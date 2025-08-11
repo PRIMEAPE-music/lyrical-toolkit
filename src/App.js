@@ -33,6 +33,7 @@ import AnalysisTab from './components/Tabs/AnalysisTab';
 import UploadTab from './components/Tabs/UploadTab';
 import StatsTab from './components/Tabs/StatsTab';
 import FloatingNotepad from './components/Notepad/FloatingNotepad';
+import StatusBanner from './components/Shared/StatusBanner';
 
 /* eslint-disable react-hooks/exhaustive-deps */
 
@@ -73,6 +74,9 @@ const LyricsSearchApp = () => {
   const [exampleSongDeleted, setExampleSongDeleted] = useState(() => loadExampleSongDeleted());
   // Stats filter
   const [selectedStatsFilter, setSelectedStatsFilter] = useState('all');
+
+  // UI feedback
+  const [saveMessage, setSaveMessage] = useState('');
 
   // File upload hook
   const fileUploadHook = useFileUpload(setSongs);
@@ -531,9 +535,9 @@ const LyricsSearchApp = () => {
     
     // Update original content to match current content
     setOriginalSongContent(notepadState.content);
-    
-    // Show success message
-    alert('Song saved successfully!');
+
+    // Show success message asynchronously
+    setSaveMessage('Song saved successfully!');
   };
 
   const handleRevertChanges = () => {
@@ -861,6 +865,11 @@ const LyricsSearchApp = () => {
         onStartNewContent={handleStartNewContent}
         hasUnsavedChanges={hasUnsavedChanges}
         originalSongContent={originalSongContent}
+      />
+      <StatusBanner
+        message={saveMessage}
+        onClose={() => setSaveMessage('')}
+        darkMode={darkMode}
       />
     </div>
   );
