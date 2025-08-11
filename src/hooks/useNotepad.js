@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useNotepad = () => {
   const [content, setContent] = useState('');
@@ -57,17 +57,39 @@ export const useNotepad = () => {
     }
   }, [content, title, isMinimized, dimensions, position, currentEditingSongId]);
 
+  // Debounced save handler to reduce storage writes
+  const saveTimeoutRef = useRef(null);
+  const pendingUpdatesRef = useRef({});
+  const debouncedSave = useCallback((updates) => {
+    pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToStorage(pendingUpdatesRef.current);
+      pendingUpdatesRef.current = {};
+    }, 400);
+  }, [saveToStorage]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Update content with auto-save
   const updateContent = useCallback((newContent) => {
     setContent(newContent);
-    saveToStorage({ content: newContent });
-  }, [saveToStorage]);
+    debouncedSave({ content: newContent });
+  }, [debouncedSave]);
 
   // Update title with auto-save
   const updateTitle = useCallback((newTitle) => {
     setTitle(newTitle);
-    saveToStorage({ title: newTitle });
-  }, [saveToStorage]);
+    debouncedSave({ title: newTitle });
+  }, [debouncedSave]);
 
   // Toggle minimized state
   const toggleMinimized = useCallback(() => {
