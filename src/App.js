@@ -75,7 +75,7 @@ const LyricsSearchApp = () => {
   const [selectedStatsFilter, setSelectedStatsFilter] = useState('all');
 
   // File upload hook
-  const fileUploadHook = useFileUpload(setSongs);
+  const fileUploadHook = useFileUpload(songs, setSongs);
   
   // Search hook
   const { searchResults } = useSearch(songs, searchQuery, highlightWord);
