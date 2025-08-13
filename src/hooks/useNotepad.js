@@ -23,17 +23,30 @@ export const useNotepad = () => {
       const savedNotepad = localStorage.getItem('lyricsNotepad');
       if (savedNotepad) {
         const parsed = JSON.parse(savedNotepad);
-        setContent(parsed.content || '');
-        setTitle(parsed.title || 'Untitled');
+
+        // Restore minimized state and position
         setIsMinimized(parsed.isMinimized ?? true);
         setPosition(parsed.position || { bottom: 20, right: 20 });
-        setCurrentEditingSongId(null);
+
+        // Restore dimensions
         setDimensions(parsed.dimensions || (() => {
           const isMobile = window.innerWidth <= 768;
-          return isMobile 
+          return isMobile
             ? { width: Math.min(400, window.innerWidth - 40), height: 300 }
             : { width: 480, height: 350 };
         })());
+
+        if (parsed.currentEditingSongId) {
+          // Continue editing the existing song
+          setContent(parsed.content || '');
+          setTitle(parsed.title || 'Untitled');
+          setCurrentEditingSongId(parsed.currentEditingSongId);
+        } else {
+          // Clear content to avoid treating previous edits as a new song
+          setContent('');
+          setTitle('Untitled');
+          setCurrentEditingSongId(null);
+        }
       }
     } catch (error) {
       console.error('Error loading notepad state:', error);
@@ -49,6 +62,7 @@ export const useNotepad = () => {
         isMinimized,
         dimensions,
         position,
+        currentEditingSongId,
         ...updates
       };
       localStorage.setItem('lyricsNotepad', JSON.stringify(notepadState));
