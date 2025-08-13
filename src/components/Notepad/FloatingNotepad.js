@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Edit3, Minimize2, Maximize2, Download, Upload, RotateCcw, Plus } from 'lucide-react';
 
 const FloatingNotepad = ({ 
@@ -17,10 +17,113 @@ const FloatingNotepad = ({
     title,
     isMinimized,
     dimensions,
+    position,
     updateContent,
     updateTitle,
-    toggleMinimized
+    toggleMinimized,
+    setPosition
   } = notepadState;
+
+  const containerRef = useRef(null);
+  const dragDataRef = useRef(null);
+  const [tempPosition, setTempPosition] = useState(position);
+
+  useEffect(() => {
+    setTempPosition(position);
+  }, [position]);
+
+  const startDrag = (clientX, clientY) => {
+    if (isMinimized) return;
+    if (dragDataRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    dragDataRef.current = {
+      startX: clientX,
+      startY: clientY,
+      rect
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', endDrag);
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest('input, button')) return;
+    startDrag(e.clientX, e.clientY);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.target.closest('input, button')) return;
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragDataRef.current) return;
+    const { startX, startY, rect } = dragDataRef.current;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const newLeft = rect.left + dx;
+    const newTop = rect.top + dy;
+    const newRight = Math.max(0, window.innerWidth - newLeft - rect.width);
+    const newBottom = Math.max(0, window.innerHeight - newTop - rect.height);
+    setTempPosition({ bottom: newBottom, right: newRight });
+  };
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+  };
+
+  const endDrag = () => {
+    if (!dragDataRef.current) return;
+    dragDataRef.current = null;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', endDrag);
+    document.removeEventListener('touchmove', handleTouchMove);
+    document.removeEventListener('touchend', endDrag);
+    setPosition(tempPosition);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.target !== e.currentTarget) return;
+    const step = 10;
+    let newPos = { ...tempPosition };
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        newPos.bottom = newPos.bottom + step;
+        setTempPosition(newPos);
+        setPosition(newPos);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        newPos.bottom = Math.max(0, newPos.bottom - step);
+        setTempPosition(newPos);
+        setPosition(newPos);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        newPos.right = newPos.right + step;
+        setTempPosition(newPos);
+        setPosition(newPos);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        newPos.right = Math.max(0, newPos.right - step);
+        setTempPosition(newPos);
+        setPosition(newPos);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        newPos = { bottom: 20, right: 20 };
+        setTempPosition(newPos);
+        setPosition(newPos);
+        break;
+      default:
+    }
+  };
 
   const handleContentChange = (e) => {
     updateContent(e.target.value);
@@ -31,16 +134,19 @@ const FloatingNotepad = ({
   };
 
   return (
-    <div 
+    <div
+      ref={containerRef}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       className={`fixed shadow-2xl border transition-all duration-300 ${
         isMinimized ? 'z-30 md:z-50 floating-notepad-minimized' : 'z-40'
       } ${
-        darkMode 
-          ? 'bg-gray-800 border-gray-600' 
+        darkMode
+          ? 'bg-gray-800 border-gray-600'
           : 'bg-white border-gray-300'
       } ${!isMinimized ? 'floating-notepad-expanded' : ''}`}
       style={
-        isMinimized 
+        isMinimized
           ? {
               // Collapsed: Bottom bar - FIXED to viewport bottom
               bottom: '0',
@@ -55,8 +161,8 @@ const FloatingNotepad = ({
             }
           : {
             // Expanded: Floating window
-            bottom: '20px',
-            right: '20px',
+            bottom: `${tempPosition.bottom}px`,
+            right: `${tempPosition.right}px`,
             width: `${dimensions.width}px`,
             height: `${dimensions.height}px`,
             borderRadius: '8px',
@@ -68,11 +174,15 @@ const FloatingNotepad = ({
       }
     >
       {/* Header - Contains title and buttons */}
-      <div className={`flex items-center justify-between p-2 ${
-        isMinimized ? '' : 'border-b'
-      } ${
-        darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-      }`}>
+      <div
+        className={`flex items-center justify-between p-2 ${
+          isMinimized ? '' : 'border-b'
+        } ${
+          darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+        }`}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+      >
         {/* Left side - Icon + Title or Notepad label */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Edit3 className={`w-4 h-4 flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
