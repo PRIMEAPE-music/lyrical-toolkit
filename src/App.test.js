@@ -1,8 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+jest.mock('jspdf', () => jest.fn());
+jest.mock('html2canvas', () => jest.fn());
+
+test('renders the music banner text', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const bannerText = screen.getByText(/check out my music/i);
+  expect(bannerText).toBeInTheDocument();
 });
