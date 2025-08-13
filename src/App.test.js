@@ -6,6 +6,6 @@ jest.mock('html2canvas', () => jest.fn());
 
 test('renders the music banner text', () => {
   render(<App />);
-  const bannerText = screen.getByText(/check out my music/i);
-  expect(bannerText).toBeInTheDocument();
+  const musicBannerText = screen.getByText(/check out my music!/i);
+  expect(musicBannerText).toBeInTheDocument();
 });
