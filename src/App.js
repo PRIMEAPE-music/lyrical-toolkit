@@ -489,20 +489,23 @@ const LyricsSearchApp = () => {
 
   const handleUploadToSongs = () => {
     if (!notepadState.content.trim()) return;
-    
+
     // Should only create new song when NOT editing
     if (notepadState.currentEditingSongId) {
       console.error('handleUploadToSongs called while editing - this should not happen');
       return;
     }
-    
+
+    const sanitizedTitle = DOMPurify.sanitize(notepadState.title || 'Untitled');
+    const sanitizedContent = DOMPurify.sanitize(notepadState.content);
+
     const newSong = {
       id: Date.now() + Math.random(),
-      title: notepadState.title || 'Untitled',
-      lyrics: notepadState.content,
-      wordCount: notepadState.content.split(/\s+/).filter(word => word.length > 0).length,
+      title: sanitizedTitle,
+      lyrics: sanitizedContent,
+      wordCount: sanitizedContent.split(/\s+/).filter(word => word.length > 0).length,
       dateAdded: new Date().toISOString(),
-      filename: `${notepadState.title || 'Untitled'}.txt`,
+      filename: `${sanitizedTitle}.txt`,
       fromNotepad: true
     };
     
@@ -515,23 +518,31 @@ const LyricsSearchApp = () => {
 
   const handleSaveChanges = () => {
     if (!notepadState.currentEditingSongId || !notepadState.content.trim()) return;
-    
+    const sanitizedTitle = DOMPurify.sanitize(notepadState.title);
+    const sanitizedContent = DOMPurify.sanitize(notepadState.content);
+    const originalSong = songs.find(song => song.id === notepadState.currentEditingSongId);
+
     setSongs(prev => prev.map(song => {
       if (song.id === notepadState.currentEditingSongId) {
+        const finalTitle = sanitizedTitle || song.title;
         return {
           ...song,
-          title: notepadState.title || song.title,
-          lyrics: notepadState.content,
-          wordCount: notepadState.content.split(/\s+/).filter(word => word.length > 0).length,
+          title: finalTitle,
+          lyrics: sanitizedContent,
+          wordCount: sanitizedContent.split(/\s+/).filter(word => word.length > 0).length,
           dateModified: new Date().toISOString()
         };
       }
       return song;
     }));
-    
-    // Update original content to match current content
-    setOriginalSongContent(notepadState.content);
-    
+
+    const finalTitle = sanitizedTitle || (originalSong ? originalSong.title : '');
+
+    // Update notepad and original content with sanitized values
+    notepadState.updateTitle(finalTitle);
+    notepadState.updateContent(sanitizedContent);
+    setOriginalSongContent(sanitizedContent);
+
     // Show success message
     alert('Song saved successfully!');
   };
