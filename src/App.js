@@ -43,7 +43,8 @@ const LyricsSearchApp = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('upload');
   const [selectedSong, setSelectedSong] = useState(null);
-  const [token, setToken] = useState(getToken());
+  const initialToken = getToken();
+  const [token, setToken] = useState(initialToken);
   
   // Use custom hooks for localStorage
   const [searchHistory, setSearchHistory] = useSearchHistory();
@@ -93,7 +94,7 @@ const LyricsSearchApp = () => {
 
   // Load example song only when needed
   const loadingExampleRef = useRef(false);
-  const [userSongsLoaded, setUserSongsLoaded] = useState(false);
+  const [userSongsLoaded, setUserSongsLoaded] = useState(!initialToken);
   const isAuthenticated = !!token;
 
   const handleLogin = async () => {
@@ -116,14 +117,14 @@ const LyricsSearchApp = () => {
   
   useEffect(() => {
     const loadExampleSong = async () => {
-      if (exampleSongDeleted || loadingExampleRef.current || !userSongsLoaded) return;
-      
+      if (exampleSongDeleted || loadingExampleRef.current) return;
+
       const exampleExists = songs.some(song => song.isExample);
       const userSongsExist = songs.some(song => !song.isExample);
-      
+
       // Only load example if no user songs exist and no example already exists
       if (exampleExists || userSongsExist) return;
-      
+
       loadingExampleRef.current = true;
 
       try {
@@ -139,9 +140,9 @@ const LyricsSearchApp = () => {
             filename: 'HUMAN.txt',
             isExample: true
           };
-          
+
           setSongs(prev => [exampleSong, ...prev]);
-          
+
           // Clear any previous search states for fresh start
           setSearchQuery('');
           setHighlightWord('');
@@ -159,16 +160,19 @@ const LyricsSearchApp = () => {
       }
     };
 
-    // Only try to load example after user songs have been loaded
-    if (userSongsLoaded) {
+    // Only try to load example if not authenticated or after user songs have been loaded
+    if (!token || userSongsLoaded) {
       setTimeout(loadExampleSong, 100);
     }
-  }, [songs.length, exampleSongDeleted, userSongsLoaded]);
+  }, [songs.length, exampleSongDeleted, userSongsLoaded, token]);
 
   // Load persisted user songs from server when authenticated
   useEffect(() => {
     const loadPersistedSongs = async () => {
-      if (!token) return;
+      if (!token) {
+        setUserSongsLoaded(true);
+        return;
+      }
       const userSongs = await loadUserSongs();
       if (userSongs.length > 0) {
         setSongs(userSongs);
