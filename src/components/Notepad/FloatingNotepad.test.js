@@ -1,8 +1,9 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import FloatingNotepad from './FloatingNotepad';
 
-test('renders FloatingNotepad component', () => {
+test('updates position with arrow keys', () => {
+  const setPosition = jest.fn();
   const notepadState = {
     content: '',
     title: '',
@@ -12,11 +13,11 @@ test('renders FloatingNotepad component', () => {
     updateContent: jest.fn(),
     updateTitle: jest.fn(),
     toggleMinimized: jest.fn(),
-    setPosition: jest.fn(),
+    setPosition,
     currentEditingSongId: null,
   };
 
-  render(
+  const { container } = render(
     <FloatingNotepad
       notepadState={notepadState}
       darkMode={false}
@@ -29,4 +30,9 @@ test('renders FloatingNotepad component', () => {
       originalSongContent=""
     />
   );
+
+  const root = container.firstChild;
+  root.focus();
+  fireEvent.keyDown(root, { key: 'ArrowUp' });
+  expect(setPosition).toHaveBeenCalledWith({ bottom: 10, right: 0 });
 });
