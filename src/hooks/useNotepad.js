@@ -4,7 +4,7 @@ export const useNotepad = () => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('Untitled');
   const [isMinimized, setIsMinimized] = useState(true);
-  const [position, setPosition] = useState({ bottom: 20, right: 20 });
+  const [position, setPositionState] = useState({ bottom: 20, right: 20 });
   const [currentEditingSongId, setCurrentEditingSongId] = useState(null);
 
   const [dimensions, setDimensions] = useState(() => {
@@ -26,7 +26,7 @@ export const useNotepad = () => {
 
         // Restore minimized state and position
         setIsMinimized(parsed.isMinimized ?? true);
-        setPosition(parsed.position || { bottom: 20, right: 20 });
+        setPositionState(parsed.position || { bottom: 20, right: 20 });
 
         // Restore dimensions
         setDimensions(parsed.dimensions || (() => {
@@ -120,6 +120,12 @@ export const useNotepad = () => {
     saveToStorage({ dimensions: newDimensions });
   }, [saveToStorage]);
 
+  // Update position
+  const updatePosition = useCallback((newPosition) => {
+    setPositionState(newPosition);
+    saveToStorage({ position: newPosition });
+  }, [saveToStorage]);
+
   // Update current editing song ID
   const updateCurrentEditingSongId = useCallback((songId) => {
     setCurrentEditingSongId(songId);
@@ -137,7 +143,7 @@ export const useNotepad = () => {
     updateTitle,
     toggleMinimized,
     updateDimensions,
-    setPosition,
+    setPosition: updatePosition,
     setCurrentEditingSongId: updateCurrentEditingSongId
   };
 };
