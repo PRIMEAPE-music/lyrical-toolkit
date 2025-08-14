@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders app component', () => {
+test('renders app header', () => {
   render(<App />);
-  const header = screen.getByText(/check out my music/i);
-  expect(header).toBeInTheDocument();
-=======
+  const heading = screen.getByText(/Lyrical-Toolkit/i);
+  expect(heading).toBeInTheDocument();
+  
 jest.mock('jspdf', () => jest.fn());
 jest.mock('html2canvas', () => jest.fn());
 
