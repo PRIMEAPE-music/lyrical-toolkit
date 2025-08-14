@@ -30,6 +30,9 @@ const FloatingNotepad = ({
     updateTitle(e.target.value);
   };
 
+  const focusStyles =
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500';
+
   return (
     <div 
       className={`fixed shadow-2xl border transition-all duration-300 ${
@@ -77,21 +80,25 @@ const FloatingNotepad = ({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Edit3 className={`w-4 h-4 flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
           {isMinimized ? (
-            <span 
-              className={`text-sm font-medium cursor-pointer truncate ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+            <button
               onClick={toggleMinimized}
+              aria-label={`Expand ${title || 'Notepad'}`}
+              className={`text-sm font-medium cursor-pointer truncate bg-transparent border-none p-0 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              } ${focusStyles}`}
             >
               {title || 'Notepad'}{hasUnsavedChanges ? '*' : ''}
-            </span>
+            </button>
           ) : (
             <input
               type="text"
               value={title + (hasUnsavedChanges ? '*' : '')}
               onChange={(e) => handleTitleChange({ target: { value: e.target.value.replace('*', '') } })}
               placeholder="Title..."
+              aria-label="Notepad title"
               className={`flex-1 px-1 md:px-2 py-0.5 md:py-1 text-xs md:text-sm border rounded min-w-0 max-w-[100px] md:max-w-none ${
-                darkMode 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                darkMode
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
               }`}
             />
@@ -106,20 +113,21 @@ const FloatingNotepad = ({
               <button
                 onClick={notepadState.currentEditingSongId ? onSaveChanges : onUploadToSongs}
                 disabled={!content.trim()}
-                className={`p-1 rounded text-xs transition-colors ${
+                aria-label={notepadState.currentEditingSongId ? 'Save changes' : 'Add to songs'}
+                className={`p-1 rounded text-xs transition-colors ${focusStyles} ${
                   content.trim()
                     ? notepadState.currentEditingSongId
-                      ? darkMode 
-                        ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
+                      ? darkMode
+                        ? 'bg-blue-800 hover:bg-blue-700 text-blue-200'
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : darkMode 
-                        ? 'bg-green-800 hover:bg-green-700 text-green-200' 
+                      : darkMode
+                        ? 'bg-green-800 hover:bg-green-700 text-green-200'
                         : 'bg-green-600 hover:bg-green-700 text-white'
                     : darkMode
                       ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
-                title={notepadState.currentEditingSongId ? "Save Changes" : "Add to Songs"}
+                title={notepadState.currentEditingSongId ? 'Save Changes' : 'Add to Songs'}
               >
                 <Upload className="w-3 h-3" />
               </button>
@@ -128,12 +136,13 @@ const FloatingNotepad = ({
               <button
                 onClick={onExportTxt}
                 disabled={!content.trim()}
-                className={`p-1 rounded text-xs transition-colors ${
+                aria-label="Export as TXT"
+                className={`p-1 rounded text-xs transition-colors ${focusStyles} ${
                   notepadState.currentEditingSongId ? 'hidden md:block' : ''
                 } ${
                   content.trim()
-                    ? darkMode 
-                      ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
+                    ? darkMode
+                      ? 'bg-blue-800 hover:bg-blue-700 text-blue-200'
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                     : darkMode
                       ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
@@ -148,9 +157,10 @@ const FloatingNotepad = ({
               {notepadState.currentEditingSongId && (
                 <button
                   onClick={onStartNewContent}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    darkMode 
-                      ? 'bg-purple-800 hover:bg-purple-700 text-purple-200' 
+                  aria-label="Empty notepad"
+                  className={`p-1 rounded text-xs transition-colors ${focusStyles} ${
+                    darkMode
+                      ? 'bg-purple-800 hover:bg-purple-700 text-purple-200'
                       : 'bg-purple-600 hover:bg-purple-700 text-white'
                   }`}
                   title="Empty Notepad"
@@ -164,10 +174,11 @@ const FloatingNotepad = ({
                 <button
                   onClick={onRevertChanges}
                   disabled={!hasUnsavedChanges}
-                  className={`p-1 rounded text-xs transition-colors ${
+                  aria-label="Revert to original"
+                  className={`p-1 rounded text-xs transition-colors ${focusStyles} ${
                     hasUnsavedChanges
-                      ? darkMode 
-                        ? 'bg-orange-800 hover:bg-orange-700 text-orange-200' 
+                      ? darkMode
+                        ? 'bg-orange-800 hover:bg-orange-700 text-orange-200'
                         : 'bg-orange-600 hover:bg-orange-700 text-white'
                       : darkMode
                         ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
@@ -177,13 +188,14 @@ const FloatingNotepad = ({
                 >
                   <RotateCcw className="w-3 h-3" />
                 </button>
-              )}
-            </>
-          )}
-          
+            )}
+          </>
+        )}
+
           <button
             onClick={toggleMinimized}
-            className={`p-1 rounded hover:bg-opacity-20 hover:bg-gray-500 ${
+            aria-label={isMinimized ? 'Expand notepad' : 'Minimize notepad'}
+            className={`p-1 rounded hover:bg-opacity-20 hover:bg-gray-500 ${focusStyles} ${
               darkMode ? 'text-gray-400' : 'text-gray-500'
             }`}
           >
@@ -200,17 +212,17 @@ const FloatingNotepad = ({
             value={content}
             onChange={handleContentChange}
             placeholder="Start writing your lyrics..."
-            className={`w-full h-full resize-none border-none outline-none text-sm p-3 ${
-              darkMode 
-                ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
+            aria-label="Notepad content"
+            className={`w-full h-full resize-none border-none text-sm p-3 ${focusStyles} ${
+              darkMode
+                ? 'bg-gray-800 text-gray-300 placeholder-gray-500'
                 : 'bg-white text-gray-900 placeholder-gray-400'
             }`}
-            style={{ 
-              width: '100%', 
+            style={{
+              width: '100%',
               height: '100%',
               resize: 'none',
-              border: 'none',
-              outline: 'none'
+              border: 'none'
             }}
           />
           
