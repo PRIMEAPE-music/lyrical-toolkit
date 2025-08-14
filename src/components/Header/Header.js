@@ -84,9 +84,9 @@ const Header = ({
                       ? 'bg-green-700 text-green-200 hover:bg-green-600 hover:text-white'
                       : 'bg-green-200 text-green-800 hover:bg-green-300'
                   }`}
-                  title="Login"
+                  title="Login or Sign Up"
                 >
-                  Login
+                  Login / Sign Up
                 </button>
               )}
             </div>
@@ -257,7 +257,7 @@ const Header = ({
                       : 'bg-green-200 text-green-800 hover:bg-green-300'
                   }`}
                 >
-                  Login
+                  Login / Sign Up
                 </button>
               )}
             </div>

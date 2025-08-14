@@ -11,6 +11,7 @@ app.use(express.json());
 
 const SECRET = 'super-secret-key';
 let songs = [];
+let users = [{ username: 'user', password: 'password' }];
 
 // Middleware to verify JWT token
 function authenticate(req, res, next) {
@@ -26,10 +27,27 @@ function authenticate(req, res, next) {
 }
 
 // Auth routes
+app.post('/api/auth/signup', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' });
+  }
+
+  const existing = users.find(u => u.username === username);
+  if (existing) {
+    return res.status(400).json({ error: 'User already exists' });
+  }
+
+  const newUser = { username, password };
+  users.push(newUser);
+  const token = jwt.sign({ username }, SECRET, { expiresIn: '1h' });
+  res.status(201).json({ token });
+});
+
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
-  // For demo purposes accept a single hard-coded user
-  if (username === 'user' && password === 'password') {
+  const user = users.find(u => u.username === username && u.password === password);
+  if (user) {
     const token = jwt.sign({ username }, SECRET, { expiresIn: '1h' });
     return res.json({ token });
   }

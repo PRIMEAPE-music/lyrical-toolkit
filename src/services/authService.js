@@ -38,6 +38,23 @@ export const login = async (username, password) => {
   return data.token;
 };
 
+// Sign up with username and password. On success the token is stored and returned.
+export const signup = async (username, password) => {
+  const response = await fetch(`${AUTH_API}/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  if (!response.ok) {
+    throw new Error('Signup failed');
+  }
+
+  const data = await response.json();
+  setToken(data.token);
+  return data.token;
+};
+
 // Refresh the current token. Returns and stores the new token.
 export const refreshToken = async () => {
   const token = getToken();
@@ -59,6 +76,7 @@ export const refreshToken = async () => {
 
 export default {
   login,
+  signup,
   logout,
   refreshToken,
   getToken
