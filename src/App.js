@@ -13,6 +13,7 @@ import {
 import { analyzeRhymeStatistics } from './utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from './data/songVocabularyPhoneticMap';
 import { saveUserSongs, loadUserSongs, clearUserSongs, saveExampleSongDeleted, loadExampleSongDeleted } from './utils/songStorage';
+import { logout as authLogout, getToken } from './services/authService';
 
 // Import hooks
 import { useSearchHistory, useDarkMode, useHighlightWord } from './hooks/useLocalStorage';
@@ -33,6 +34,7 @@ import AnalysisTab from './components/Tabs/AnalysisTab';
 import UploadTab from './components/Tabs/UploadTab';
 import StatsTab from './components/Tabs/StatsTab';
 import FloatingNotepad from './components/Notepad/FloatingNotepad';
+import AuthModal from './components/AuthModal';
 
 /* eslint-disable react-hooks/exhaustive-deps */
 
@@ -42,6 +44,8 @@ const LyricsSearchApp = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('upload');
   const [selectedSong, setSelectedSong] = useState(null);
+  const initialToken = getToken();
+  const [token, setToken] = useState(initialToken);
   
   // Use custom hooks for localStorage
   const [searchHistory, setSearchHistory] = useSearchHistory();
@@ -91,18 +95,32 @@ const LyricsSearchApp = () => {
 
   // Load example song only when needed
   const loadingExampleRef = useRef(false);
-  const [userSongsLoaded, setUserSongsLoaded] = useState(false);
+  const [userSongsLoaded, setUserSongsLoaded] = useState(!initialToken);
+  const isAuthenticated = !!token;
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const handleAuth = (newToken) => {
+    setToken(newToken);
+    setShowAuthModal(false);
+  };
+
+  const handleLogout = () => {
+    authLogout();
+    setToken(null);
+    setSongs([]);
+    setUserSongsLoaded(false);
+    setShowAuthModal(false);
+  };
   
   useEffect(() => {
     const loadExampleSong = async () => {
-      if (exampleSongDeleted || loadingExampleRef.current || !userSongsLoaded) return;
-      
+      if (exampleSongDeleted || loadingExampleRef.current) return;
+
       const exampleExists = songs.some(song => song.isExample);
       const userSongsExist = songs.some(song => !song.isExample);
-      
+
       // Only load example if no user songs exist and no example already exists
       if (exampleExists || userSongsExist) return;
-      
+
       loadingExampleRef.current = true;
 
       try {
@@ -118,9 +136,9 @@ const LyricsSearchApp = () => {
             filename: 'HUMAN.txt',
             isExample: true
           };
-          
+
           setSongs(prev => [exampleSong, ...prev]);
-          
+
           // Clear any previous search states for fresh start
           setSearchQuery('');
           setHighlightWord('');
@@ -138,39 +156,35 @@ const LyricsSearchApp = () => {
       }
     };
 
-    // Only try to load example after user songs have been loaded
-    if (userSongsLoaded) {
+    // Only try to load example if not authenticated or after user songs have been loaded
+    if (!token || userSongsLoaded) {
       setTimeout(loadExampleSong, 100);
     }
-  }, [songs.length, exampleSongDeleted, userSongsLoaded]);
+  }, [songs.length, exampleSongDeleted, userSongsLoaded, token]);
 
-  // Load persisted user songs on app startup
+  // Load persisted user songs from server when authenticated
   useEffect(() => {
-    const loadPersistedSongs = () => {
-      const userSongs = loadUserSongs();
-      if (userSongs.length > 0) {
-        setSongs(prev => {
-          // Only add if not already present (avoid duplicates)
-          const existingIds = new Set(prev.map(song => song.id));
-          const newSongs = userSongs.filter(song => !existingIds.has(song.id));
-          return [...prev, ...newSongs];
-        });
+    const loadPersistedSongs = async () => {
+      if (!token) {
+        setUserSongsLoaded(true);
+        return;
       }
-      // Mark that user songs loading is complete (whether we found any or not)
+      const userSongs = await loadUserSongs();
+      if (userSongs.length > 0) {
+        setSongs(userSongs);
+      }
       setUserSongsLoaded(true);
     };
 
-    // Load persisted songs on initial render
     loadPersistedSongs();
-  }, []); // Empty dependency array - only run once on mount
+  }, [token]);
 
   // Persist user songs whenever songs change
   useEffect(() => {
-    // Only save if we have songs and they're not just the initial load
-    if (songs.length > 0) {
+    if (token) {
       saveUserSongs(songs);
     }
-  }, [songs]);
+  }, [songs, token]);
 
   // Reset stats filter when songs change
   useEffect(() => {
@@ -644,13 +658,23 @@ const LyricsSearchApp = () => {
       <MusicBanner />
 
       {/* Header */}
-      <Header 
+      <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         showManual={showManual}
         setShowManual={setShowManual}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
+        isAuthenticated={isAuthenticated}
+        onLogin={() => setShowAuthModal(true)}
+        onLogout={handleLogout}
+      />
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuth={handleAuth}
+        darkMode={darkMode}
       />
 
       {/* Universal Search Bar */}

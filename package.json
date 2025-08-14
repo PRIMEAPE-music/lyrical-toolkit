@@ -13,6 +13,9 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.511.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-scripts": "5.0.1",
@@ -20,6 +23,7 @@
   },
   "scripts": {
     "start": "craco start",
+    "server": "node server/index.js",
     "build": "CI=false craco build",
     "test": "craco test",
     "eject": "react-scripts eject"

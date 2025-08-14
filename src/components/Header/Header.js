@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Upload, BarChart3, Book, Shuffle, Music, Moon, Sun } from 'lucide-react';
 
-const Header = ({ 
-  activeTab, 
-  setActiveTab, 
-  showManual, 
-  setShowManual, 
-  darkMode, 
-  setDarkMode 
+const Header = ({
+  activeTab,
+  setActiveTab,
+  showManual,
+  setShowManual,
+  darkMode,
+  setDarkMode,
+  isAuthenticated,
+  onLogin,
+  onLogout
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -31,8 +34,8 @@ const Header = ({
             <button
               onClick={() => setDarkMode(!darkMode)}
               className={`p-2 rounded-lg transition-colors ${
-                darkMode 
-                  ? 'bg-gray-700 hover:bg-gray-600' 
+                darkMode
+                  ? 'bg-gray-700 hover:bg-gray-600'
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
               }`}
               style={darkMode ? { color: 'white' } : {}}
@@ -40,26 +43,53 @@ const Header = ({
             >
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            
+
             <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
               Lyrical-Toolkit
             </h1>
-            
-            <button
-              onClick={() => setShowManual(!showManual)}
-              className={`p-2 rounded-lg transition-colors ${
-                showManual
-                  ? darkMode 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-blue-600 text-white'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-              title="Show Manual"
-            >
-              <Book className="w-4 h-4" />
-            </button>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowManual(!showManual)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showManual
+                    ? darkMode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-600 text-white'
+                    : darkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+                title="Show Manual"
+              >
+                <Book className="w-4 h-4" />
+              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={onLogout}
+                  className={`p-2 rounded-lg transition-colors ${
+                    darkMode
+                      ? 'bg-red-700 text-red-200 hover:bg-red-600 hover:text-white'
+                      : 'bg-red-200 text-red-800 hover:bg-red-300'
+                  }`}
+                  title="Logout"
+                >
+                  Logout
+                </button>
+              ) : (
+                <button
+                  onClick={onLogin}
+                  className={`p-2 rounded-lg transition-colors ${
+                    darkMode
+                      ? 'bg-green-700 text-green-200 hover:bg-green-600 hover:text-white'
+                      : 'bg-green-200 text-green-800 hover:bg-green-300'
+                  }`}
+                  title="Login or Sign Up"
+                >
+                  Login / Sign Up
+                </button>
+              )}
+            </div>
           </div>
           
           {/* Mobile tabs */}
@@ -191,21 +221,46 @@ const Header = ({
           </div>
           
           <div style={{ display: 'table-cell', width: '33.33%', verticalAlign: 'middle', textAlign: 'right' }}>
-            <button
-              onClick={() => setShowManual(!showManual)}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                showManual
-                  ? darkMode 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-blue-600 text-white'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              <Book className="w-4 h-4 inline mr-2" />
-              Show Manual
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button
+                onClick={() => setShowManual(!showManual)}
+                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                  showManual
+                    ? darkMode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-600 text-white'
+                    : darkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                <Book className="w-4 h-4 inline mr-2" />
+                Show Manual
+              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={onLogout}
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                    darkMode
+                      ? 'bg-red-700 text-red-200 hover:bg-red-600 hover:text-white'
+                      : 'bg-red-200 text-red-800 hover:bg-red-300'
+                  }`}
+                >
+                  Logout
+                </button>
+              ) : (
+                <button
+                  onClick={onLogin}
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                    darkMode
+                      ? 'bg-green-700 text-green-200 hover:bg-green-600 hover:text-white'
+                      : 'bg-green-200 text-green-800 hover:bg-green-300'
+                  }`}
+                >
+                  Login / Sign Up
+                </button>
+              )}
+            </div>
           </div>
         </div>
         
