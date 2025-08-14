@@ -13,7 +13,7 @@ import {
 import { analyzeRhymeStatistics } from './utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from './data/songVocabularyPhoneticMap';
 import { saveUserSongs, loadUserSongs, clearUserSongs, saveExampleSongDeleted, loadExampleSongDeleted } from './utils/songStorage';
-import { login as authLogin, logout as authLogout, getToken } from './services/authService';
+import { logout as authLogout, getToken } from './services/authService';
 
 // Import hooks
 import { useSearchHistory, useDarkMode, useHighlightWord } from './hooks/useLocalStorage';
@@ -34,6 +34,7 @@ import AnalysisTab from './components/Tabs/AnalysisTab';
 import UploadTab from './components/Tabs/UploadTab';
 import StatsTab from './components/Tabs/StatsTab';
 import FloatingNotepad from './components/Notepad/FloatingNotepad';
+import AuthModal from './components/AuthModal';
 
 /* eslint-disable react-hooks/exhaustive-deps */
 
@@ -96,16 +97,10 @@ const LyricsSearchApp = () => {
   const loadingExampleRef = useRef(false);
   const [userSongsLoaded, setUserSongsLoaded] = useState(!initialToken);
   const isAuthenticated = !!token;
-
-  const handleLogin = async () => {
-    const username = prompt('Username');
-    const password = prompt('Password');
-    try {
-      const newToken = await authLogin(username, password);
-      setToken(newToken);
-    } catch (error) {
-      alert('Login failed');
-    }
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const handleAuth = (newToken) => {
+    setToken(newToken);
+    setShowAuthModal(false);
   };
 
   const handleLogout = () => {
@@ -113,6 +108,7 @@ const LyricsSearchApp = () => {
     setToken(null);
     setSongs([]);
     setUserSongsLoaded(false);
+    setShowAuthModal(false);
   };
   
   useEffect(() => {
@@ -670,8 +666,15 @@ const LyricsSearchApp = () => {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         isAuthenticated={isAuthenticated}
-        onLogin={handleLogin}
+        onLogin={() => setShowAuthModal(true)}
         onLogout={handleLogout}
+      />
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuth={handleAuth}
+        darkMode={darkMode}
       />
 
       {/* Universal Search Bar */}
