@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Upload, BarChart3, Book, Shuffle, Music, Moon, Sun } from 'lucide-react';
 
-const Header = ({ 
-  activeTab, 
-  setActiveTab, 
-  showManual, 
-  setShowManual, 
-  darkMode, 
-  setDarkMode 
+const Header = ({
+  activeTab,
+  setActiveTab,
+  showManual,
+  setShowManual,
+  darkMode,
+  setDarkMode,
+  isAuthenticated,
+  onLoginClick,
+  onSignupClick
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -45,21 +48,45 @@ const Header = ({
               Lyrical-Toolkit
             </h1>
             
-            <button
-              onClick={() => setShowManual(!showManual)}
-              className={`p-2 rounded-lg transition-colors ${
-                showManual
-                  ? darkMode 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-blue-600 text-white'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-              title="Show Manual"
-            >
-              <Book className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {!isAuthenticated && (
+                <>
+                  <button
+                    onClick={onLoginClick}
+                    className={`px-3 py-2 rounded-lg transition-colors ${
+                      darkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={onSignupClick}
+                    className={`px-3 py-2 rounded-lg transition-colors ${
+                      darkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setShowManual(!showManual)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showManual
+                    ? 'bg-blue-600 text-white'
+                    : darkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+                title="Show Manual"
+              >
+                <Book className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           
           {/* Mobile tabs */}
@@ -191,21 +218,47 @@ const Header = ({
           </div>
           
           <div style={{ display: 'table-cell', width: '33.33%', verticalAlign: 'middle', textAlign: 'right' }}>
-            <button
-              onClick={() => setShowManual(!showManual)}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                showManual
-                  ? darkMode 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-blue-600 text-white'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              <Book className="w-4 h-4 inline mr-2" />
-              Show Manual
-            </button>
+            <div className="flex justify-end gap-2">
+              {!isAuthenticated && (
+                <>
+                  <button
+                    onClick={onLoginClick}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      darkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={onSignupClick}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      darkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setShowManual(!showManual)}
+                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                  showManual
+                    ? darkMode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-600 text-white'
+                    : darkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                <Book className="w-4 h-4 inline mr-2" />
+                Show Manual
+              </button>
+            </div>
           </div>
         </div>
         

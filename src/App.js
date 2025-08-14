@@ -33,6 +33,7 @@ import AnalysisTab from './components/Tabs/AnalysisTab';
 import UploadTab from './components/Tabs/UploadTab';
 import StatsTab from './components/Tabs/StatsTab';
 import FloatingNotepad from './components/Notepad/FloatingNotepad';
+import AuthModal from './components/AuthModal';
 
 /* eslint-disable react-hooks/exhaustive-deps */
 
@@ -74,6 +75,11 @@ const LyricsSearchApp = () => {
   // Stats filter
   const [selectedStatsFilter, setSelectedStatsFilter] = useState('all');
 
+  // Authentication modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [token, setToken] = useState(null);
+
   // File upload hook
   const fileUploadHook = useFileUpload(songs, setSongs);
   
@@ -92,6 +98,18 @@ const LyricsSearchApp = () => {
   // Load example song only when needed
   const loadingExampleRef = useRef(false);
   const [userSongsLoaded, setUserSongsLoaded] = useState(false);
+
+  const openAuthModal = (mode = 'login') => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
+  };
+
+  const handleAuthSuccess = (data) => {
+    if (data?.token) {
+      setToken(data.token);
+    }
+    setShowAuthModal(false);
+  };
   
   useEffect(() => {
     const loadExampleSong = async () => {
@@ -644,13 +662,16 @@ const LyricsSearchApp = () => {
       <MusicBanner />
 
       {/* Header */}
-      <Header 
+      <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         showManual={showManual}
         setShowManual={setShowManual}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
+        isAuthenticated={!!token}
+        onLoginClick={() => openAuthModal('login')}
+        onSignupClick={() => openAuthModal('signup')}
       />
 
       {/* Universal Search Bar */}
@@ -853,8 +874,15 @@ const LyricsSearchApp = () => {
         )}
       </div>
 
+      <AuthModal
+        isOpen={showAuthModal}
+        mode={authMode}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
+
       {/* Song Modal */}
-      <SongModal 
+      <SongModal
         selectedSong={selectedSong}
         onClose={() => setSelectedSong(null)}
         highlightWord={highlightWord}
