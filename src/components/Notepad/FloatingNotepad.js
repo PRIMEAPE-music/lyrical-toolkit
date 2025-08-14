@@ -124,7 +124,7 @@ const FloatingNotepad = ({
       default:
     }
   };
-
+  
   const handleContentChange = (e) => {
     updateContent(e.target.value);
   };

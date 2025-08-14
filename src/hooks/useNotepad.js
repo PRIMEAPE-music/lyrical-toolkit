@@ -88,6 +88,8 @@ export const useNotepad = () => {
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
+        saveToStorage(pendingUpdatesRef.current);
+        pendingUpdatesRef.current = {};
         clearTimeout(saveTimeoutRef.current);
       }
     };
