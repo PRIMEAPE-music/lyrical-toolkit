@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Edit3, Minimize2, Maximize2, Download, Upload, RotateCcw, Plus } from 'lucide-react';
 
 const FloatingNotepad = ({ 
@@ -19,8 +19,25 @@ const FloatingNotepad = ({
     dimensions,
     updateContent,
     updateTitle,
-    toggleMinimized
+    toggleMinimized,
+    updateDimensions
   } = notepadState;
+
+  const notepadRef = useRef(null);
+
+  useEffect(() => {
+    if (!notepadRef.current || isMinimized) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        updateDimensions({ width, height });
+      }
+    });
+
+    observer.observe(notepadRef.current);
+    return () => observer.disconnect();
+  }, [isMinimized, updateDimensions]);
 
   const handleContentChange = (e) => {
     updateContent(e.target.value);
@@ -31,12 +48,13 @@ const FloatingNotepad = ({
   };
 
   return (
-    <div 
+    <div
+      ref={notepadRef}
       className={`fixed shadow-2xl border transition-all duration-300 ${
         isMinimized ? 'z-30 md:z-50 floating-notepad-minimized' : 'z-40'
       } ${
-        darkMode 
-          ? 'bg-gray-800 border-gray-600' 
+        darkMode
+          ? 'bg-gray-800 border-gray-600'
           : 'bg-white border-gray-300'
       } ${!isMinimized ? 'floating-notepad-expanded' : ''}`}
       style={
