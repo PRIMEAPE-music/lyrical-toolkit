@@ -26,8 +26,8 @@ const FloatingNotepad = ({
     updateContent(e.target.value);
   };
 
-  const handleTitleChange = (e) => {
-    updateTitle(e.target.value);
+  const handleTitleChange = (value) => {
+    updateTitle(value);
   };
 
   return (
@@ -87,7 +87,7 @@ const FloatingNotepad = ({
             <input
               type="text"
               value={title + (hasUnsavedChanges ? '*' : '')}
-              onChange={(e) => handleTitleChange({ target: { value: e.target.value.replace('*', '') } })}
+              onChange={(e) => handleTitleChange(e.target.value.replace('*', ''))}
               placeholder="Title..."
               className={`flex-1 px-1 md:px-2 py-0.5 md:py-1 text-xs md:text-sm border rounded min-w-0 max-w-[100px] md:max-w-none ${
                 darkMode 
