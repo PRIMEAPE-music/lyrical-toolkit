@@ -35,16 +35,16 @@ const UploadTab = ({
       >
         <Upload className={`w-16 h-16 mx-auto mb-4 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`} />
         <h3 className={`text-lg font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          Upload your lyrics
+          Upload your lyrics and audio
         </h3>
         <p className={`mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          Drag and drop your .txt files here, or click to browse
+          Drag and drop your .txt or audio files here, or click to browse
         </p>
         
         <input
           type="file"
           multiple
-          accept=".txt"
+          accept=".txt,audio/*"
           onChange={(e) => onFileUpload(Array.from(e.target.files))}
           className="hidden"
           id="file-upload"
@@ -62,7 +62,7 @@ const UploadTab = ({
         </label>
         
         <p className={`text-xs mt-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-          Supports up to 50 .txt files
+          Supports up to 50 songs
         </p>
       </div>
 
