@@ -11,6 +11,7 @@ const Header = ({
   isAuthenticated,
   onLoginClick,
   onSignupClick
+
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -34,8 +35,8 @@ const Header = ({
             <button
               onClick={() => setDarkMode(!darkMode)}
               className={`p-2 rounded-lg transition-colors ${
-                darkMode 
-                  ? 'bg-gray-700 hover:bg-gray-600' 
+                darkMode
+                  ? 'bg-gray-700 hover:bg-gray-600'
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
               }`}
               style={darkMode ? { color: 'white' } : {}}
@@ -43,7 +44,7 @@ const Header = ({
             >
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            
+
             <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
               Lyrical-Toolkit
             </h1>
@@ -78,6 +79,7 @@ const Header = ({
                 className={`p-2 rounded-lg transition-colors ${
                   showManual
                     ? 'bg-blue-600 text-white'
+
                     : darkMode
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -243,6 +245,7 @@ const Header = ({
                   </button>
                 </>
               )}
+
               <button
                 onClick={() => setShowManual(!showManual)}
                 className={`px-6 py-2 rounded-lg font-medium transition-colors ${
