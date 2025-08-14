@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png" />
+    
+    <!-- Viewport and theme -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    
+    <!-- SEO Meta Tags -->
+    <title>Lyrical-Toolkit - Professional Songwriting Tools</title>
+    <meta name="description" content="Analyze lyrics, find rhymes, check syllables, and improve your songwriting with AI-powered tools. Upload your songs and get detailed analysis including rhyme schemes, flow patterns, and writing quality." />
+    <meta name="keywords" content="songwriting, lyrics, rhyme analysis, songwriting tools, music, hip hop, rap, poetry, syllable counter, rhyme finder" />
+    <meta name="author" content="Lyrical-Toolkit" />
+    
+    <!-- Open Graph (Facebook, LinkedIn, etc.) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lyrical-Toolkit - Professional Songwriting Tools" />
+    <meta property="og:description" content="Analyze lyrics, find rhymes, check syllables, and improve your songwriting with AI-powered tools" />
+    <meta property="og:url" content="https://lyrical-toolkit.com/" />
+    <meta property="og:site_name" content="Lyrical-Toolkit" />
+    <meta property="og:image" content="https://lyrical-toolkit.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Lyrical-Toolkit - Professional Songwriting Tools" />
+    <meta name="twitter:description" content="Analyze lyrics, find rhymes, check syllables, and improve your songwriting with AI-powered tools" />
+    <meta name="twitter:image" content="https://lyrical-toolkit.com/og-image.png" />
+    
+    <!-- Discord/Rich Embeds -->
+    <meta name="theme-color" content="#1f2937" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://api.dictionaryapi.dev" />
+    <link rel="preconnect" href="https://api.datamuse.com" />
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_MEASUREMENT_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      // Check for opt-out parameter or localStorage flag
+      const urlParams = new URLSearchParams(window.location.search);
+      const optOut = urlParams.get('optout');
+      
+      if (optOut === 'true') {
+        localStorage.setItem('gaOptOut', 'true');
+        alert('Analytics tracking disabled for this device!');
+      }
+      
+      // Don't track if opted out
+      const isOptedOut = localStorage.getItem('gaOptOut') === 'true';
+      
+      if (!isOptedOut) {
+        gtag('config', 'G-N5FGVLHSXG', {
+          // Additional configuration options
+          anonymize_ip: true,
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>

@@ -1,0 +1,188 @@
+User Manual
+
+GETTING STARTED
+Upload your .txt files using the Upload tab. Drag and drop files or click "Choose Files" to browse. The app supports multiple files at once and stores everything locally in your browser. An example song is loaded automatically to help you explore features.
+
+_______________
+
+UPLOAD TAB
+- Manage your complete song collection
+- View word counts, upload dates, and file details
+- Delete individual songs or clear entire collection
+- Click "View" to see full lyrics with current highlighting
+- Click "Edit" to load songs into the floating notepad for editing
+- Export Options: Download songs as TXT or PDF files
+- Example songs are marked for easy identification
+
+_______________
+
+FLOATING NOTEPAD
+A persistent notepad is available on every page for writing and brainstorming:
+- Click the notepad icon at the bottom of your screen to expand/minimize
+- Write lyrics, notes, or ideas - everything auto-saves as you type
+- Edit the title by clicking on "Untitled" when expanded
+- Export your notes as a .txt file for backup
+- Upload notepad content directly to your song collection
+- Edit existing songs: Click "Edit" on any song to load it into the notepad
+- Save changes to existing songs or revert to original content
+- Visual indicators show when you have unsaved changes (*)
+- Context-aware buttons change based on whether you're creating new content or editing
+- The notepad remembers your content between sessions
+
+_______________
+
+SEARCH TAB
+- Type any word or phrase to find where it appears in your lyrics
+- Use quotation marks for exact matches: "the way" vs the way
+- Results show verse context with highlighted matches
+- Click "View full song" to see complete lyrics
+- Recent searches are saved for quick access
+- Search results display match counts and line numbers
+
+_______________
+
+DICTIONARY TAB
+- Enter any word to get definitions, pronunciations, and parts of speech
+- Click "Search in lyrics" to find that word in your songs
+- Results show multiple definitions and usage examples
+- Useful for exploring word meanings and finding better choices
+- Great for expanding your vocabulary while writing
+
+_______________
+
+SYNONYMS TAB
+- Find synonyms and antonyms for any word
+- Click suggested words to search for rhymes or get definitions
+- Helps expand vocabulary and find alternative expressions
+- Discover fresh ways to express common ideas
+- Avoid repetitive word usage in your lyrics
+
+_______________
+
+RHYMES TAB
+- Perfect Rhymes: Words that rhyme exactly (cat/bat, make/take)
+- Near Rhymes: Words with similar sounds (love/tough, mind/find)
+- Sounds Like: Words with similar pronunciation patterns
+- Click any rhyme to get its definition or search in lyrics
+- Essential tool for finding rhyming words when writing
+
+_______________
+
+ANALYSIS TAB
+Select any song from your collection for detailed analysis:
+
+Rhyming Dictionary: Generate rhyme groups from ALL your lyrics
+- Shows rhyming patterns across your entire collection
+- Click words to search for them in your songs
+- Discover your natural rhyming tendencies
+
+Rhyme Scheme Analysis: Visual rhyme highlighting with manual editing
+- Color-coded highlighting shows rhyming patterns automatically
+- Manual Rhyme Editor lets you adjust rhyme groups by clicking words
+- Each color represents a different rhyme group (A-Z, 1-20)
+- Undo/redo functionality for editing changes
+- Export rhyme schemes as PDF with color highlighting
+- Reveals internal rhymes and complex patterns you might miss
+
+Syllable Analysis: Count syllables and analyze meter
+- Shows syllable count for each line
+- Displays average syllables and word counts
+- Helps with rhythm and flow consistency
+
+Performance & Style Analysis: AI-powered vocal and delivery analysis
+- Vocal Flow: Analyzes how smoothly lyrics flow when performed
+- Breath Control: Identifies natural breathing spots and challenging sections
+- Energy Dynamics: Maps energy levels throughout the song
+- Repetition Analysis: Evaluates effective repeats and overused phrases
+- Emotional Progression: Tracks emotional arc from start to finish
+- Era/Influence Detection: Identifies musical periods and artist influences
+- Uses advanced AI to provide detailed performance insights
+
+Writing Quality Analysis: Comprehensive writing assessment
+- AI Writing Analysis: Advanced coherence and narrative analysis
+- Story flow, thematic unity, and narrative consistency evaluation
+- Cultural references and allusions detection
+- Provides quality score and specific improvement suggestions
+- Shows examples with line numbers for easy reference
+
+_______________
+
+STATS TAB
+Comprehensive statistics about your lyrics:
+- Filter by individual song or view all songs combined
+- Basic metrics: total songs, words, unique words, vocabulary richness
+- Structure analysis: average lines/words per song, word length, syllables
+- Reading level and vocabulary complexity scores
+- Detailed rhyme statistics: perfect rhymes, near rhymes, internal rhymes
+- Most frequently used words (click to search)
+- Syllable and word length distributions
+- Rhyme density and quality analysis with top rhyme groups display
+
+_______________
+
+EXPORT OPTIONS
+Multiple ways to save and share your work:
+- Notepad Export: Save current notepad content as TXT file
+- Song Export: Individual songs can be exported as TXT or PDF
+- Rhyme Scheme Export: Save color-coded rhyme visualizations as PDF
+- Upload to Collection: Move notepad content to your song library
+- All exports maintain formatting and highlighting where applicable
+
+_______________
+
+DARK MODE
+Toggle between light and dark themes using the moon/sun icon in the header. Your preference is saved automatically and applies to all analysis visualizations.
+
+_______________
+
+AI FEATURES
+Advanced artificial intelligence integration:
+- Performance Analysis: AI evaluates vocal delivery, flow, and style elements
+- Writing Coherence: AI assesses narrative structure and thematic consistency
+- Cultural References: Automatic detection of literary, biblical, and pop culture allusions
+- Era Detection: AI identifies musical influences and time period characteristics
+- Results are cached to avoid repeated analysis of the same content
+- Rate limiting protects against overuse (10-second intervals between AI calls)
+
+_______________
+
+TIPS & BEST PRACTICES
+- Use exact search ("quotes") to find specific phrases or lyrics
+- The notepad is perfect for capturing ideas while analyzing existing songs
+- Try rhyme scheme analysis with manual editing to perfect your patterns
+- Use the Manual Rhyme Editor to fix incorrect rhyme detections
+- Word frequency analysis reveals your writing habits and style tendencies
+- Use writing quality analysis to identify areas for improvement
+- AI Performance Analysis helps optimize lyrics for actual singing/delivery
+- Export rhyme schemes as PDF to visualize patterns offline
+- Stats tab helps track your progress and writing evolution
+- Edit songs directly in the notepad for quick revisions
+- All data stays in your browser - nothing is sent to external servers except for AI analysis
+- Export notepad content regularly as backup
+
+_______________
+
+EXAMPLE WORKFLOW
+1. Upload your lyrics collection or work with the example song
+2. Use the notepad to brainstorm new ideas while exploring features
+3. Search for common words like "love" or "time" to see usage patterns
+4. Analyze rhyme schemes and use manual editing to perfect patterns
+5. Run AI Performance Analysis to optimize for vocal delivery
+6. Check writing quality to identify improvement opportunities
+7. Use dictionary/synonyms/rhymes tabs while writing in the notepad
+8. Edit existing songs directly by clicking "Edit" in the Upload tab
+9. Export finished work as TXT or PDF, or save changes to your collection
+10. Use AI Writing Analysis for advanced coherence and narrative feedback
+11. Review stats to track your writing development over time
+
+_______________
+
+TROUBLESHOOTING
+- If features aren't working, try refreshing the page
+- Large files may take a moment to process
+- AI analysis requires internet connection and may have brief delays
+- For best results, use clean .txt files without special formatting
+- Your data persists between sessions but stays local to your browser
+- Clear your browser data if you want to reset everything
+- If AI analysis fails, try again after a few seconds (rate limiting)
+- Manual rhyme editing changes are saved automatically per song

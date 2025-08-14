@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#1f2937"/>
+  
+  <!-- Main content area -->
+  <rect x="60" y="60" width="1080" height="510" fill="#374151" rx="20"/>
+  
+  <!-- Icon (larger version) -->
+  <g transform="translate(100, 150)">
+    <!-- Notepad -->
+    <rect x="0" y="0" width="120" height="150" fill="white" stroke="#1f2937" stroke-width="4" rx="8"/>
+    
+    <!-- Notepad lines -->
+    <line x1="15" y1="30" x2="105" y2="30" stroke="#1f2937" stroke-width="2" opacity="0.3"/>
+    <line x1="15" y1="50" x2="105" y2="50" stroke="#1f2937" stroke-width="2" opacity="0.3"/>
+    <line x1="15" y1="70" x2="105" y2="70" stroke="#1f2937" stroke-width="2" opacity="0.3"/>
+    <line x1="15" y1="90" x2="95" y2="90" stroke="#1f2937" stroke-width="2" opacity="0.3"/>
+    
+    <!-- Pen -->
+    <line x1="80" y1="60" x2="140" y2="120" stroke="#1f2937" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="140" cy="120" r="4" fill="#1f2937"/>
+  </g>
+  
+  <!-- Title -->
+  <text x="300" y="220" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">Lyrical-Toolkit</text>
+  
+  <!-- Subtitle -->
+  <text x="300" y="280" font-family="Arial, sans-serif" font-size="32" fill="#9ca3af">Professional Songwriting Tools</text>
+  
+  <!-- Features -->
+  <text x="300" y="340" font-family="Arial, sans-serif" font-size="24" fill="#d1d5db">• Analyze lyrics and rhyme schemes</text>
+  <text x="300" y="380" font-family="Arial, sans-serif" font-size="24" fill="#d1d5db">• Find rhymes and synonyms</text>
+  <text x="300" y="420" font-family="Arial, sans-serif" font-size="24" fill="#d1d5db">• AI-powered writing quality analysis</text>
+  <text x="300" y="460" font-family="Arial, sans-serif" font-size="24" fill="#d1d5db">• Syllable counting and flow analysis</text>
+  
+  <!-- URL -->
+  <text x="300" y="520" font-family="Arial, sans-serif" font-size="20" fill="#60a5fa">lyrical-toolkit.com</text>
+</svg>

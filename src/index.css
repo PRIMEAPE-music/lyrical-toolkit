@@ -1,0 +1,945 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background-color: #f9fafb;
+  color: #111827;
+  line-height: 1.5;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.bg-white {
+  background-color: white;
+}
+
+.bg-gray-900 {
+  background-color: #111827;
+}
+
+.bg-gray-100 {
+  background-color: #f3f4f6;
+}
+
+.bg-gray-200 {
+  background-color: #e5e7eb;
+}
+
+.border-gray-200 {
+  border-color: #e5e7eb;
+}
+
+.border-gray-300 {
+  border-color: #d1d5db;
+}
+
+.text-white {
+  color: white;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+.text-gray-700 {
+  color: #374151;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.max-w-6xl {
+  max-width: 72rem;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.py-6 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.py-12 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mt-8 {
+  margin-top: 2rem;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
+.border {
+  border-width: 1px;
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-2 {
+  border-width: 2px;
+}
+
+.border-dashed {
+  border-style: dashed;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.flex {
+  display: flex;
+}
+
+.grid {
+  display: grid;
+}
+
+.hidden {
+  display: none;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.w-4 {
+  width: 1rem;
+}
+
+.w-5 {
+  width: 1.25rem;
+}
+
+.w-6 {
+  width: 1.5rem;
+}
+
+.w-16 {
+  width: 4rem;
+}
+
+.h-4 {
+  height: 1rem;
+}
+
+.h-5 {
+  height: 1.25rem;
+}
+
+.h-6 {
+  height: 1.5rem;
+}
+
+.h-16 {
+  height: 4rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+.space-y-1 > * + * {
+  margin-top: 0.25rem;
+}
+
+.space-y-2 > * + * {
+  margin-top: 0.5rem;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+.sticky {
+  position: sticky;
+}
+
+.top-0 {
+  top: 0;
+}
+
+.z-50 {
+  z-index: 50;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.left-3 {
+  left: 0.75rem;
+}
+
+.transform {
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y));
+}
+
+.-translate-y-1\/2 {
+  transform: translateY(-50%);
+}
+
+.pl-10 {
+  padding-left: 2.5rem;
+}
+
+.pr-4 {
+  padding-right: 1rem;
+}
+
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+button, input {
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background-color: #6b6b6b !important;
+  color: white !important;
+}
+
+button:hover * {
+  color: white !important;
+}
+
+.dark button:hover {
+  background-color: #6b6b6b !important;
+  color: white !important;
+}
+
+.dark button:hover * {
+  color: white !important;
+}
+
+/* Override generic button hover for analyze song buttons to match tab styling */
+.analyze-song-button {
+  background-color: transparent !important;
+}
+
+.analyze-song-button:hover {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+.analyze-song-button:hover * {
+  color: inherit !important;
+}
+
+input:focus {
+  outline: none;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.2);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.transition-colors {
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.inline {
+  display: inline;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+/* Add these new styles to your src/index.css */
+
+/* Common styling for all highlighted rhyme words */
+.rhyme-word-highlight {
+  font-weight: 600; /* semibold */
+  border-radius: 0.25rem; /* rounded */
+  padding: 1px 4px; /* similar to px-1 py-0.5 */
+  margin: 0 1px; /* A little space around highlighted words */
+}
+
+/* PRIMARY COLORS (A-L) - Most Distinct */
+/* Light Mode Colors */
+.rhyme-group-a { background-color: #fca5a5; /* Coral Red */ color: #7f1d1d; }
+.rhyme-group-b { background-color: #93c5fd; /* Sky Blue */ color: #1e3a8a; }
+.rhyme-group-c { background-color: #86efac; /* Mint Green */ color: #14532d; }
+.rhyme-group-d { background-color: #fde047; /* Bright Yellow */ color: #713f12; }
+.rhyme-group-e { background-color: #c084fc; /* Violet */ color: #581c87; }
+.rhyme-group-f { background-color: #fb7185; /* Rose Pink */ color: #881337; }
+.rhyme-group-g { background-color: #fb923c; /* Orange */ color: #7c2d12; }
+.rhyme-group-h { background-color: #22d3ee; /* Cyan */ color: #164e63; }
+.rhyme-group-i { background-color: #a3e635; /* Lime */ color: #365314; }
+.rhyme-group-j { background-color: #e879f9; /* Magenta */ color: #701a75; }
+.rhyme-group-k { background-color: #38bdf8; /* Light Blue */ color: #0c4a6e; }
+.rhyme-group-l { background-color: #4ade80; /* Emerald */ color: #14532d; }
+
+/* SECONDARY COLORS (M-Z) - Distinct from Primary */
+.rhyme-group-m { background-color: #fbbf24; /* Amber */ color: #78350f; }
+.rhyme-group-n { background-color: #f472b6; /* Hot Pink */ color: #831843; }
+.rhyme-group-o { background-color: #a855f7; /* Purple */ color: #4c1d95; }
+.rhyme-group-p { background-color: #06b6d4; /* Cyan Blue */ color: #155e75; }
+.rhyme-group-q { background-color: #ef4444; /* Red */ color: #7f1d1d; }
+.rhyme-group-r { background-color: #84cc16; /* Lime Green */ color: #365314; }
+.rhyme-group-s { background-color: #64748b; /* Slate */ color: #f1f5f9; }
+.rhyme-group-t { background-color: #f59e0b; /* Golden */ color: #78350f; }
+.rhyme-group-u { background-color: #8b5cf6; /* Indigo */ color: #312e81; }
+.rhyme-group-v { background-color: #10b981; /* Teal Green */ color: #064e3b; }
+.rhyme-group-w { background-color: #f97316; /* Deep Orange */ color: #7c2d12; }
+.rhyme-group-x { background-color: #ec4899; /* Pink */ color: #831843; }
+.rhyme-group-y { background-color: #06b6d4; /* Aqua */ color: #0c4a6e; }
+.rhyme-group-z { background-color: #eab308; /* Yellow Gold */ color: #713f12; }
+
+/* EXTENDED COLORS (1-20) - Additional Distinct Options */
+.rhyme-group-1 { background-color: #dc2626; /* Bold Red */ color: #fef2f2; }
+.rhyme-group-2 { background-color: #2563eb; /* Bold Blue */ color: #eff6ff; }
+.rhyme-group-3 { background-color: #16a34a; /* Bold Green */ color: #f0fdf4; }
+.rhyme-group-4 { background-color: #ca8a04; /* Dark Gold */ color: #fffbeb; }
+.rhyme-group-5 { background-color: #9333ea; /* Bold Purple */ color: #faf5ff; }
+.rhyme-group-6 { background-color: #db2777; /* Bold Pink */ color: #fdf2f8; }
+.rhyme-group-7 { background-color: #ea580c; /* Bold Orange */ color: #fff7ed; }
+.rhyme-group-8 { background-color: #0891b2; /* Bold Teal */ color: #ecfeff; }
+.rhyme-group-9 { background-color: #65a30d; /* Bold Lime */ color: #f7fee7; }
+.rhyme-group-10 { background-color: #c026d3; /* Bold Magenta */ color: #fdf4ff; }
+.rhyme-group-11 { background-color: #0284c7; /* Bold Sky */ color: #f0f9ff; }
+.rhyme-group-12 { background-color: #dc2626; /* Crimson */ color: #fff1f2; }
+.rhyme-group-13 { background-color: #059669; /* Bold Emerald */ color: #ecfdf5; }
+.rhyme-group-14 { background-color: #7c3aed; /* Bold Violet */ color: #f5f3ff; }
+.rhyme-group-15 { background-color: #be123c; /* Deep Rose */ color: #fff1f2; }
+.rhyme-group-16 { background-color: #0369a1; /* Deep Blue */ color: #e0f2fe; }
+.rhyme-group-17 { background-color: #047857; /* Deep Green */ color: #ecfdf5; }
+.rhyme-group-18 { background-color: #a16207; /* Deep Amber */ color: #fffbeb; }
+.rhyme-group-19 { background-color: #7e22ce; /* Deep Purple */ color: #faf5ff; }
+.rhyme-group-20 { background-color: #be185d; /* Deep Pink */ color: #fdf2f8; }
+
+.rhyme-group-default { background-color: #e5e7eb; /* Light Gray */ color: #374151; }
+
+/* DARK MODE COLORS */
+.dark .rhyme-group-a { background-color: #7f1d1d; color: #fca5a5; }
+.dark .rhyme-group-b { background-color: #1e3a8a; color: #93c5fd; }
+.dark .rhyme-group-c { background-color: #14532d; color: #86efac; }
+.dark .rhyme-group-d { background-color: #713f12; color: #fde047; }
+.dark .rhyme-group-e { background-color: #581c87; color: #c084fc; }
+.dark .rhyme-group-f { background-color: #881337; color: #fb7185; }
+.dark .rhyme-group-g { background-color: #7c2d12; color: #fb923c; }
+.dark .rhyme-group-h { background-color: #164e63; color: #22d3ee; }
+.dark .rhyme-group-i { background-color: #365314; color: #a3e635; }
+.dark .rhyme-group-j { background-color: #701a75; color: #e879f9; }
+.dark .rhyme-group-k { background-color: #0c4a6e; color: #38bdf8; }
+.dark .rhyme-group-l { background-color: #14532d; color: #4ade80; }
+
+.dark .rhyme-group-m { background-color: #78350f; color: #fbbf24; }
+.dark .rhyme-group-n { background-color: #831843; color: #f472b6; }
+.dark .rhyme-group-o { background-color: #4c1d95; color: #a855f7; }
+.dark .rhyme-group-p { background-color: #155e75; color: #06b6d4; }
+.dark .rhyme-group-q { background-color: #7f1d1d; color: #ef4444; }
+.dark .rhyme-group-r { background-color: #365314; color: #84cc16; }
+.dark .rhyme-group-s { background-color: #f1f5f9; color: #64748b; }
+.dark .rhyme-group-t { background-color: #78350f; color: #f59e0b; }
+.dark .rhyme-group-u { background-color: #312e81; color: #8b5cf6; }
+.dark .rhyme-group-v { background-color: #064e3b; color: #10b981; }
+.dark .rhyme-group-w { background-color: #7c2d12; color: #f97316; }
+.dark .rhyme-group-x { background-color: #831843; color: #ec4899; }
+.dark .rhyme-group-y { background-color: #0c4a6e; color: #06b6d4; }
+.dark .rhyme-group-z { background-color: #713f12; color: #eab308; }
+
+.dark .rhyme-group-1 { background-color: #fef2f2; color: #dc2626; }
+.dark .rhyme-group-2 { background-color: #eff6ff; color: #2563eb; }
+.dark .rhyme-group-3 { background-color: #f0fdf4; color: #16a34a; }
+.dark .rhyme-group-4 { background-color: #fffbeb; color: #ca8a04; }
+.dark .rhyme-group-5 { background-color: #faf5ff; color: #9333ea; }
+.dark .rhyme-group-6 { background-color: #fdf2f8; color: #db2777; }
+.dark .rhyme-group-7 { background-color: #fff7ed; color: #ea580c; }
+.dark .rhyme-group-8 { background-color: #ecfeff; color: #0891b2; }
+.dark .rhyme-group-9 { background-color: #f7fee7; color: #65a30d; }
+.dark .rhyme-group-10 { background-color: #fdf4ff; color: #c026d3; }
+.dark .rhyme-group-11 { background-color: #f0f9ff; color: #0284c7; }
+.dark .rhyme-group-12 { background-color: #fff1f2; color: #dc2626; }
+.dark .rhyme-group-13 { background-color: #ecfdf5; color: #059669; }
+.dark .rhyme-group-14 { background-color: #f5f3ff; color: #7c3aed; }
+.dark .rhyme-group-15 { background-color: #fff1f2; color: #be123c; }
+.dark .rhyme-group-16 { background-color: #e0f2fe; color: #0369a1; }
+.dark .rhyme-group-17 { background-color: #ecfdf5; color: #047857; }
+.dark .rhyme-group-18 { background-color: #fffbeb; color: #a16207; }
+.dark .rhyme-group-19 { background-color: #faf5ff; color: #7e22ce; }
+.dark .rhyme-group-20 { background-color: #fdf2f8; color: #be185d; }
+
+.dark .rhyme-group-default { background-color: #4b5563; color: #e5e7eb; }
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+  .tab-container {
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+    justify-content: center !important;
+  }
+  
+  .tab-button {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
+    min-width: fit-content !important;
+  }
+  
+  /* Remove any background color overrides that might interfere */
+  .tab-button:not(.active-tab) {
+    /* Let React handle the colors, don't override here */
+  }
+  
+  /* Make header stack vertically on mobile */
+  .mobile-header {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  
+  .mobile-title {
+    flex-direction: row !important;
+    gap: 1rem !important;
+  }
+  
+  /* Adjust search bar for mobile */
+  .mobile-search input {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  /* Better spacing for content cards */
+  .mobile-content {
+    padding: 1rem !important;
+  }
+  
+  /* Stack synonym/antonym cards vertically on mobile */
+  .mobile-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-button {
+    font-size: 0.7rem !important;
+    padding: 0.4rem 0.6rem !important;
+  }
+  
+  .mobile-title h1 {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Modal and positioning classes */
+.fixed {
+  position: fixed;
+}
+
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.bg-black {
+  background-color: #000000;
+}
+
+.bg-opacity-50 {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.z-50 {
+  z-index: 50;
+}
+
+.max-w-4xl {
+  max-width: 56rem;
+}
+
+.max-h-\[80vh\] {
+  max-height: 80vh;
+}
+
+.max-h-\[60vh\] {
+  max-height: 60vh;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.leading-relaxed {
+  line-height: 1.625;
+}
+
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+/* Dark mode gray colors */
+.bg-gray-800 {
+  background-color: #1f2937;
+}
+
+.bg-gray-700 {
+  background-color: #374151;
+}
+
+.border-gray-700 {
+  border-color: #374151;
+}
+
+.text-gray-300 {
+  color: #d1d5db;
+}
+
+.hover\:text-gray-300:hover {
+  color: #d1d5db;
+}
+
+.hover\:text-gray-600:hover {
+  color: #4b5563;
+}
+
+/* Mobile notepad adjustments */
+@media (max-width: 768px) {
+  .floating-notepad-expanded {
+    right: 10px !important;
+    left: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  
+  .floating-notepad-expanded .notepad-header-buttons button {
+    padding: 6px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+  
+  .floating-notepad-expanded .notepad-header-buttons svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Music Banner Mobile Adjustments */
+@media (max-width: 768px) {
+  .music-banner-mobile .flex {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .music-banner-mobile .order-1,
+  .music-banner-mobile .order-5 {
+    order: 6;
+  }
+  
+  .music-banner-mobile .order-2,
+  .music-banner-mobile .order-3,
+  .music-banner-mobile .order-4 {
+    order: 1;
+  }
+}
+
+/* Force album images to stay constrained */
+.music-banner img {
+  max-width: 64px !important;
+  max-height: 64px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: cover;
+}
+
+/* Mobile-first: Show mobile link by default, hide desktop link */
+.desktop-link {
+  display: none;
+}
+
+.mobile-link {
+  display: inline-block;
+}
+
+/* Desktop: Show desktop link, hide mobile link */
+@media (min-width: 768px) {
+  .desktop-link {
+    display: inline-block;
+  }
+  
+  .mobile-link {
+    display: none;
+  }
+}
+
+/* Hide social links on mobile, show on desktop */
+.desktop-social {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .desktop-social {
+    display: flex;
+  }
+}
+
+/* Make dismiss X button smaller on mobile */
+.dismiss-button {
+  padding: 4px;
+}
+
+.dismiss-button svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (min-width: 768px) {
+  .dismiss-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Editable word styles */
+.editable-word {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.editable-word:hover {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+/* Manually edited indicator */
+.manually-edited::after {
+  content: '*';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 12px;
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+/* Edit mode active indicator */
+.edit-mode-active .editable-word {
+  border-bottom: 1px dotted #9ca3af;
+}
+
+/* Rhyme group menu */
+.rhyme-group-menu {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Fix mobile viewport and zoom issues */
+@media (max-width: 768px) {
+  /* Prevent horizontal scroll and zoom issues */
+  body {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Ensure all containers stay within viewport */
+  .max-w-6xl {
+    max-width: 100vw !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Fix upload tab specific issues */
+  .mobile-content {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Prevent song cards from extending beyond viewport */
+  .mobile-content .grid,
+  .mobile-content .space-y-3 > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Specific viewport meta fixes */
+@viewport {
+  width: device-width;
+  zoom: 1.0;
+}
+
+/* Ensure notepad sticks to bottom on mobile */
+@media (max-width: 768px) {
+  .floating-notepad-minimized {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 1000 !important;
+  }
+}
+
+/* Additional mobile fixes for song cards and notepad */
+@media (max-width: 768px) {
+  /* Song card containers */
+  .mobile-content .grid gap-3 > div,
+  .mobile-content .space-y-3 > div {
+    padding: 0.75rem !important;
+    margin: 0 !important;
+  }
+  
+  /* Notepad header on mobile */
+  .notepad-header-buttons {
+    flex-shrink: 0 !important;
+    min-width: fit-content !important;
+  }
+  
+  /* Force song cards to fit within viewport */
+  .mobile-content {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+/* Additional mobile utilities for better responsive behavior */
+@media (max-width: 768px) {
+  /* Ensure z-index works properly on mobile */
+  .z-50 {
+    z-index: 50 !important;
+  }
+  
+  /* Prevent dropdown overflow on mobile */
+  .export-dropdown-mobile {
+    max-width: calc(100vw - 20px) !important;
+  }
+}
+
+/* High z-index for dropdowns to appear above all content */
+.z-50 {
+  z-index: 50;
+}
+
+/* Add this to your index.css file */
+.upload-tab-large {
+  padding: 1rem 2rem !important;
+  font-size: 1.125rem !important;
+  min-height: 3rem !important;
+}
+
+/* Header responsive styles */
+.desktop-header {
+  display: block;
+}
+
+.mobile-header {
+  display: none;
+}
+
+.desktop-tabs {
+  display: flex;
+}
+
+.mobile-tabs {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-header {
+    display: none;
+  }
+  
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
+  .desktop-tabs {
+    display: none;
+  }
+  
+  .mobile-tabs {
+    display: flex;
+    justify-content: center;
+  }
+}
