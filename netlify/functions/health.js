@@ -33,15 +33,26 @@ exports.handler = async (event, context) => {
 
     // Check environment variables
     console.log('[HEALTH] Checking environment variables');
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.NETLIFY;
+    const jwtSecretConfigured = !!process.env.JWT_SECRET && process.env.JWT_SECRET !== 'your-secret-key-change-in-production';
+    const refreshSecretConfigured = !!process.env.REFRESH_SECRET && process.env.REFRESH_SECRET !== 'your-refresh-secret-change-in-production';
+    
     healthStatus.checks.environment = {
         status: 'pass',
-        jwtSecretConfigured: !!process.env.JWT_SECRET && process.env.JWT_SECRET !== 'your-secret-key-change-in-production',
-        refreshSecretConfigured: !!process.env.REFRESH_SECRET && process.env.REFRESH_SECRET !== 'your-refresh-secret-change-in-production'
+        isProduction,
+        jwtSecretConfigured,
+        refreshSecretConfigured,
+        nodeVersion: process.version,
+        platform: process.platform
     };
 
-    if (!healthStatus.checks.environment.jwtSecretConfigured || !healthStatus.checks.environment.refreshSecretConfigured) {
+    if (isProduction && (!jwtSecretConfigured || !refreshSecretConfigured)) {
+        healthStatus.checks.environment.status = 'fail';
+        healthStatus.checks.environment.message = 'Production environment detected but secrets are not properly configured';
+        healthStatus.status = 'unhealthy';
+    } else if (!jwtSecretConfigured || !refreshSecretConfigured) {
         healthStatus.checks.environment.status = 'warn';
-        healthStatus.checks.environment.message = 'Some environment variables are using default values - not secure for production';
+        healthStatus.checks.environment.message = 'Environment variables are using default values - not secure for production';
     }
 
     // Check Netlify Blobs connectivity
@@ -148,6 +159,15 @@ exports.handler = async (event, context) => {
             httpStatusCode = 500;
     }
 
+    // Add setup instructions for failed checks
+    if (healthStatus.status === 'unhealthy' || healthStatus.status === 'degraded') {
+        healthStatus.setupInstructions = {
+            blobsSetup: 'Ensure Netlify Blobs is enabled in your site settings under Functions > Blobs',
+            environmentVariables: 'Set JWT_SECRET and REFRESH_SECRET in your Netlify site environment variables',
+            troubleshooting: 'Check the Netlify function logs for detailed error messages'
+        };
+    }
+    
     console.log('[HEALTH] Health check completed:', {
         status: healthStatus.status,
         httpStatusCode,

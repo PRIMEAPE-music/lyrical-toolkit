@@ -1,9 +1,24 @@
 const { getStore } = require('@netlify/blobs');
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
 
-// Initialize Blobs stores (simplified configuration)
-const metadataStore = getStore('song-metadata');
-const contentStore = getStore('song-content');
+// Lazy initialization function for Blobs stores
+function getBlobsStore(storeName) {
+    try {
+        return getStore(storeName);
+    } catch (error) {
+        console.error(`Failed to initialize Blobs store '${storeName}':`, error);
+        return null;
+    }
+}
+
+// Get stores with error handling
+function getMetadataStore() {
+    return getBlobsStore('song-metadata');
+}
+
+function getContentStore() {
+    return getBlobsStore('song-content');
+}
 
 // Helper function to authenticate user from JWT
 function authenticateRequest(event) {
@@ -90,6 +105,20 @@ exports.handler = async (event, context) => {
             case 'GET':
                 // Get specific song content and metadata
                 try {
+                    const contentStore = getContentStore();
+                    const metadataStore = getMetadataStore();
+                    
+                    if (!contentStore || !metadataStore) {
+                        return {
+                            statusCode: 503,
+                            headers,
+                            body: JSON.stringify({ 
+                                error: 'Service temporarily unavailable',
+                                details: 'Song storage service is currently unavailable'
+                            })
+                        };
+                    }
+                    
                     const [content, metadataJson] = await Promise.all([
                         contentStore.get(songKey, { type: 'text' }),
                         metadataStore.get(songKey, { type: 'text' })
@@ -133,6 +162,20 @@ exports.handler = async (event, context) => {
             case 'PUT':
                 // Update specific song
                 try {
+                    const contentStore = getContentStore();
+                    const metadataStore = getMetadataStore();
+                    
+                    if (!contentStore || !metadataStore) {
+                        return {
+                            statusCode: 503,
+                            headers,
+                            body: JSON.stringify({ 
+                                error: 'Service temporarily unavailable',
+                                details: 'Song storage service is currently unavailable'
+                            })
+                        };
+                    }
+                    
                     const { title, content, filename } = JSON.parse(event.body);
                     
                     if (!content) {
@@ -181,6 +224,20 @@ exports.handler = async (event, context) => {
             case 'POST':
                 // Create new song with specific ID
                 try {
+                    const contentStore = getContentStore();
+                    const metadataStore = getMetadataStore();
+                    
+                    if (!contentStore || !metadataStore) {
+                        return {
+                            statusCode: 503,
+                            headers,
+                            body: JSON.stringify({ 
+                                error: 'Service temporarily unavailable',
+                                details: 'Song storage service is currently unavailable'
+                            })
+                        };
+                    }
+                    
                     const { title, content, filename } = JSON.parse(event.body);
                     
                     if (!content) {
@@ -239,6 +296,20 @@ exports.handler = async (event, context) => {
             case 'DELETE':
                 // Delete specific song
                 try {
+                    const contentStore = getContentStore();
+                    const metadataStore = getMetadataStore();
+                    
+                    if (!contentStore || !metadataStore) {
+                        return {
+                            statusCode: 503,
+                            headers,
+                            body: JSON.stringify({ 
+                                error: 'Service temporarily unavailable',
+                                details: 'Song storage service is currently unavailable'
+                            })
+                        };
+                    }
+                    
                     // Check if song exists
                     const existingContent = await contentStore.get(songKey, { type: 'text' });
                     if (!existingContent) {

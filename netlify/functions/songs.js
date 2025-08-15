@@ -1,9 +1,24 @@
 const { getStore } = require('@netlify/blobs');
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
 
-// Initialize Blobs stores (simplified configuration)
-const metadataStore = getStore('song-metadata');
-const contentStore = getStore('song-content');
+// Lazy initialization function for Blobs stores
+function getBlobsStore(storeName) {
+    try {
+        return getStore(storeName);
+    } catch (error) {
+        console.error(`Failed to initialize Blobs store '${storeName}':`, error);
+        return null;
+    }
+}
+
+// Get stores with error handling
+function getMetadataStore() {
+    return getBlobsStore('song-metadata');
+}
+
+function getContentStore() {
+    return getBlobsStore('song-content');
+}
 
 // Helper function to authenticate user from JWT
 function authenticateRequest(event) {
@@ -55,17 +70,32 @@ exports.handler = async (event, context) => {
             case 'GET':
                 // List user's songs (metadata only)
                 try {
+                    const metadataStore = getMetadataStore();
+                    
+                    if (!metadataStore) {
+                        return {
+                            statusCode: 503,
+                            headers,
+                            body: JSON.stringify({ 
+                                error: 'Service temporarily unavailable',
+                                details: 'Song storage service is currently unavailable'
+                            })
+                        };
+                    }
+                    
                     const metadataList = await metadataStore.list({ prefix: `${userId}-` });
                     const songsMetadata = [];
                     
-                    for (const { key } of metadataList.blobs) {
-                        try {
-                            const metadata = await metadataStore.get(key, { type: 'json' });
-                            if (metadata) {
-                                songsMetadata.push(metadata);
+                    if (metadataList && metadataList.blobs) {
+                        for (const { key } of metadataList.blobs) {
+                            try {
+                                const metadata = await metadataStore.get(key, { type: 'json' });
+                                if (metadata) {
+                                    songsMetadata.push(metadata);
+                                }
+                            } catch (error) {
+                                console.warn(`Failed to load metadata for key ${key}:`, error);
                             }
-                        } catch (error) {
-                            console.warn(`Failed to load metadata for key ${key}:`, error);
                         }
                     }
                     
@@ -89,6 +119,20 @@ exports.handler = async (event, context) => {
             case 'PUT':
                 // Save/update user's songs (bulk operation)
                 try {
+                    const contentStore = getContentStore();
+                    const metadataStore = getMetadataStore();
+                    
+                    if (!contentStore || !metadataStore) {
+                        return {
+                            statusCode: 503,
+                            headers,
+                            body: JSON.stringify({ 
+                                error: 'Service temporarily unavailable',
+                                details: 'Song storage service is currently unavailable'
+                            })
+                        };
+                    }
+                    
                     const { songs } = JSON.parse(event.body);
                     
                     if (!Array.isArray(songs)) {
@@ -152,19 +196,35 @@ exports.handler = async (event, context) => {
             case 'DELETE':
                 // Clear all user's songs
                 try {
+                    const contentStore = getContentStore();
+                    const metadataStore = getMetadataStore();
+                    
+                    if (!contentStore || !metadataStore) {
+                        return {
+                            statusCode: 503,
+                            headers,
+                            body: JSON.stringify({ 
+                                error: 'Service temporarily unavailable',
+                                details: 'Song storage service is currently unavailable'
+                            })
+                        };
+                    }
+                    
                     const metadataList = await metadataStore.list({ prefix: `${userId}-` });
                     let deletedCount = 0;
                     
-                    for (const { key } of metadataList.blobs) {
-                        try {
-                            // Delete from both stores
-                            await Promise.all([
-                                metadataStore.delete(key),
-                                contentStore.delete(key)
-                            ]);
-                            deletedCount++;
-                        } catch (error) {
-                            console.warn(`Failed to delete song with key ${key}:`, error);
+                    if (metadataList && metadataList.blobs) {
+                        for (const { key } of metadataList.blobs) {
+                            try {
+                                // Delete from both stores
+                                await Promise.all([
+                                    metadataStore.delete(key),
+                                    contentStore.delete(key)
+                                ]);
+                                deletedCount++;
+                            } catch (error) {
+                                console.warn(`Failed to delete song with key ${key}:`, error);
+                            }
                         }
                     }
                     

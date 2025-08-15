@@ -394,6 +394,6 @@ module.exports = {
     authenticateUser,
     getUserById,
     getCorsHeaders,
-    EFFECTIVE_JWT_SECRET,
-    EFFECTIVE_REFRESH_SECRET
+    JWT_SECRET: EFFECTIVE_JWT_SECRET,
+    REFRESH_SECRET: EFFECTIVE_REFRESH_SECRET
 };

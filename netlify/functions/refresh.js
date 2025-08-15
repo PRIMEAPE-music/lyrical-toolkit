@@ -1,4 +1,4 @@
-const { verifyJWT, getUserById, generateTokenPair, getCorsHeaders, EFFECTIVE_REFRESH_SECRET } = require('./shared-storage');
+const { verifyJWT, getUserById, generateTokenPair, getCorsHeaders, REFRESH_SECRET } = require('./shared-storage');
 
 exports.handler = async (event, context) => {
     const headers = getCorsHeaders();
@@ -63,7 +63,7 @@ exports.handler = async (event, context) => {
         // Verify refresh token with error handling
         let payload;
         try {
-            payload = verifyJWT(refreshToken, EFFECTIVE_REFRESH_SECRET);
+            payload = verifyJWT(refreshToken, REFRESH_SECRET);
             console.log('[REFRESH] Refresh token verified for user:', payload.userId);
             
             if (!payload.type || payload.type !== 'refresh') {

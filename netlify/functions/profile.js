@@ -1,4 +1,4 @@
-const { verifyJWT, getUserById, getCorsHeaders, EFFECTIVE_JWT_SECRET } = require('./shared-storage');
+const { verifyJWT, getUserById, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
 
 exports.handler = async (event, context) => {
     const headers = getCorsHeaders();
@@ -50,7 +50,7 @@ exports.handler = async (event, context) => {
         // Verify JWT token with error handling
         let payload;
         try {
-            payload = verifyJWT(token, EFFECTIVE_JWT_SECRET);
+            payload = verifyJWT(token, JWT_SECRET);
             console.log('[PROFILE] Token verified for user:', payload.userId);
         } catch (tokenError) {
             console.error('[PROFILE] Token verification failed:', tokenError.message);
