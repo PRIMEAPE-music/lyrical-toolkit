@@ -5,6 +5,7 @@
   "dependencies": {
     "@craco/craco": "^7.1.0",
     "@google/generative-ai": "^0.24.1",
+    "@netlify/blobs": "^10.0.8",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

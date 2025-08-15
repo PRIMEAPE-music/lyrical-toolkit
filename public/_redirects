@@ -1,0 +1,6 @@
+# API redirects for songs
+/api/songs/:id  /.netlify/functions/song-content/:id  200
+/api/songs      /.netlify/functions/songs             200
+
+# Catch-all for React SPA
+/*              /index.html                           200

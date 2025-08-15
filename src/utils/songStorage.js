@@ -38,9 +38,18 @@ const authFetch = async (url, options = {}) => {
 export const saveUserSongs = async (songs) => {
   try {
     const userSongs = songs.filter(song => !song.isExample);
+    // Transform songs to match new Blobs API format
+    const transformedSongs = userSongs.map(song => ({
+      id: song.id,
+      title: song.title,
+      content: song.lyrics || song.content,
+      filename: song.filename || `${song.title}.txt`,
+      dateAdded: song.dateAdded || new Date().toISOString()
+    }));
+    
     await authFetch(API_URL, {
       method: 'PUT',
-      body: JSON.stringify(userSongs)
+      body: JSON.stringify({ songs: transformedSongs })
     });
   } catch (error) {
     console.error('Error saving songs to server:', error);
@@ -75,6 +84,11 @@ export const loadUserSongs = async () => {
     const response = await authFetch(API_URL);
     if (response.ok) {
       const data = await response.json();
+      // Handle new Blobs API response format
+      if (data.songs && Array.isArray(data.songs)) {
+        return data.songs.filter(song => song && song.id && song.title);
+      }
+      // Fallback for old format
       if (Array.isArray(data)) {
         return data.filter(song => song && song.id && song.title && song.lyrics);
       }
