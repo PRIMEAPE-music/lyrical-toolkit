@@ -1,12 +1,16 @@
-const { authenticateUser } = require('../../services/userService');
-const { generateTokenPair } = require('../../services/tokenService');
-const { logAuthAttempt } = require('../../services/auditService');
+const { authenticateUser, generateTokenPair, getCorsHeaders } = require('./shared-storage');
 
 exports.handler = async (event, context) => {
+    const headers = getCorsHeaders();
+
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
+
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ error: 'Method not allowed' })
         };
     }
@@ -17,55 +21,39 @@ exports.handler = async (event, context) => {
         if (!login || !password) {
             return {
                 statusCode: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ error: 'Login and password are required' })
             };
         }
 
         // Authenticate user
-        const user = await authenticateUser(login, password);
-        
+        const user = authenticateUser(login, password);
+
         // Generate tokens
-        const tokens = await generateTokenPair(user);
-        
-        // Log successful login
-        await logAuthAttempt({
-            userId: user.id,
-            action: 'LOGIN',
-            ipAddress: event.headers['x-forwarded-for'] || 'unknown',
-            userAgent: event.headers['user-agent'] || 'unknown',
-            success: true
-        });
+        const tokens = generateTokenPair(user);
+
+        // Return user without password hash
+        const { passwordHash, ...userResponse } = user;
 
         return {
             statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
                 message: 'Login successful',
                 user: {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email,
-                    emailVerified: user.email_verified
+                    ...userResponse,
+                    email_verified: userResponse.emailVerified
                 },
                 tokens
             })
         };
 
     } catch (error) {
-        // Log failed login attempt
-        await logAuthAttempt({
-            action: 'LOGIN',
-            ipAddress: event.headers['x-forwarded-for'] || 'unknown',
-            userAgent: event.headers['user-agent'] || 'unknown',
-            success: false,
-            details: error.message
-        });
-
+        console.error('Login error:', error);
         return {
-            statusCode: 401,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: error.message || 'Authentication failed' })
+            statusCode: error.message === 'Invalid credentials' ? 401 : 500,
+            headers,
+            body: JSON.stringify({ error: error.message || 'Internal server error' })
         };
     }
 };

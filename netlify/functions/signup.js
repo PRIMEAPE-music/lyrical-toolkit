@@ -1,12 +1,16 @@
-const { createUser } = require('../../services/userService');
-const { generateTokenPair } = require('../../services/tokenService');
-const { logAuthAttempt } = require('../../services/auditService');
+const { createUser, generateTokenPair, getCorsHeaders } = require('./shared-storage');
 
 exports.handler = async (event, context) => {
+    const headers = getCorsHeaders();
+
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
+
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ error: 'Method not allowed' })
         };
     }
@@ -17,55 +21,39 @@ exports.handler = async (event, context) => {
         if (!username || !email || !password) {
             return {
                 statusCode: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ error: 'Username, email, and password are required' })
             };
         }
 
         // Create user
-        const user = await createUser({ username, email, password });
-        
+        const user = createUser({ username, email, password });
+
         // Generate tokens
-        const tokens = await generateTokenPair(user);
-        
-        // Log successful signup
-        await logAuthAttempt({
-            userId: user.id,
-            action: 'SIGNUP',
-            ipAddress: event.headers['x-forwarded-for'] || 'unknown',
-            userAgent: event.headers['user-agent'] || 'unknown',
-            success: true
-        });
+        const tokens = generateTokenPair(user);
+
+        // Return user without password hash
+        const { passwordHash, ...userResponse } = user;
 
         return {
             statusCode: 201,
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
-                message: 'Account created successfully. Please check your email to verify your account.',
+                message: 'Account created successfully',
                 user: {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email,
-                    emailVerified: user.email_verified
+                    ...userResponse,
+                    email_verified: userResponse.emailVerified
                 },
                 tokens
             })
         };
 
     } catch (error) {
-        // Log failed signup attempt
-        await logAuthAttempt({
-            action: 'SIGNUP',
-            ipAddress: event.headers['x-forwarded-for'] || 'unknown',
-            userAgent: event.headers['user-agent'] || 'unknown',
-            success: false,
-            details: error.message
-        });
-
+        console.error('Signup error:', error);
         return {
-            statusCode: 400,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: error.message || 'Failed to create account' })
+            statusCode: error.message.includes('already exists') ? 400 : 500,
+            headers,
+            body: JSON.stringify({ error: error.message || 'Internal server error' })
         };
     }
 };
