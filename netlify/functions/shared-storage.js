@@ -2,29 +2,66 @@
 const crypto = require('crypto');
 const { getStore } = require('@netlify/blobs');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const REFRESH_SECRET = process.env.REFRESH_SECRET || 'your-refresh-secret-change-in-production';
+// Environment variable validation with proper fallbacks
+const JWT_SECRET = process.env.JWT_SECRET;
+const REFRESH_SECRET = process.env.REFRESH_SECRET;
 
-// Initialize Blobs store for user data
-const userStore = getStore('user-data');
+if (!JWT_SECRET || JWT_SECRET === 'your-secret-key-change-in-production') {
+    console.warn('JWT_SECRET not properly configured. Using fallback - NOT SECURE FOR PRODUCTION');
+}
+if (!REFRESH_SECRET || REFRESH_SECRET === 'your-refresh-secret-change-in-production') {
+    console.warn('REFRESH_SECRET not properly configured. Using fallback - NOT SECURE FOR PRODUCTION');
+}
 
-// Create JWT token
+const EFFECTIVE_JWT_SECRET = JWT_SECRET || 'fallback-jwt-secret-insecure';
+const EFFECTIVE_REFRESH_SECRET = REFRESH_SECRET || 'fallback-refresh-secret-insecure';
+
+// Initialize Blobs store with error handling
+let userStore;
+try {
+    userStore = getStore('user-data');
+    console.log('Netlify Blobs store initialized successfully');
+} catch (error) {
+    console.error('Failed to initialize Netlify Blobs store:', error);
+    userStore = null;
+}
+
+// Create JWT token with improved error handling
 function createJWT(payload, secret, expiresIn = '15m') {
-    const header = { typ: 'JWT', alg: 'HS256' };
-    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
-    
-    const now = Math.floor(Date.now() / 1000);
-    const exp = expiresIn === '15m' ? now + 900 : now + 604800; // 15 min or 7 days
-    
-    const payloadWithExp = { ...payload, exp, iat: now };
-    const encodedPayload = Buffer.from(JSON.stringify(payloadWithExp)).toString('base64url');
-    
-    const signature = crypto
-        .createHmac('sha256', secret)
-        .update(`${encodedHeader}.${encodedPayload}`)
-        .digest('base64url');
-    
-    return `${encodedHeader}.${encodedPayload}.${signature}`;
+    try {
+        if (!payload || typeof payload !== 'object') {
+            throw new Error('Invalid payload provided');
+        }
+        if (!secret) {
+            throw new Error('Secret is required for JWT creation');
+        }
+        
+        const header = { typ: 'JWT', alg: 'HS256' };
+        const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+        
+        const now = Math.floor(Date.now() / 1000);
+        let exp;
+        if (expiresIn === '15m') {
+            exp = now + 900; // 15 minutes
+        } else if (expiresIn === '7d') {
+            exp = now + 604800; // 7 days
+        } else {
+            throw new Error('Invalid expiration time specified');
+        }
+        
+        const payloadWithExp = { ...payload, exp, iat: now };
+        const encodedPayload = Buffer.from(JSON.stringify(payloadWithExp)).toString('base64url');
+        
+        const signature = crypto
+            .createHmac('sha256', secret)
+            .update(`${encodedHeader}.${encodedPayload}`)
+            .digest('base64url');
+        
+        return `${encodedHeader}.${encodedPayload}.${signature}`;
+    } catch (error) {
+        console.error('JWT creation failed:', error);
+        throw new Error(`Failed to create JWT: ${error.message}`);
+    }
 }
 
 // Verify JWT token - COMPLETE IMPLEMENTATION
@@ -78,32 +115,44 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-// Generate token pair for user
+// Generate token pair for user with improved validation
 function generateTokenPair(user) {
-    if (!user || !user.id || !user.username || !user.email) {
-        throw new Error('Invalid user data for token generation');
+    try {
+        if (!user || !user.id || !user.username || !user.email) {
+            throw new Error('Invalid user data for token generation - missing required fields');
+        }
+        
+        console.log('Generating token pair for user:', user.username);
+        
+        const accessToken = createJWT({ 
+            userId: user.id, 
+            username: user.username,
+            email: user.email
+        }, EFFECTIVE_JWT_SECRET, '15m');
+        
+        const refreshToken = createJWT({ 
+            userId: user.id, 
+            username: user.username,
+            type: 'refresh' 
+        }, EFFECTIVE_REFRESH_SECRET, '7d');
+        
+        console.log('Token pair generated successfully for user:', user.username);
+        return { accessToken, refreshToken };
+    } catch (error) {
+        console.error('Token generation failed for user:', user?.username, error);
+        throw new Error(`Failed to generate tokens: ${error.message}`);
     }
-    
-    const accessToken = createJWT({ 
-        userId: user.id, 
-        username: user.username,
-        email: user.email
-    }, JWT_SECRET, '15m');
-    
-    const refreshToken = createJWT({ 
-        userId: user.id, 
-        username: user.username,
-        type: 'refresh' 
-    }, REFRESH_SECRET, '7d');
-    
-    return { accessToken, refreshToken };
 }
 
-// Save user to Blobs storage
+// Save user to Blobs storage with robust error handling
 async function saveUser(user) {
     try {
         if (!user || !user.username || !user.email) {
-            throw new Error('Invalid user data');
+            throw new Error('Invalid user data - missing required fields');
+        }
+        
+        if (!userStore) {
+            throw new Error('Blobs storage not available - cannot save user');
         }
         
         console.log('Attempting to save user:', user.username);
@@ -113,37 +162,62 @@ async function saveUser(user) {
         
         console.log('Saving with keys:', { userKey, emailKey });
         
-        // Save user data with both username and email keys for lookup
-        await Promise.all([
-            userStore.set(userKey, JSON.stringify(user)),
-            userStore.set(emailKey, JSON.stringify(user))
-        ]);
-        
-        console.log('User saved successfully:', user.username);
-        return user;
+        try {
+            // Save user data with both username and email keys for lookup
+            await Promise.all([
+                userStore.set(userKey, JSON.stringify(user)),
+                userStore.set(emailKey, JSON.stringify(user))
+            ]);
+            
+            console.log('User saved successfully to Blobs storage:', user.username);
+            return user;
+        } catch (blobError) {
+            console.error('Blobs storage operation failed:', blobError);
+            throw new Error(`Blobs storage operation failed: ${blobError.message}`);
+        }
     } catch (error) {
         console.error('Error saving user:', error);
+        if (error.message.includes('Blobs')) {
+            throw error; // Re-throw Blobs-specific errors
+        }
         throw new Error(`Failed to save user: ${error.message}`);
     }
 }
 
-// Find user by key in Blobs storage
+// Find user by key in Blobs storage with enhanced error handling
 async function findUserByKey(key) {
     try {
         if (!key) {
+            console.log('No key provided for user lookup');
+            return null;
+        }
+        
+        if (!userStore) {
+            console.error('Blobs storage not available - cannot find user');
             return null;
         }
         
         console.log('Looking for user with key:', key);
-        const userData = await userStore.get(key, { type: 'text' });
         
-        if (userData) {
-            console.log('User found for key:', key);
-            return JSON.parse(userData);
+        try {
+            const userData = await userStore.get(key, { type: 'text' });
+            
+            if (userData) {
+                console.log('User found for key:', key);
+                try {
+                    return JSON.parse(userData);
+                } catch (parseError) {
+                    console.error('Failed to parse user data for key:', key, parseError);
+                    return null;
+                }
+            }
+            
+            console.log('No user found for key:', key);
+            return null;
+        } catch (blobError) {
+            console.error('Blobs storage get operation failed for key:', key, blobError);
+            return null;
         }
-        
-        console.log('No user found for key:', key);
-        return null;
     } catch (error) {
         console.error('Error finding user by key:', key, error);
         return null;
@@ -253,28 +327,44 @@ async function authenticateUser(login, password) {
     }
 }
 
-// Get user by ID
+// Get user by ID with enhanced Blobs error handling
 async function getUserById(id) {
     try {
         if (!id) {
+            console.log('No ID provided for user lookup');
+            return null;
+        }
+        
+        if (!userStore) {
+            console.error('Blobs storage not available - cannot get user by ID');
             return null;
         }
         
         console.log('Getting user by ID:', id);
         
-        // Search through user keys to find matching ID
-        const userList = await userStore.list({ prefix: 'user:' });
-        
-        for (const { key } of userList.blobs) {
-            const user = await findUserByKey(key);
-            if (user && user.id === id) {
-                console.log('User found by ID:', user.username);
-                return user;
+        try {
+            // Search through user keys to find matching ID
+            const userList = await userStore.list({ prefix: 'user:' });
+            
+            if (!userList || !userList.blobs) {
+                console.log('No users found in Blobs storage');
+                return null;
             }
+            
+            for (const { key } of userList.blobs) {
+                const user = await findUserByKey(key);
+                if (user && user.id === id) {
+                    console.log('User found by ID:', user.username);
+                    return user;
+                }
+            }
+            
+            console.log('No user found with ID:', id);
+            return null;
+        } catch (blobError) {
+            console.error('Blobs storage list operation failed:', blobError);
+            return null;
         }
-        
-        console.log('No user found with ID:', id);
-        return null;
     } catch (error) {
         console.error('Error finding user by ID:', error);
         return null;
@@ -304,6 +394,6 @@ module.exports = {
     authenticateUser,
     getUserById,
     getCorsHeaders,
-    JWT_SECRET,
-    REFRESH_SECRET
+    EFFECTIVE_JWT_SECRET,
+    EFFECTIVE_REFRESH_SECRET
 };
