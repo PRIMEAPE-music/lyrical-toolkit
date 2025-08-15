@@ -1,8 +1,11 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
-      "Bash(mkdir:*)"
-    ]
+      "Bash(mkdir:*)",
+      "Bash(dir)",
+      "Bash(ren:*)",
+      "Bash(mv:*)"
+    ],
+    "defaultMode": "acceptEdits"
   }
 }
