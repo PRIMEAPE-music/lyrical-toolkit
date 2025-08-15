@@ -5,7 +5,11 @@
       "Bash(dir)",
       "Bash(ren:*)",
       "Bash(mv:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(for file in *.js)",
+      "Bash(do echo \"Checking $file:\")",
+      "Bash(node:*)",
+      "Bash(done)"
     ],
     "defaultMode": "acceptEdits"
   }
