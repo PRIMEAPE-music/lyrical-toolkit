@@ -1,59 +1,10 @@
-// Simple shared storage utility for Netlify functions
-// Uses file-based storage to persist data between function calls
-// For production, replace with a proper database service
+// Simple stateless authentication for Netlify functions
+// Uses hardcoded demo users for testing - no persistent storage needed
 
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const REFRESH_SECRET = process.env.REFRESH_SECRET || 'your-refresh-secret-change-in-production';
-
-// File-based storage paths
-const STORAGE_DIR = '/tmp';
-const USERS_FILE = path.join(STORAGE_DIR, 'users.json');
-const TOKENS_FILE = path.join(STORAGE_DIR, 'refresh_tokens.json');
-
-// Helper functions for file-based storage
-function loadUsers() {
-    try {
-        if (fs.existsSync(USERS_FILE)) {
-            const data = fs.readFileSync(USERS_FILE, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (error) {
-        console.error('Error loading users:', error);
-    }
-    return [];
-}
-
-function saveUsers(users) {
-    try {
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-    } catch (error) {
-        console.error('Error saving users:', error);
-    }
-}
-
-function loadRefreshTokens() {
-    try {
-        if (fs.existsSync(TOKENS_FILE)) {
-            const data = fs.readFileSync(TOKENS_FILE, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (error) {
-        console.error('Error loading refresh tokens:', error);
-    }
-    return [];
-}
-
-function saveRefreshTokens(tokens) {
-    try {
-        fs.writeFileSync(TOKENS_FILE, JSON.stringify(tokens, null, 2));
-    } catch (error) {
-        console.error('Error saving refresh tokens:', error);
-    }
-}
 
 function createJWT(payload, secret, expiresIn = '15m') {
     const header = { typ: 'JWT', alg: 'HS256' };
@@ -103,28 +54,39 @@ function hashPassword(password) {
 }
 
 function generateTokenPair(user) {
-    const accessToken = createJWT({ userId: user.id, username: user.username }, JWT_SECRET, '15m');
-    const refreshToken = createJWT({ userId: user.id, type: 'refresh' }, REFRESH_SECRET, '7d');
+    const accessToken = createJWT({ 
+        userId: user.id, 
+        username: user.username,
+        email: user.email
+    }, JWT_SECRET, '15m');
     
-    // Store refresh token
-    const refreshTokens = loadRefreshTokens();
-    refreshTokens.push({
-        token: refreshToken,
-        userId: user.id,
-        createdAt: new Date(),
-        revoked: false
-    });
-    saveRefreshTokens(refreshTokens);
+    const refreshToken = createJWT({ 
+        userId: user.id, 
+        username: user.username,
+        type: 'refresh' 
+    }, REFRESH_SECRET, '7d');
     
     return { accessToken, refreshToken };
 }
 
+// Hardcoded demo users for testing (in production, use a real database)
+const DEMO_USERS = [
+    {
+        id: 1,
+        username: 'demo',
+        email: 'demo@example.com',
+        passwordHash: hashPassword('demo123'),
+        emailVerified: true,
+        createdAt: new Date().toISOString(),
+        failedLoginAttempts: 0
+    }
+];
+
 function createUser(userData) {
     const { username, email, password } = userData;
-    const users = loadUsers();
     
     // Check if user already exists
-    const existingUser = users.find(u => 
+    const existingUser = DEMO_USERS.find(u => 
         u.username.toLowerCase() === username.toLowerCase() || 
         u.email.toLowerCase() === email.toLowerCase()
     );
@@ -133,9 +95,9 @@ function createUser(userData) {
         throw new Error('User with this username or email already exists');
     }
 
-    // Create new user
+    // Create new user (add to demo users array)
     const user = {
-        id: users.length + 1,
+        id: DEMO_USERS.length + 1,
         username: username.trim(),
         email: email.toLowerCase().trim(),
         passwordHash: hashPassword(password),
@@ -144,14 +106,12 @@ function createUser(userData) {
         failedLoginAttempts: 0
     };
 
-    users.push(user);
-    saveUsers(users);
+    DEMO_USERS.push(user);
     return user;
 }
 
 function findUser(login) {
-    const users = loadUsers();
-    return users.find(u => 
+    return DEMO_USERS.find(u => 
         u.username.toLowerCase() === login.toLowerCase() || 
         u.email.toLowerCase() === login.toLowerCase()
     );
@@ -174,8 +134,7 @@ function authenticateUser(login, password) {
 }
 
 function getUserById(id) {
-    const users = loadUsers();
-    return users.find(u => u.id === id);
+    return DEMO_USERS.find(u => u.id === id);
 }
 
 function getCorsHeaders() {
