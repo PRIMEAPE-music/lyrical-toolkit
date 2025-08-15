@@ -1,16 +1,9 @@
 const { getStore } = require('@netlify/blobs');
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
 
-// Initialize Blobs stores
-const isProduction = process.env.NODE_ENV === 'production';
-const metadataStore = getStore({
-    name: 'song-metadata',
-    deployId: isProduction ? undefined : process.env.DEPLOY_ID
-});
-const contentStore = getStore({
-    name: 'song-content', 
-    deployId: isProduction ? undefined : process.env.DEPLOY_ID
-});
+// Initialize Blobs stores (simplified configuration)
+const metadataStore = getStore('song-metadata');
+const contentStore = getStore('song-content');
 
 // Helper function to authenticate user from JWT
 function authenticateRequest(event) {

@@ -5,12 +5,8 @@ const { getStore } = require('@netlify/blobs');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const REFRESH_SECRET = process.env.REFRESH_SECRET || 'your-refresh-secret-change-in-production';
 
-// Initialize Blobs store for user data
-const isProduction = process.env.NODE_ENV === 'production';
-const userStore = getStore({
-    name: 'user-data',
-    deployId: isProduction ? undefined : process.env.DEPLOY_ID
-});
+// Initialize Blobs store for user data (simplified configuration)
+const userStore = getStore('user-data');
 
 function createJWT(payload, secret, expiresIn = '15m') {
     const header = { typ: 'JWT', alg: 'HS256' };
@@ -78,31 +74,39 @@ function generateTokenPair(user) {
 // Helper functions for user storage in Blobs
 async function saveUser(user) {
     try {
+        console.log('Attempting to save user:', user.username);
+        
         // Store by username and email for lookup
         const userKey = `user:${user.username.toLowerCase()}`;
         const emailKey = `email:${user.email.toLowerCase()}`;
+        
+        console.log('Saving with keys:', { userKey, emailKey });
         
         await Promise.all([
             userStore.set(userKey, JSON.stringify(user)),
             userStore.set(emailKey, JSON.stringify(user))
         ]);
         
+        console.log('User saved successfully:', user.username);
         return user;
     } catch (error) {
         console.error('Error saving user:', error);
-        throw new Error('Failed to save user');
+        throw new Error(`Failed to save user: ${error.message}`);
     }
 }
 
 async function findUserByKey(key) {
     try {
+        console.log('Looking for user with key:', key);
         const userData = await userStore.get(key, { type: 'text' });
         if (userData) {
+            console.log('User found for key:', key);
             return JSON.parse(userData);
         }
+        console.log('No user found for key:', key);
         return null;
     } catch (error) {
-        console.error('Error finding user:', error);
+        console.error('Error finding user by key:', key, error);
         return null;
     }
 }
@@ -110,38 +114,57 @@ async function findUserByKey(key) {
 async function createUser(userData) {
     const { username, email, password } = userData;
     
-    // Check if user already exists
-    const existingUserByUsername = await findUserByKey(`user:${username.toLowerCase()}`);
-    const existingUserByEmail = await findUserByKey(`email:${email.toLowerCase()}`);
+    console.log('Creating user:', { username, email });
     
-    if (existingUserByUsername || existingUserByEmail) {
-        throw new Error('User with this username or email already exists');
+    try {
+        // Check if user already exists
+        const existingUserByUsername = await findUserByKey(`user:${username.toLowerCase()}`);
+        const existingUserByEmail = await findUserByKey(`email:${email.toLowerCase()}`);
+        
+        if (existingUserByUsername || existingUserByEmail) {
+            throw new Error('User with this username or email already exists');
+        }
+
+        // Create new user
+        const user = {
+            id: Date.now().toString(),
+            username: username.trim(),
+            email: email.toLowerCase().trim(),
+            passwordHash: hashPassword(password),
+            emailVerified: false,
+            createdAt: new Date().toISOString(),
+            failedLoginAttempts: 0
+        };
+
+        console.log('Saving new user to Blobs storage');
+        await saveUser(user);
+        console.log('User created successfully:', user.username);
+        return user;
+    } catch (error) {
+        console.error('Error creating user:', error);
+        throw error;
     }
-
-    // Create new user
-    const user = {
-        id: Date.now().toString(),
-        username: username.trim(),
-        email: email.toLowerCase().trim(),
-        passwordHash: hashPassword(password),
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        failedLoginAttempts: 0
-    };
-
-    await saveUser(user);
-    return user;
 }
 
 async function findUser(login) {
     const lowerLogin = login.toLowerCase();
     
+    console.log('Finding user with login:', lowerLogin);
+    
     // Try to find by username first
     let user = await findUserByKey(`user:${lowerLogin}`);
-    if (user) return user;
+    if (user) {
+        console.log('User found by username:', user.username);
+        return user;
+    }
     
     // Try to find by email
     user = await findUserByKey(`email:${lowerLogin}`);
+    if (user) {
+        console.log('User found by email:', user.username);
+    } else {
+        console.log('No user found for login:', lowerLogin);
+    }
     return user;
 }
 
