@@ -1,10 +1,8 @@
 // Enhanced authentication service with full feature support
 // Supports access tokens, refresh tokens, email verification, and password reset
 
-// Use different API endpoints based on environment
-const AUTH_API = process.env.NODE_ENV === 'production' 
-  ? '/.netlify/functions' 
-  : 'http://localhost:3001/api/auth';
+// Always use Netlify functions for authentication (unified system)
+const AUTH_API = '/.netlify/functions';
 
 // Token management
 export const getAccessToken = () => {

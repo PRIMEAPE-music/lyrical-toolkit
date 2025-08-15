@@ -32,141 +32,23 @@ function authenticate(req, res, next) {
   });
 }
 
-// Auth routes - Updated to match new frontend format
-app.post('/api/auth/signup', (req, res) => {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'Username, email, and password are required' });
-  }
+// Auth routes DISABLED - Now using Netlify functions for authentication only
+// This prevents conflicts between Express and Netlify auth systems
 
-  const existing = users.find(u => u.username === username || u.email === email);
-  if (existing) {
-    return res.status(400).json({ error: 'User with this username or email already exists' });
-  }
+// NOTE: Authentication is now handled exclusively by Netlify functions
+// All auth endpoints (/api/auth/*) are disabled to prevent conflicts
+// Users should use Netlify functions for signup/login/logout/profile
 
-  const newUser = { 
-    id: Date.now(), 
-    username, 
-    email,
-    password, // Add password to user object
-    email_verified: true // Skip verification in development
-  };
-  users.push(newUser);
-  
-  const accessToken = jwt.sign({ userId: newUser.id, username, email }, SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ userId: newUser.id }, SECRET, { expiresIn: '7d' });
-  
-  const responseData = {
-    message: 'Account created successfully',
-    user: {
-      id: newUser.id,
-      username: newUser.username,
-      email: newUser.email,
-      emailVerified: newUser.email_verified
-    },
-    tokens: {
-      accessToken,
-      refreshToken
-    }
-  };
-  
-  res.status(201).json(responseData);
-});
-
-app.post('/api/auth/login', (req, res) => {
-  const { login, password } = req.body;
-  console.log('Login attempt:', { login, password });
-  console.log('Current users:', users.map(u => ({ id: u.id, username: u.username, email: u.email, password: u.password })));
-  
-  const user = users.find(u => 
-    (u.username === login || u.email === login) && u.password === password
-  );
-  
-  console.log('Found user:', user);
-  
-  if (user) {
-    const accessToken = jwt.sign({ userId: user.id, username: user.username, email: user.email }, SECRET, { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ userId: user.id }, SECRET, { expiresIn: '7d' });
-    
-    return res.json({
-      message: 'Login successful',
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        emailVerified: user.email_verified
-      },
-      tokens: {
-        accessToken,
-        refreshToken
-      }
-    });
-  }
-  return res.status(401).json({ error: 'Invalid credentials' });
-});
-
-app.post('/api/auth/refresh', (req, res) => {
-  const { refreshToken } = req.body;
-  if (!refreshToken) {
-    return res.status(400).json({ error: 'Refresh token is required' });
-  }
-
-  jwt.verify(refreshToken, SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ error: 'Invalid or expired refresh token' });
-    }
-    
-    const user = users.find(u => u.id === decoded.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const newAccessToken = jwt.sign({ userId: user.id, username: user.username, email: user.email }, SECRET, { expiresIn: '15m' });
-    const newRefreshToken = jwt.sign({ userId: user.id }, SECRET, { expiresIn: '7d' });
-    
-    res.json({
-      message: 'Tokens refreshed successfully',
-      tokens: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken
-      }
-    });
-  });
-});
-
-// Additional auth endpoints for development
-app.get('/api/auth/profile', authenticate, (req, res) => {
-  const user = users.find(u => u.id === req.user.userId);
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
-  }
-  
-  res.json({
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      emailVerified: user.email_verified
-    }
-  });
-});
-
-app.post('/api/auth/logout', (req, res) => {
-  res.json({ message: 'Logged out successfully' });
-});
-
-// Mock endpoints for development
-app.post('/api/auth/verify-email', (req, res) => {
-  res.json({ message: 'Email verified successfully' });
-});
-
-app.post('/api/auth/request-reset', (req, res) => {
-  res.json({ message: 'Password reset instructions sent to your email' });
-});
-
-app.post('/api/auth/reset-password', (req, res) => {
-  res.json({ message: 'Password reset successfully' });
-});
+/* DISABLED AUTH ROUTES - USING NETLIFY FUNCTIONS INSTEAD
+app.post('/api/auth/signup', (req, res) => { ... });
+app.post('/api/auth/login', (req, res) => { ... });
+app.post('/api/auth/refresh', (req, res) => { ... });
+app.get('/api/auth/profile', authenticate, (req, res) => { ... });
+app.post('/api/auth/logout', (req, res) => { ... });
+app.post('/api/auth/verify-email', (req, res) => { ... });
+app.post('/api/auth/request-reset', (req, res) => { ... });
+app.post('/api/auth/reset-password', (req, res) => { ... });
+*/
 
 // Song CRUD endpoints
 app.get('/api/songs', authenticate, (req, res) => {

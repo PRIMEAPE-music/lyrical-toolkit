@@ -1,10 +1,16 @@
-// Simple stateless authentication for Netlify functions
-// Uses hardcoded demo users for testing - no persistent storage needed
-
+// Persistent authentication for Netlify functions using Blobs storage
 const crypto = require('crypto');
+const { getStore } = require('@netlify/blobs');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const REFRESH_SECRET = process.env.REFRESH_SECRET || 'your-refresh-secret-change-in-production';
+
+// Initialize Blobs store for user data
+const isProduction = process.env.NODE_ENV === 'production';
+const userStore = getStore({
+    name: 'user-data',
+    deployId: isProduction ? undefined : process.env.DEPLOY_ID
+});
 
 function createJWT(payload, secret, expiresIn = '15m') {
     const header = { typ: 'JWT', alg: 'HS256' };
@@ -69,35 +75,52 @@ function generateTokenPair(user) {
     return { accessToken, refreshToken };
 }
 
-// Hardcoded demo users for testing (in production, use a real database)
-const DEMO_USERS = [
-    {
-        id: 1,
-        username: 'demo',
-        email: 'demo@example.com',
-        passwordHash: hashPassword('demo123'),
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-        failedLoginAttempts: 0
+// Helper functions for user storage in Blobs
+async function saveUser(user) {
+    try {
+        // Store by username and email for lookup
+        const userKey = `user:${user.username.toLowerCase()}`;
+        const emailKey = `email:${user.email.toLowerCase()}`;
+        
+        await Promise.all([
+            userStore.set(userKey, JSON.stringify(user)),
+            userStore.set(emailKey, JSON.stringify(user))
+        ]);
+        
+        return user;
+    } catch (error) {
+        console.error('Error saving user:', error);
+        throw new Error('Failed to save user');
     }
-];
+}
 
-function createUser(userData) {
+async function findUserByKey(key) {
+    try {
+        const userData = await userStore.get(key, { type: 'text' });
+        if (userData) {
+            return JSON.parse(userData);
+        }
+        return null;
+    } catch (error) {
+        console.error('Error finding user:', error);
+        return null;
+    }
+}
+
+async function createUser(userData) {
     const { username, email, password } = userData;
     
     // Check if user already exists
-    const existingUser = DEMO_USERS.find(u => 
-        u.username.toLowerCase() === username.toLowerCase() || 
-        u.email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (existingUser) {
+    const existingUserByUsername = await findUserByKey(`user:${username.toLowerCase()}`);
+    const existingUserByEmail = await findUserByKey(`email:${email.toLowerCase()}`);
+    
+    if (existingUserByUsername || existingUserByEmail) {
         throw new Error('User with this username or email already exists');
     }
 
-    // Create new user (add to demo users array)
+    // Create new user
     const user = {
-        id: DEMO_USERS.length + 1,
+        id: Date.now().toString(),
         username: username.trim(),
         email: email.toLowerCase().trim(),
         passwordHash: hashPassword(password),
@@ -106,19 +129,24 @@ function createUser(userData) {
         failedLoginAttempts: 0
     };
 
-    DEMO_USERS.push(user);
+    await saveUser(user);
     return user;
 }
 
-function findUser(login) {
-    return DEMO_USERS.find(u => 
-        u.username.toLowerCase() === login.toLowerCase() || 
-        u.email.toLowerCase() === login.toLowerCase()
-    );
+async function findUser(login) {
+    const lowerLogin = login.toLowerCase();
+    
+    // Try to find by username first
+    let user = await findUserByKey(`user:${lowerLogin}`);
+    if (user) return user;
+    
+    // Try to find by email
+    user = await findUserByKey(`email:${lowerLogin}`);
+    return user;
 }
 
-function authenticateUser(login, password) {
-    const user = findUser(login);
+async function authenticateUser(login, password) {
+    const user = await findUser(login);
     
     if (!user) {
         throw new Error('Invalid credentials');
@@ -133,8 +161,22 @@ function authenticateUser(login, password) {
     return user;
 }
 
-function getUserById(id) {
-    return DEMO_USERS.find(u => u.id === id);
+async function getUserById(id) {
+    // For our system, we'll search by ID which could be stored separately
+    // For now, let's search through existing user keys
+    try {
+        const userList = await userStore.list({ prefix: 'user:' });
+        for (const { key } of userList.blobs) {
+            const user = await findUserByKey(key);
+            if (user && user.id === id) {
+                return user;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Error finding user by ID:', error);
+        return null;
+    }
 }
 
 function getCorsHeaders() {

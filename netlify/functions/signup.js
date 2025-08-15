@@ -27,7 +27,7 @@ exports.handler = async (event, context) => {
         }
 
         // Create user
-        const user = createUser({ username, email, password });
+        const user = await createUser({ username, email, password });
 
         // Generate tokens
         const tokens = generateTokenPair(user);

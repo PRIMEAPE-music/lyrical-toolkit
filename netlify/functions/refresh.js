@@ -1,11 +1,16 @@
-const { verifyRefreshToken, generateTokenPair } = require('../../services/tokenService');
-const { getUserById } = require('../../services/userService');
+const { verifyJWT, getUserById, generateTokenPair, getCorsHeaders, REFRESH_SECRET } = require('./shared-storage');
 
 exports.handler = async (event, context) => {
+    const headers = getCorsHeaders();
+
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
+
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ error: 'Method not allowed' })
         };
     }
@@ -16,37 +21,30 @@ exports.handler = async (event, context) => {
         if (!refreshToken) {
             return {
                 statusCode: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ error: 'Refresh token is required' })
             };
         }
 
         // Verify refresh token
-        const userId = await verifyRefreshToken(refreshToken);
-        if (!userId) {
-            return {
-                statusCode: 401,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ error: 'Invalid or expired refresh token' })
-            };
-        }
-
+        const payload = verifyJWT(refreshToken, REFRESH_SECRET);
+        
         // Get user data
-        const user = getUserById(userId);
+        const user = await getUserById(payload.userId);
         if (!user) {
             return {
                 statusCode: 404,
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ error: 'User not found' })
             };
         }
 
         // Generate new token pair
-        const tokens = await generateTokenPair(user);
+        const tokens = generateTokenPair(user);
 
         return {
             statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
                 message: 'Tokens refreshed successfully',
                 tokens
@@ -54,10 +52,11 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
+        console.error('Token refresh error:', error);
         return {
-            statusCode: 500,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: 'Token refresh failed' })
+            statusCode: error.message.includes('token') ? 401 : 500,
+            headers,
+            body: JSON.stringify({ error: error.message || 'Token refresh failed' })
         };
     }
 };

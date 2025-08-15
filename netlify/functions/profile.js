@@ -28,7 +28,7 @@ exports.handler = async (event, context) => {
         const token = authHeader.substring(7);
         const payload = verifyJWT(token, JWT_SECRET);
         
-        const user = getUserById(payload.userId);
+        const user = await getUserById(payload.userId);
         if (!user) {
             return {
                 statusCode: 404,
