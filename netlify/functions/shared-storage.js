@@ -1,16 +1,59 @@
 // Simple shared storage utility for Netlify functions
-// Uses environment variables to persist basic data between function calls
+// Uses file-based storage to persist data between function calls
 // For production, replace with a proper database service
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const REFRESH_SECRET = process.env.REFRESH_SECRET || 'your-refresh-secret-change-in-production';
 
-// Simple in-memory storage that gets reset on each deployment
-// In production, replace with Redis, Supabase, PlanetScale, etc.
-global.users = global.users || [];
-global.refreshTokens = global.refreshTokens || [];
+// File-based storage paths
+const STORAGE_DIR = '/tmp';
+const USERS_FILE = path.join(STORAGE_DIR, 'users.json');
+const TOKENS_FILE = path.join(STORAGE_DIR, 'refresh_tokens.json');
+
+// Helper functions for file-based storage
+function loadUsers() {
+    try {
+        if (fs.existsSync(USERS_FILE)) {
+            const data = fs.readFileSync(USERS_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+    return [];
+}
+
+function saveUsers(users) {
+    try {
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    } catch (error) {
+        console.error('Error saving users:', error);
+    }
+}
+
+function loadRefreshTokens() {
+    try {
+        if (fs.existsSync(TOKENS_FILE)) {
+            const data = fs.readFileSync(TOKENS_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error loading refresh tokens:', error);
+    }
+    return [];
+}
+
+function saveRefreshTokens(tokens) {
+    try {
+        fs.writeFileSync(TOKENS_FILE, JSON.stringify(tokens, null, 2));
+    } catch (error) {
+        console.error('Error saving refresh tokens:', error);
+    }
+}
 
 function createJWT(payload, secret, expiresIn = '15m') {
     const header = { typ: 'JWT', alg: 'HS256' };
@@ -64,21 +107,24 @@ function generateTokenPair(user) {
     const refreshToken = createJWT({ userId: user.id, type: 'refresh' }, REFRESH_SECRET, '7d');
     
     // Store refresh token
-    global.refreshTokens.push({
+    const refreshTokens = loadRefreshTokens();
+    refreshTokens.push({
         token: refreshToken,
         userId: user.id,
         createdAt: new Date(),
         revoked: false
     });
+    saveRefreshTokens(refreshTokens);
     
     return { accessToken, refreshToken };
 }
 
 function createUser(userData) {
     const { username, email, password } = userData;
+    const users = loadUsers();
     
     // Check if user already exists
-    const existingUser = global.users.find(u => 
+    const existingUser = users.find(u => 
         u.username.toLowerCase() === username.toLowerCase() || 
         u.email.toLowerCase() === email.toLowerCase()
     );
@@ -89,7 +135,7 @@ function createUser(userData) {
 
     // Create new user
     const user = {
-        id: global.users.length + 1,
+        id: users.length + 1,
         username: username.trim(),
         email: email.toLowerCase().trim(),
         passwordHash: hashPassword(password),
@@ -98,12 +144,14 @@ function createUser(userData) {
         failedLoginAttempts: 0
     };
 
-    global.users.push(user);
+    users.push(user);
+    saveUsers(users);
     return user;
 }
 
 function findUser(login) {
-    return global.users.find(u => 
+    const users = loadUsers();
+    return users.find(u => 
         u.username.toLowerCase() === login.toLowerCase() || 
         u.email.toLowerCase() === login.toLowerCase()
     );
@@ -126,7 +174,8 @@ function authenticateUser(login, password) {
 }
 
 function getUserById(id) {
-    return global.users.find(u => u.id === id);
+    const users = loadUsers();
+    return users.find(u => u.id === id);
 }
 
 function getCorsHeaders() {
