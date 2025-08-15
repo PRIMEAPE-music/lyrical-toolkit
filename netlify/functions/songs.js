@@ -6,7 +6,7 @@ function getBlobsStore(storeName) {
     try {
         return getStore(storeName);
     } catch (error) {
-        console.error(`Failed to initialize Blobs store '${storeName}':`, error);
+        console.error('Failed to initialize Blobs store "' + storeName + '":', error);
         return null;
     }
 }
@@ -39,13 +39,13 @@ function generateSongId() {
 
 // Create song key for user
 function createSongKey(userId, songId) {
-    return `${userId}-${songId}`;
+    return userId + '-' + songId;
 }
 
 // Parse song content and extract metadata
 function parseSongContent(content, filename) {
-    const lines = content.split('\n').filter(line => line.trim());
-    const words = content.split(/\s+/).filter(word => word.trim());
+    const lines = content.split('\n').filter(function(line) { return line.trim(); });
+    const words = content.split(/\s+/).filter(function(word) { return word.trim(); });
     
     return {
         wordCount: words.length,
@@ -83,7 +83,7 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    const metadataList = await metadataStore.list({ prefix: `${userId}-` });
+                    const metadataList = await metadataStore.list({ prefix: userId + '-' });
                     const songsMetadata = [];
                     
                     if (metadataList && metadataList.blobs) {
@@ -210,7 +210,7 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    const metadataList = await metadataStore.list({ prefix: `${userId}-` });
+                    const metadataList = await metadataStore.list({ prefix: userId + '-' });
                     let deletedCount = 0;
                     
                     if (metadataList && metadataList.blobs) {

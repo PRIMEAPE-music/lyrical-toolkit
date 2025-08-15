@@ -6,10 +6,10 @@ function sanitizeInput(input) {
     return input.trim().replace(/[<>"'&]/g, '');
 }
 
-exports.handler = async (event, context) => {
+exports.handler = function(event, context) {
     const headers = getCorsHeaders();
     
-    console.log(`[SIGNUP] ${event.httpMethod} request received from ${event.headers?.origin || 'unknown'}`);
+    console.log('[SIGNUP] ' + event.httpMethod + ' request received from ' + ((event.headers && event.headers.origin) || 'unknown'));
 
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 200, headers, body: '' };
@@ -24,19 +24,21 @@ exports.handler = async (event, context) => {
         };
     }
 
-    try {
-        // Parse and validate request body
-        let requestBody;
+    return new Promise(function(resolve) {
         try {
-            requestBody = JSON.parse(event.body || '{}');
-        } catch (parseError) {
-            console.error('[SIGNUP] Invalid JSON in request body:', parseError);
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ error: 'Invalid JSON in request body' })
-            };
-        }
+            // Parse and validate request body
+            let requestBody;
+            try {
+                requestBody = JSON.parse(event.body || '{}');
+            } catch (parseError) {
+                console.error('[SIGNUP] Invalid JSON in request body:', parseError);
+                resolve({
+                    statusCode: 400,
+                    headers: headers,
+                    body: JSON.stringify({ error: 'Invalid JSON in request body' })
+                });
+                return;
+            }
         
         const { username, email, password } = requestBody;
         
@@ -76,104 +78,112 @@ exports.handler = async (event, context) => {
             validationErrors.push('Password must be less than 128 characters');
         }
         
-        if (validationErrors.length > 0) {
-            console.warn('[SIGNUP] Validation errors:', validationErrors);
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ 
-                    error: 'Validation failed', 
-                    details: validationErrors 
-                })
-            };
-        }
+            if (validationErrors.length > 0) {
+                console.warn('[SIGNUP] Validation errors:', validationErrors);
+                resolve({
+                    statusCode: 400,
+                    headers: headers,
+                    body: JSON.stringify({ 
+                        error: 'Validation failed', 
+                        details: validationErrors 
+                    })
+                });
+                return;
+            }
 
-        // Create user with error boundary
-        console.log('[SIGNUP] Attempting to create user:', username.trim());
-        let user;
-        try {
-            user = await createUser({ 
+            // Create user with error boundary
+            console.log('[SIGNUP] Attempting to create user:', username.trim());
+            
+            createUser({ 
                 username: username.trim(), 
                 email: email.trim().toLowerCase(), 
-                password 
+                password: password 
+            }).then(function(user) {
+                console.log('[SIGNUP] Generating tokens for user:', user.username);
+                
+                try {
+                    const tokens = generateTokenPair(user);
+                    
+                    // Return user without sensitive data
+                    const userResponse = Object.assign({}, user);
+                    delete userResponse.passwordHash;
+
+                    console.log('[SIGNUP] Signup successful for user:', user.username);
+                    resolve({
+                        statusCode: 201,
+                        headers: headers,
+                        body: JSON.stringify({
+                            message: 'Account created successfully',
+                            user: Object.assign({}, userResponse, {
+                                email_verified: userResponse.emailVerified
+                            }),
+                            tokens: tokens
+                        })
+                    });
+                } catch (tokenError) {
+                    console.error('[SIGNUP] Token generation failed:', tokenError);
+                    resolve({
+                        statusCode: 500,
+                        headers: headers,
+                        body: JSON.stringify({ 
+                            error: 'Token generation failed',
+                            details: 'Account created but login tokens could not be generated'
+                        })
+                    });
+                }
+            }).catch(function(createError) {
+                console.error('[SIGNUP] User creation failed:', createError);
+                
+                // Handle specific error types
+                if (createError.message.indexOf('already exists') !== -1) {
+                    resolve({
+                        statusCode: 409,
+                        headers: headers,
+                        body: JSON.stringify({ 
+                            error: 'User already exists',
+                            details: 'A user with this username or email already exists'
+                        })
+                    });
+                    return;
+                }
+                
+                if (createError.message.indexOf('Blobs storage') !== -1) {
+                    resolve({
+                        statusCode: 503,
+                        headers: headers,
+                        body: JSON.stringify({ 
+                            error: 'Service temporarily unavailable',
+                            details: 'Unable to save user data. Please try again later.'
+                        })
+                    });
+                    return;
+                }
+                
+                resolve({
+                    statusCode: 500,
+                    headers: headers,
+                    body: JSON.stringify({ 
+                        error: 'Internal server error',
+                        details: 'An unexpected error occurred during signup'
+                    })
+                });
             });
-        } catch (createError) {
-            console.error('[SIGNUP] User creation failed:', createError);
-            
-            // Handle specific error types
-            if (createError.message.includes('already exists')) {
-                return {
-                    statusCode: 409,
-                    headers,
-                    body: JSON.stringify({ 
-                        error: 'User already exists',
-                        details: 'A user with this username or email already exists'
-                    })
-                };
-            }
-            
-            if (createError.message.includes('Blobs storage')) {
-                return {
-                    statusCode: 503,
-                    headers,
-                    body: JSON.stringify({ 
-                        error: 'Service temporarily unavailable',
-                        details: 'Unable to save user data. Please try again later.'
-                    })
-                };
-            }
-            
-            throw createError; // Re-throw unexpected errors
-        }
 
-        // Generate tokens with error boundary
-        console.log('[SIGNUP] Generating tokens for user:', user.username);
-        let tokens;
-        try {
-            tokens = generateTokenPair(user);
-        } catch (tokenError) {
-            console.error('[SIGNUP] Token generation failed:', tokenError);
-            return {
+        } catch (error) {
+            console.error('[SIGNUP] Unexpected error:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+            
+            resolve({
                 statusCode: 500,
-                headers,
+                headers: headers,
                 body: JSON.stringify({ 
-                    error: 'Token generation failed',
-                    details: 'Account created but login tokens could not be generated'
+                    error: 'Internal server error',
+                    details: 'An unexpected error occurred during signup'
                 })
-            };
+            });
         }
-
-        // Return user without sensitive data
-        const { passwordHash, ...userResponse } = user;
-
-        console.log('[SIGNUP] Signup successful for user:', user.username);
-        return {
-            statusCode: 201,
-            headers,
-            body: JSON.stringify({
-                message: 'Account created successfully',
-                user: {
-                    ...userResponse,
-                    email_verified: userResponse.emailVerified
-                },
-                tokens
-            })
-        };
-
-    } catch (error) {
-        console.error('[SIGNUP] Unexpected error:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
-        
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ 
-                error: 'Internal server error',
-                details: 'An unexpected error occurred during signup'
-            })
-        };
-    }
+    });
 };

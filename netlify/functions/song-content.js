@@ -6,7 +6,7 @@ function getBlobsStore(storeName) {
     try {
         return getStore(storeName);
     } catch (error) {
-        console.error(`Failed to initialize Blobs store '${storeName}':`, error);
+        console.error('Failed to initialize Blobs store "' + storeName + '":', error);
         return null;
     }
 }
@@ -34,7 +34,7 @@ function authenticateRequest(event) {
 
 // Create song key for user
 function createSongKey(userId, songId) {
-    return `${userId}-${songId}`;
+    return userId + '-' + songId;
 }
 
 // Extract song ID from path or query parameters
@@ -66,8 +66,8 @@ function extractSongId(event) {
 
 // Parse song content and extract metadata
 function parseSongContent(content, filename) {
-    const lines = content.split('\n').filter(line => line.trim());
-    const words = content.split(/\s+/).filter(word => word.trim());
+    const lines = content.split('\n').filter(function(line) { return line.trim(); });
+    const words = content.split(/\s+/).filter(function(word) { return word.trim(); });
     
     return {
         wordCount: words.length,

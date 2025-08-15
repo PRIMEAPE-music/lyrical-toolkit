@@ -6,10 +6,10 @@ function sanitizeInput(input) {
     return input.trim().replace(/[<>"'&]/g, '');
 }
 
-exports.handler = async (event, context) => {
+exports.handler = function(event, context) {
     const headers = getCorsHeaders();
     
-    console.log(`[LOGIN] ${event.httpMethod} request received from ${event.headers?.origin || 'unknown'}`);
+    console.log('[LOGIN] ' + event.httpMethod + ' request received from ' + ((event.headers && event.headers.origin) || 'unknown'));
 
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 200, headers, body: '' };
@@ -24,19 +24,21 @@ exports.handler = async (event, context) => {
         };
     }
 
-    try {
-        // Parse and validate request body
-        let requestBody;
+    return new Promise(function(resolve) {
         try {
-            requestBody = JSON.parse(event.body || '{}');
-        } catch (parseError) {
-            console.error('[LOGIN] Invalid JSON in request body:', parseError);
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ error: 'Invalid JSON in request body' })
-            };
-        }
+            // Parse and validate request body
+            let requestBody;
+            try {
+                requestBody = JSON.parse(event.body || '{}');
+            } catch (parseError) {
+                console.error('[LOGIN] Invalid JSON in request body:', parseError);
+                resolve({
+                    statusCode: 400,
+                    headers: headers,
+                    body: JSON.stringify({ error: 'Invalid JSON in request body' })
+                });
+                return;
+            }
         
         const { login, password } = requestBody;
         
@@ -78,94 +80,101 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Sanitize login input
-        const sanitizedLogin = sanitizeInput(login.trim());
-        
-        // Authenticate user with error boundary
-        console.log('[LOGIN] Attempting to authenticate user');
-        let user;
-        try {
-            user = await authenticateUser(sanitizedLogin, password);
-        } catch (authError) {
-            console.error('[LOGIN] Authentication failed:', {
-                message: authError.message,
-                login: sanitizedLogin ? `${sanitizedLogin.substring(0, 3)}***` : 'missing'
+            // Sanitize login input
+            const sanitizedLogin = sanitizeInput(login.trim());
+            
+            // Authenticate user with error boundary
+            console.log('[LOGIN] Attempting to authenticate user');
+            
+            authenticateUser(sanitizedLogin, password).then(function(user) {
+                console.log('[LOGIN] Generating tokens for user:', user.username);
+                
+                try {
+                    const tokens = generateTokenPair(user);
+                    
+                    // Return user without sensitive data
+                    const userResponse = Object.assign({}, user);
+                    delete userResponse.passwordHash;
+
+                    console.log('[LOGIN] Login successful for user:', user.username);
+                    resolve({
+                        statusCode: 200,
+                        headers: headers,
+                        body: JSON.stringify({
+                            message: 'Login successful',
+                            user: Object.assign({}, userResponse, {
+                                email_verified: userResponse.emailVerified
+                            }),
+                            tokens: tokens
+                        })
+                    });
+                } catch (tokenError) {
+                    console.error('[LOGIN] Token generation failed:', tokenError);
+                    resolve({
+                        statusCode: 500,
+                        headers: headers,
+                        body: JSON.stringify({ 
+                            error: 'Token generation failed',
+                            details: 'Authentication successful but login tokens could not be generated'
+                        })
+                    });
+                }
+            }).catch(function(authError) {
+                console.error('[LOGIN] Authentication failed:', {
+                    message: authError.message,
+                    login: sanitizedLogin ? (sanitizedLogin.substring(0, 3) + '***') : 'missing'
+                });
+                
+                // Handle specific authentication errors
+                if (authError.message.indexOf('Invalid credentials') !== -1) {
+                    resolve({
+                        statusCode: 401,
+                        headers: headers,
+                        body: JSON.stringify({ 
+                            error: 'Invalid credentials',
+                            details: 'Username/email or password is incorrect'
+                        })
+                    });
+                    return;
+                }
+                
+                if (authError.message.indexOf('Blobs storage') !== -1) {
+                    resolve({
+                        statusCode: 503,
+                        headers: headers,
+                        body: JSON.stringify({ 
+                            error: 'Service temporarily unavailable',
+                            details: 'Authentication service is currently unavailable. Please try again later.'
+                        })
+                    });
+                    return;
+                }
+                
+                resolve({
+                    statusCode: 500,
+                    headers: headers,
+                    body: JSON.stringify({ 
+                        error: 'Internal server error',
+                        details: 'An unexpected error occurred during login'
+                    })
+                });
+            });
+
+        } catch (error) {
+            console.error('[LOGIN] Unexpected error:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
             });
             
-            // Handle specific authentication errors
-            if (authError.message.includes('Invalid credentials')) {
-                return {
-                    statusCode: 401,
-                    headers,
-                    body: JSON.stringify({ 
-                        error: 'Invalid credentials',
-                        details: 'Username/email or password is incorrect'
-                    })
-                };
-            }
-            
-            if (authError.message.includes('Blobs storage')) {
-                return {
-                    statusCode: 503,
-                    headers,
-                    body: JSON.stringify({ 
-                        error: 'Service temporarily unavailable',
-                        details: 'Authentication service is currently unavailable. Please try again later.'
-                    })
-                };
-            }
-            
-            throw authError; // Re-throw unexpected errors
-        }
-
-        // Generate tokens with error boundary
-        console.log('[LOGIN] Generating tokens for user:', user.username);
-        let tokens;
-        try {
-            tokens = generateTokenPair(user);
-        } catch (tokenError) {
-            console.error('[LOGIN] Token generation failed:', tokenError);
-            return {
+            resolve({
                 statusCode: 500,
-                headers,
+                headers: headers,
                 body: JSON.stringify({ 
-                    error: 'Token generation failed',
-                    details: 'Authentication successful but login tokens could not be generated'
+                    error: 'Internal server error',
+                    details: 'An unexpected error occurred during login'
                 })
-            };
+            });
         }
-
-        // Return user without sensitive data
-        const { passwordHash, ...userResponse } = user;
-
-        console.log('[LOGIN] Login successful for user:', user.username);
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-                message: 'Login successful',
-                user: {
-                    ...userResponse,
-                    email_verified: userResponse.emailVerified
-                },
-                tokens
-            })
-        };
-
-    } catch (error) {
-        console.error('[LOGIN] Unexpected error:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        });
-        
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ 
-                error: 'Internal server error',
-                details: 'An unexpected error occurred during login'
-            })
-        };
-    }
+    });
 };
