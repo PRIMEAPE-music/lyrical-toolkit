@@ -1,14 +1,5 @@
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
-
-// Note: Song storage functionality disabled - migrating from Blobs to Supabase
-// This endpoint will return appropriate errors until song storage is reimplemented
-function getMetadataStore() {
-    return null; // Disabled during migration
-}
-
-function getContentStore() {
-    return null; // Disabled during migration
-}
+const { getSupabaseClient } = require('./supabase-client');
 
 // Helper function to authenticate user from JWT
 function authenticateRequest(event) {
@@ -22,16 +13,6 @@ function authenticateRequest(event) {
     return payload;
 }
 
-// Generate unique song ID
-function generateSongId() {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-}
-
-// Create song key for user
-function createSongKey(userId, songId) {
-    return userId + '-' + songId;
-}
-
 // Parse song content and extract metadata
 function parseSongContent(content, filename) {
     const lines = content.split('\n').filter(function(line) { return line.trim(); });
@@ -43,6 +24,136 @@ function parseSongContent(content, filename) {
         title: filename.replace(/\.(txt|lyrics)$/i, '') || 'Untitled Song'
     };
 }
+
+// Song database operations
+const SongOperations = {
+    // Get all songs for a user
+    getByUserId: async function(userId) {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+            .from('songs')
+            .select('*')
+            .eq('user_id', userId)
+            .order('date_added', { ascending: false });
+        
+        if (error) {
+            throw new Error('Failed to retrieve songs: ' + error.message);
+        }
+        
+        return data || [];
+    },
+
+    // Create a new song
+    create: async function(userId, songData) {
+        const supabase = getSupabaseClient();
+        const parsed = parseSongContent(songData.content, songData.filename || songData.title);
+        
+        const songRecord = {
+            user_id: userId,
+            title: songData.title || parsed.title,
+            content: songData.content,
+            filename: songData.filename || `${parsed.title}.txt`,
+            word_count: parsed.wordCount,
+            line_count: parsed.lineCount,
+            date_added: songData.dateAdded || new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+            .from('songs')
+            .insert([songRecord])
+            .select()
+            .single();
+        
+        if (error) {
+            throw new Error('Failed to create song: ' + error.message);
+        }
+        
+        return data;
+    },
+
+    // Update an existing song
+    update: async function(userId, songId, songData) {
+        const supabase = getSupabaseClient();
+        const parsed = parseSongContent(songData.content, songData.filename || songData.title);
+        
+        const updateRecord = {
+            title: songData.title || parsed.title,
+            content: songData.content,
+            filename: songData.filename || `${parsed.title}.txt`,
+            word_count: parsed.wordCount,
+            line_count: parsed.lineCount,
+            date_modified: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+            .from('songs')
+            .update(updateRecord)
+            .eq('id', songId)
+            .eq('user_id', userId)
+            .select()
+            .single();
+        
+        if (error) {
+            throw new Error('Failed to update song: ' + error.message);
+        }
+        
+        return data;
+    },
+
+    // Delete a song
+    delete: async function(userId, songId) {
+        const supabase = getSupabaseClient();
+        
+        const { error } = await supabase
+            .from('songs')
+            .delete()
+            .eq('id', songId)
+            .eq('user_id', userId);
+        
+        if (error) {
+            throw new Error('Failed to delete song: ' + error.message);
+        }
+        
+        return true;
+    },
+
+    // Delete all songs for a user
+    deleteAll: async function(userId) {
+        const supabase = getSupabaseClient();
+        
+        const { error } = await supabase
+            .from('songs')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (error) {
+            throw new Error('Failed to delete all songs: ' + error.message);
+        }
+        
+        return true;
+    },
+
+    // Get a specific song by ID
+    getById: async function(userId, songId) {
+        const supabase = getSupabaseClient();
+        
+        const { data, error } = await supabase
+            .from('songs')
+            .select('*')
+            .eq('id', songId)
+            .eq('user_id', userId)
+            .single();
+        
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return null; // Not found
+            }
+            throw new Error('Failed to get song: ' + error.message);
+        }
+        
+        return data;
+    }
+};
 
 exports.handler = async (event, context) => {
     const headers = getCorsHeaders();
@@ -60,37 +171,19 @@ exports.handler = async (event, context) => {
             case 'GET':
                 // List user's songs (metadata only)
                 try {
-                    const metadataStore = getMetadataStore();
+                    const songs = await SongOperations.getByUserId(userId);
                     
-                    if (!metadataStore) {
-                        return {
-                            statusCode: 503,
-                            headers,
-                            body: JSON.stringify({ 
-                                error: 'Service temporarily unavailable',
-                                details: 'Song storage service is currently unavailable'
-                            })
-                        };
-                    }
-                    
-                    const metadataList = await metadataStore.list({ prefix: userId + '-' });
-                    const songsMetadata = [];
-                    
-                    if (metadataList && metadataList.blobs) {
-                        for (const { key } of metadataList.blobs) {
-                            try {
-                                const metadata = await metadataStore.get(key, { type: 'json' });
-                                if (metadata) {
-                                    songsMetadata.push(metadata);
-                                }
-                            } catch (error) {
-                                console.warn(`Failed to load metadata for key ${key}:`, error);
-                            }
-                        }
-                    }
-                    
-                    // Sort by dateAdded (newest first)
-                    songsMetadata.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+                    // Transform database format to API format for backward compatibility
+                    const songsMetadata = songs.map(song => ({
+                        id: song.id,
+                        title: song.title,
+                        wordCount: song.word_count,
+                        lineCount: song.line_count,
+                        dateAdded: song.date_added,
+                        dateModified: song.date_modified,
+                        userId: song.user_id,
+                        filename: song.filename
+                    }));
                     
                     return {
                         statusCode: 200,
@@ -109,20 +202,6 @@ exports.handler = async (event, context) => {
             case 'PUT':
                 // Save/update user's songs (bulk operation)
                 try {
-                    const contentStore = getContentStore();
-                    const metadataStore = getMetadataStore();
-                    
-                    if (!contentStore || !metadataStore) {
-                        return {
-                            statusCode: 503,
-                            headers,
-                            body: JSON.stringify({ 
-                                error: 'Service temporarily unavailable',
-                                details: 'Song storage service is currently unavailable'
-                            })
-                        };
-                    }
-                    
                     const { songs } = JSON.parse(event.body);
                     
                     if (!Array.isArray(songs)) {
@@ -143,27 +222,32 @@ exports.handler = async (event, context) => {
                             continue;
                         }
                         
-                        const songId = id || generateSongId();
-                        const songKey = createSongKey(userId, songId);
-                        const parsed = parseSongContent(content, filename || title);
-                        
-                        const metadata = {
-                            id: songId,
-                            title: parsed.title,
-                            wordCount: parsed.wordCount,
-                            lineCount: parsed.lineCount,
-                            dateAdded: song.dateAdded || new Date().toISOString(),
-                            userId: userId,
-                            filename: filename || `${parsed.title}.txt`
-                        };
-                        
-                        // Save content to content store
-                        await contentStore.set(songKey, content);
-                        
-                        // Save metadata to metadata store
-                        await metadataStore.set(songKey, JSON.stringify(metadata));
-                        
-                        savedSongs.push(metadata);
+                        try {
+                            let savedSong;
+                            if (id) {
+                                // Try to update existing song
+                                savedSong = await SongOperations.update(userId, id, { title, content, filename });
+                            } else {
+                                // Create new song
+                                savedSong = await SongOperations.create(userId, { title, content, filename, dateAdded: song.dateAdded });
+                            }
+                            
+                            // Transform to API format
+                            const metadata = {
+                                id: savedSong.id,
+                                title: savedSong.title,
+                                wordCount: savedSong.word_count,
+                                lineCount: savedSong.line_count,
+                                dateAdded: savedSong.date_added,
+                                dateModified: savedSong.date_modified,
+                                userId: savedSong.user_id,
+                                filename: savedSong.filename
+                            };
+                            
+                            savedSongs.push(metadata);
+                        } catch (songError) {
+                            console.warn(`Failed to save song "${title}":`, songError);
+                        }
                     }
                     
                     return {
@@ -186,37 +270,10 @@ exports.handler = async (event, context) => {
             case 'DELETE':
                 // Clear all user's songs
                 try {
-                    const contentStore = getContentStore();
-                    const metadataStore = getMetadataStore();
+                    const songs = await SongOperations.getByUserId(userId);
+                    const deletedCount = songs.length;
                     
-                    if (!contentStore || !metadataStore) {
-                        return {
-                            statusCode: 503,
-                            headers,
-                            body: JSON.stringify({ 
-                                error: 'Service temporarily unavailable',
-                                details: 'Song storage service is currently unavailable'
-                            })
-                        };
-                    }
-                    
-                    const metadataList = await metadataStore.list({ prefix: userId + '-' });
-                    let deletedCount = 0;
-                    
-                    if (metadataList && metadataList.blobs) {
-                        for (const { key } of metadataList.blobs) {
-                            try {
-                                // Delete from both stores
-                                await Promise.all([
-                                    metadataStore.delete(key),
-                                    contentStore.delete(key)
-                                ]);
-                                deletedCount++;
-                            } catch (error) {
-                                console.warn(`Failed to delete song with key ${key}:`, error);
-                            }
-                        }
-                    }
+                    await SongOperations.deleteAll(userId);
                     
                     return {
                         statusCode: 200,

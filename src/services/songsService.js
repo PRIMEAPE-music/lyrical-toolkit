@@ -227,8 +227,61 @@ export const searchSongs = async (query) => {
   }
 };
 
+// Load example song for users with no songs
+export const getExampleSong = async () => {
+  try {
+    const response = await fetch('/HUMAN.txt');
+    if (!response.ok) {
+      throw new Error('Failed to load example song');
+    }
+    const content = await response.text();
+    
+    return {
+      id: 'example-human',
+      title: 'HUMAN (Example Song)',
+      content: content,
+      filename: 'HUMAN.txt',
+      wordCount: content.split(/\s+/).filter(word => word.trim()).length,
+      lineCount: content.split('\n').filter(line => line.trim()).length,
+      dateAdded: new Date().toISOString(),
+      isExample: true
+    };
+  } catch (error) {
+    console.error('Failed to load example song:', error);
+    return null;
+  }
+};
+
+// Get songs with example song for new users
+export const getSongsWithExample = async () => {
+  try {
+    const { songs } = await getSongs();
+    
+    // If user has no songs, include the example song
+    if (songs.length === 0) {
+      const exampleSong = await getExampleSong();
+      if (exampleSong) {
+        return { songs: [exampleSong] };
+      }
+    }
+    
+    return { songs };
+  } catch (error) {
+    // If there's an auth error or service unavailable, try to show example
+    if (error.message.includes('token') || error.message.includes('Service temporarily unavailable')) {
+      const exampleSong = await getExampleSong();
+      if (exampleSong) {
+        return { songs: [exampleSong] };
+      }
+    }
+    throw error;
+  }
+};
+
 const songsService = {
   getSongs,
+  getSongsWithExample,
+  getExampleSong,
   saveSongs,
   clearAllSongs,
   getSong,

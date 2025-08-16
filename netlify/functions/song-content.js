@@ -1,14 +1,5 @@
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
-
-// Note: Song storage functionality disabled - migrating from Blobs to Supabase
-// This endpoint will return appropriate errors until song storage is reimplemented
-function getMetadataStore() {
-    return null; // Disabled during migration
-}
-
-function getContentStore() {
-    return null; // Disabled during migration
-}
+const { getSupabaseClient } = require('./supabase-client');
 
 // Helper function to authenticate user from JWT
 function authenticateRequest(event) {
@@ -22,10 +13,6 @@ function authenticateRequest(event) {
     return payload;
 }
 
-// Create song key for user
-function createSongKey(userId, songId) {
-    return userId + '-' + songId;
-}
 
 // Extract song ID from path or query parameters
 function extractSongId(event) {
@@ -66,6 +53,115 @@ function parseSongContent(content, filename) {
     };
 }
 
+// Song database operations
+const SongOperations = {
+    // Get a specific song by ID
+    getById: async function(userId, songId) {
+        const supabase = getSupabaseClient();
+        
+        const { data, error } = await supabase
+            .from('songs')
+            .select('*')
+            .eq('id', songId)
+            .eq('user_id', userId)
+            .single();
+        
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return null; // Not found
+            }
+            throw new Error('Failed to get song: ' + error.message);
+        }
+        
+        return data;
+    },
+
+    // Create a new song
+    create: async function(userId, songId, songData) {
+        const supabase = getSupabaseClient();
+        const parsed = parseSongContent(songData.content, songData.filename || songData.title);
+        
+        // Check if custom ID is provided, otherwise let Supabase generate UUID
+        const songRecord = {
+            user_id: userId,
+            title: songData.title || parsed.title,
+            content: songData.content,
+            filename: songData.filename || `${parsed.title}.txt`,
+            word_count: parsed.wordCount,
+            line_count: parsed.lineCount
+        };
+
+        // If specific ID is provided (for backward compatibility), try to use it
+        if (songId) {
+            songRecord.id = songId;
+        }
+
+        const { data, error } = await supabase
+            .from('songs')
+            .insert([songRecord])
+            .select()
+            .single();
+        
+        if (error) {
+            if (error.code === '23505') {
+                throw new Error('Song with this ID already exists');
+            }
+            throw new Error('Failed to create song: ' + error.message);
+        }
+        
+        return data;
+    },
+
+    // Update an existing song
+    update: async function(userId, songId, songData) {
+        const supabase = getSupabaseClient();
+        const parsed = parseSongContent(songData.content, songData.filename || songData.title);
+        
+        const updateRecord = {
+            title: songData.title || parsed.title,
+            content: songData.content,
+            filename: songData.filename || `${parsed.title}.txt`,
+            word_count: parsed.wordCount,
+            line_count: parsed.lineCount,
+            date_modified: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+            .from('songs')
+            .update(updateRecord)
+            .eq('id', songId)
+            .eq('user_id', userId)
+            .select()
+            .single();
+        
+        if (error) {
+            if (error.code === 'PGRST116') {
+                throw new Error('Song not found');
+            }
+            throw new Error('Failed to update song: ' + error.message);
+        }
+        
+        return data;
+    },
+
+    // Delete a song
+    delete: async function(userId, songId) {
+        const supabase = getSupabaseClient();
+        
+        const { error } = await supabase
+            .from('songs')
+            .delete()
+            .eq('id', songId)
+            .eq('user_id', userId);
+        
+        if (error) {
+            throw new Error('Failed to delete song: ' + error.message);
+        }
+        
+        return true;
+    }
+};
+
 exports.handler = async (event, context) => {
     const headers = getCorsHeaders();
 
@@ -88,33 +184,14 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({ error: 'Song ID is required' })
             };
         }
-        
-        const songKey = createSongKey(userId, songId);
 
         switch (event.httpMethod) {
             case 'GET':
                 // Get specific song content and metadata
                 try {
-                    const contentStore = getContentStore();
-                    const metadataStore = getMetadataStore();
+                    const song = await SongOperations.getById(userId, songId);
                     
-                    if (!contentStore || !metadataStore) {
-                        return {
-                            statusCode: 503,
-                            headers,
-                            body: JSON.stringify({ 
-                                error: 'Service temporarily unavailable',
-                                details: 'Song storage service is currently unavailable'
-                            })
-                        };
-                    }
-                    
-                    const [content, metadataJson] = await Promise.all([
-                        contentStore.get(songKey, { type: 'text' }),
-                        metadataStore.get(songKey, { type: 'text' })
-                    ]);
-                    
-                    if (!content) {
+                    if (!song) {
                         return {
                             statusCode: 404,
                             headers,
@@ -122,23 +199,23 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    let metadata = {};
-                    if (metadataJson) {
-                        try {
-                            metadata = JSON.parse(metadataJson);
-                        } catch (error) {
-                            console.warn('Failed to parse metadata:', error);
-                        }
-                    }
+                    // Transform database format to API format for backward compatibility
+                    const response = {
+                        id: song.id,
+                        content: song.content,
+                        title: song.title,
+                        filename: song.filename,
+                        wordCount: song.word_count,
+                        lineCount: song.line_count,
+                        dateAdded: song.date_added,
+                        dateModified: song.date_modified,
+                        userId: song.user_id
+                    };
                     
                     return {
                         statusCode: 200,
                         headers,
-                        body: JSON.stringify({
-                            id: songId,
-                            content: content,
-                            ...metadata
-                        })
+                        body: JSON.stringify(response)
                     };
                 } catch (error) {
                     console.error('Error getting song:', error);
@@ -152,20 +229,6 @@ exports.handler = async (event, context) => {
             case 'PUT':
                 // Update specific song
                 try {
-                    const contentStore = getContentStore();
-                    const metadataStore = getMetadataStore();
-                    
-                    if (!contentStore || !metadataStore) {
-                        return {
-                            statusCode: 503,
-                            headers,
-                            body: JSON.stringify({ 
-                                error: 'Service temporarily unavailable',
-                                details: 'Song storage service is currently unavailable'
-                            })
-                        };
-                    }
-                    
                     const { title, content, filename } = JSON.parse(event.body);
                     
                     if (!content) {
@@ -176,34 +239,38 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    const parsed = parseSongContent(content, filename || title);
+                    const updatedSong = await SongOperations.update(userId, songId, { title, content, filename });
                     
-                    const metadata = {
-                        id: songId,
-                        title: title || parsed.title,
-                        wordCount: parsed.wordCount,
-                        lineCount: parsed.lineCount,
-                        dateAdded: new Date().toISOString(),
-                        userId: userId,
-                        filename: filename || `${parsed.title}.txt`
+                    // Transform database format to API format for backward compatibility
+                    const response = {
+                        message: 'Song updated successfully',
+                        song: {
+                            id: updatedSong.id,
+                            content: updatedSong.content,
+                            title: updatedSong.title,
+                            filename: updatedSong.filename,
+                            wordCount: updatedSong.word_count,
+                            lineCount: updatedSong.line_count,
+                            dateAdded: updatedSong.date_added,
+                            dateModified: updatedSong.date_modified,
+                            userId: updatedSong.user_id
+                        }
                     };
-                    
-                    // Save content and metadata
-                    await Promise.all([
-                        contentStore.set(songKey, content),
-                        metadataStore.set(songKey, JSON.stringify(metadata))
-                    ]);
                     
                     return {
                         statusCode: 200,
                         headers,
-                        body: JSON.stringify({
-                            message: 'Song updated successfully',
-                            song: { id: songId, content, ...metadata }
-                        })
+                        body: JSON.stringify(response)
                     };
                 } catch (error) {
                     console.error('Error updating song:', error);
+                    if (error.message.includes('not found')) {
+                        return {
+                            statusCode: 404,
+                            headers,
+                            body: JSON.stringify({ error: 'Song not found' })
+                        };
+                    }
                     return {
                         statusCode: 500,
                         headers,
@@ -214,20 +281,6 @@ exports.handler = async (event, context) => {
             case 'POST':
                 // Create new song with specific ID
                 try {
-                    const contentStore = getContentStore();
-                    const metadataStore = getMetadataStore();
-                    
-                    if (!contentStore || !metadataStore) {
-                        return {
-                            statusCode: 503,
-                            headers,
-                            body: JSON.stringify({ 
-                                error: 'Service temporarily unavailable',
-                                details: 'Song storage service is currently unavailable'
-                            })
-                        };
-                    }
-                    
                     const { title, content, filename } = JSON.parse(event.body);
                     
                     if (!content) {
@@ -238,44 +291,38 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    // Check if song already exists
-                    const existingContent = await contentStore.get(songKey, { type: 'text' });
-                    if (existingContent) {
+                    const newSong = await SongOperations.create(userId, songId, { title, content, filename });
+                    
+                    // Transform database format to API format for backward compatibility
+                    const response = {
+                        message: 'Song created successfully',
+                        song: {
+                            id: newSong.id,
+                            content: newSong.content,
+                            title: newSong.title,
+                            filename: newSong.filename,
+                            wordCount: newSong.word_count,
+                            lineCount: newSong.line_count,
+                            dateAdded: newSong.date_added,
+                            dateModified: newSong.date_modified,
+                            userId: newSong.user_id
+                        }
+                    };
+                    
+                    return {
+                        statusCode: 201,
+                        headers,
+                        body: JSON.stringify(response)
+                    };
+                } catch (error) {
+                    console.error('Error creating song:', error);
+                    if (error.message.includes('already exists')) {
                         return {
                             statusCode: 409,
                             headers,
                             body: JSON.stringify({ error: 'Song with this ID already exists' })
                         };
                     }
-                    
-                    const parsed = parseSongContent(content, filename || title);
-                    
-                    const metadata = {
-                        id: songId,
-                        title: title || parsed.title,
-                        wordCount: parsed.wordCount,
-                        lineCount: parsed.lineCount,
-                        dateAdded: new Date().toISOString(),
-                        userId: userId,
-                        filename: filename || `${parsed.title}.txt`
-                    };
-                    
-                    // Save content and metadata
-                    await Promise.all([
-                        contentStore.set(songKey, content),
-                        metadataStore.set(songKey, JSON.stringify(metadata))
-                    ]);
-                    
-                    return {
-                        statusCode: 201,
-                        headers,
-                        body: JSON.stringify({
-                            message: 'Song created successfully',
-                            song: { id: songId, content, ...metadata }
-                        })
-                    };
-                } catch (error) {
-                    console.error('Error creating song:', error);
                     return {
                         statusCode: 500,
                         headers,
@@ -286,23 +333,9 @@ exports.handler = async (event, context) => {
             case 'DELETE':
                 // Delete specific song
                 try {
-                    const contentStore = getContentStore();
-                    const metadataStore = getMetadataStore();
-                    
-                    if (!contentStore || !metadataStore) {
-                        return {
-                            statusCode: 503,
-                            headers,
-                            body: JSON.stringify({ 
-                                error: 'Service temporarily unavailable',
-                                details: 'Song storage service is currently unavailable'
-                            })
-                        };
-                    }
-                    
-                    // Check if song exists
-                    const existingContent = await contentStore.get(songKey, { type: 'text' });
-                    if (!existingContent) {
+                    // Check if song exists first
+                    const existingSong = await SongOperations.getById(userId, songId);
+                    if (!existingSong) {
                         return {
                             statusCode: 404,
                             headers,
@@ -310,11 +343,7 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    // Delete from both stores
-                    await Promise.all([
-                        contentStore.delete(songKey),
-                        metadataStore.delete(songKey)
-                    ]);
+                    await SongOperations.delete(userId, songId);
                     
                     return {
                         statusCode: 200,

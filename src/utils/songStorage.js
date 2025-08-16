@@ -1,8 +1,8 @@
 import { getAccessToken, refreshTokens, getAuthHeader } from '../services/authService';
 
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? '/api/songs' 
-  : 'http://localhost:3001/api/songs';
+  ? '/.netlify/functions/songs' 
+  : 'http://localhost:8888/.netlify/functions/songs';
 
 const authFetch = async (url, options = {}) => {
   const response = await fetch(url, {
@@ -78,23 +78,75 @@ export const loadExampleSongDeleted = () => {
   return false;
 };
 
+// Load example song for users with no songs
+export const loadExampleSong = async () => {
+  try {
+    const response = await fetch('/HUMAN.txt');
+    if (!response.ok) {
+      throw new Error('Failed to load example song');
+    }
+    const content = await response.text();
+    
+    return {
+      id: 'example-human',
+      title: 'HUMAN (Example Song)',
+      lyrics: content,
+      content: content,
+      filename: 'HUMAN.txt',
+      wordCount: content.split(/\s+/).filter(word => word.trim()).length,
+      lineCount: content.split('\n').filter(line => line.trim()).length,
+      dateAdded: new Date().toISOString(),
+      isExample: true
+    };
+  } catch (error) {
+    console.error('Failed to load example song:', error);
+    return null;
+  }
+};
+
 // Load user songs from the server
 export const loadUserSongs = async () => {
   try {
     const response = await authFetch(API_URL);
     if (response.ok) {
       const data = await response.json();
-      // Handle new Blobs API response format
+      // Handle Supabase API response format
       if (data.songs && Array.isArray(data.songs)) {
-        return data.songs.filter(song => song && song.id && song.title);
-      }
-      // Fallback for old format
-      if (Array.isArray(data)) {
-        return data.filter(song => song && song.id && song.title && song.lyrics);
+        const songs = data.songs
+          .filter(song => song && song.id && song.title)
+          .map(song => ({
+            id: song.id,
+            title: song.title,
+            lyrics: song.content || song.lyrics,
+            content: song.content || song.lyrics,
+            filename: song.filename,
+            wordCount: song.wordCount,
+            lineCount: song.lineCount,
+            dateAdded: song.dateAdded,
+            dateModified: song.dateModified,
+            userId: song.userId
+          }));
+        
+        // If user has no songs, include the example song
+        if (songs.length === 0) {
+          const exampleSong = await loadExampleSong();
+          if (exampleSong) {
+            return [exampleSong];
+          }
+        }
+        
+        return songs;
       }
     }
   } catch (error) {
     console.error('Error loading songs from server:', error);
+    // If there's an auth error or service unavailable, try to show example
+    if (error.message.includes('token') || error.message.includes('Service temporarily unavailable')) {
+      const exampleSong = await loadExampleSong();
+      if (exampleSong) {
+        return [exampleSong];
+      }
+    }
   }
   return [];
 };
