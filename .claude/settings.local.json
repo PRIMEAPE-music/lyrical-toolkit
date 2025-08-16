@@ -9,7 +9,8 @@
       "Bash(for file in *.js)",
       "Bash(do echo \"Checking $file:\")",
       "Bash(node:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(curl:*)"
     ],
     "defaultMode": "acceptEdits"
   }

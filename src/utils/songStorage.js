@@ -154,22 +154,28 @@ export const loadUserSongs = async (includeExample = true) => {
 // Load songs for unauthenticated users (example song only)
 export const loadSongsForUnauthenticated = async () => {
   // Check if user deleted the example song
-  if (loadExampleSongDeleted()) {
+  const isDeleted = loadExampleSongDeleted();
+  console.log('Example song deleted status:', isDeleted);
+  if (isDeleted) {
     return [];
   }
   
   const exampleSong = await loadExampleSong();
+  console.log('Loaded example song:', exampleSong);
   return exampleSong ? [exampleSong] : [];
 };
 
 // Universal song loading function that handles both authenticated and unauthenticated states
 export const loadAllSongs = async (isAuthenticated = false) => {
+  console.log('loadAllSongs called with isAuthenticated:', isAuthenticated);
   if (!isAuthenticated) {
     // For unauthenticated users, only show example if not deleted
+    console.log('Loading songs for unauthenticated user');
     return await loadSongsForUnauthenticated();
   }
   
   // For authenticated users, load their songs with example fallback
+  console.log('Loading songs for authenticated user');
   return await loadUserSongs(true);
 };
 

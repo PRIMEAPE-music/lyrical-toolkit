@@ -92,7 +92,7 @@ const LyricsSearchAppContent = () => {
     (notepadState.content !== originalSongContent);
 
   // Load example song only when needed
-  const [userSongsLoaded, setUserSongsLoaded] = useState(!isAuthenticated);
+  const [userSongsLoaded, setUserSongsLoaded] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleLogout = async () => {
@@ -105,13 +105,17 @@ const LyricsSearchAppContent = () => {
   // Load songs when authentication state changes or on initial load
   useEffect(() => {
     const loadSongs = async () => {
-      if (!isAuthenticated && !userSongsLoaded) {
-        // For unauthenticated users, load example song if not deleted
+      console.log('useEffect: isAuthenticated:', isAuthenticated, 'userSongsLoaded:', userSongsLoaded);
+      
+      // Always try to load songs based on authentication state
+      if (!userSongsLoaded) {
+        console.log('Loading songs... authenticated:', isAuthenticated);
         try {
-          const allSongs = await loadAllSongs(false);
+          const allSongs = await loadAllSongs(isAuthenticated);
+          console.log('Loaded songs:', allSongs.length, allSongs);
           setSongs(allSongs);
         } catch (error) {
-          console.error('Failed to load songs for unauthenticated user:', error);
+          console.error('Failed to load songs:', error);
         }
         setUserSongsLoaded(true);
       }
@@ -120,32 +124,9 @@ const LyricsSearchAppContent = () => {
     loadSongs();
   }, [isAuthenticated, userSongsLoaded]);
 
-  // Load persisted user songs from server when authenticated
+  // Reset loading state when authentication changes
   useEffect(() => {
-    const loadPersistedSongs = async () => {
-      if (!isAuthenticated) {
-        return; // Handled by the other useEffect
-      }
-      
-      try {
-        const allSongs = await loadAllSongs(true);
-        setSongs(allSongs);
-      } catch (error) {
-        console.error('Failed to load user songs:', error);
-        // On error, still try to show example song
-        try {
-          const allSongs = await loadAllSongs(false);
-          setSongs(allSongs);
-        } catch (fallbackError) {
-          console.error('Failed to load fallback songs:', fallbackError);
-        }
-      }
-      setUserSongsLoaded(true);
-    };
-
-    if (isAuthenticated) {
-      loadPersistedSongs();
-    }
+    setUserSongsLoaded(false);
   }, [isAuthenticated]);
 
   // Persist user songs whenever songs change
