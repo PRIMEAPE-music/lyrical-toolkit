@@ -203,6 +203,7 @@ exports.handler = async (event, context) => {
                     const response = {
                         id: song.id,
                         content: song.content,
+                        lyrics: song.content, // Include lyrics field for frontend compatibility
                         title: song.title,
                         filename: song.filename,
                         wordCount: song.word_count,
@@ -229,9 +230,12 @@ exports.handler = async (event, context) => {
             case 'PUT':
                 // Update specific song
                 try {
-                    const { title, content, filename } = JSON.parse(event.body);
+                    const { title, content, lyrics, filename } = JSON.parse(event.body);
                     
-                    if (!content) {
+                    // Handle both content and lyrics fields
+                    const songContent = content || lyrics || '';
+                    
+                    if (!songContent) {
                         return {
                             statusCode: 400,
                             headers,
@@ -239,7 +243,7 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    const updatedSong = await SongOperations.update(userId, songId, { title, content, filename });
+                    const updatedSong = await SongOperations.update(userId, songId, { title, content: songContent, filename });
                     
                     // Transform database format to API format for backward compatibility
                     const response = {
@@ -247,6 +251,7 @@ exports.handler = async (event, context) => {
                         song: {
                             id: updatedSong.id,
                             content: updatedSong.content,
+                            lyrics: updatedSong.content, // Include lyrics field for frontend compatibility
                             title: updatedSong.title,
                             filename: updatedSong.filename,
                             wordCount: updatedSong.word_count,
@@ -281,9 +286,12 @@ exports.handler = async (event, context) => {
             case 'POST':
                 // Create new song with specific ID
                 try {
-                    const { title, content, filename } = JSON.parse(event.body);
+                    const { title, content, lyrics, filename } = JSON.parse(event.body);
                     
-                    if (!content) {
+                    // Handle both content and lyrics fields
+                    const songContent = content || lyrics || '';
+                    
+                    if (!songContent) {
                         return {
                             statusCode: 400,
                             headers,
@@ -291,7 +299,7 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    const newSong = await SongOperations.create(userId, songId, { title, content, filename });
+                    const newSong = await SongOperations.create(userId, songId, { title, content: songContent, filename });
                     
                     // Transform database format to API format for backward compatibility
                     const response = {
@@ -299,6 +307,7 @@ exports.handler = async (event, context) => {
                         song: {
                             id: newSong.id,
                             content: newSong.content,
+                            lyrics: newSong.content, // Include lyrics field for frontend compatibility
                             title: newSong.title,
                             filename: newSong.filename,
                             wordCount: newSong.word_count,

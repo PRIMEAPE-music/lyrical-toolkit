@@ -14,8 +14,11 @@ export const useSearch = (songs, searchQuery, highlightWord) => {
     const searchLower = searchTerm.toLowerCase();
 
     songs.forEach(song => {
+      // Ensure lyrics field exists with fallback to content
+      const lyrics = song.lyrics || song.content || '';
+      
       // Split lyrics into verses/paragraphs (separated by empty lines)
-      const verses = song.lyrics.split(/\n\s*\n/).filter(verse => verse.trim());
+      const verses = lyrics.split(/\n\s*\n/).filter(verse => verse.trim());
       
       verses.forEach((verse, verseIndex) => {
         const lines = verse.split('\n').filter(line => line.trim());

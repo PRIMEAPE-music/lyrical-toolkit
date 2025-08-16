@@ -177,6 +177,8 @@ exports.handler = async (event, context) => {
                     const songsMetadata = songs.map(song => ({
                         id: song.id,
                         title: song.title,
+                        content: song.content,
+                        lyrics: song.content, // Include lyrics field for frontend compatibility
                         wordCount: song.word_count,
                         lineCount: song.line_count,
                         dateAdded: song.date_added,
@@ -215,27 +217,35 @@ exports.handler = async (event, context) => {
                     const savedSongs = [];
                     
                     for (const song of songs) {
-                        const { id, title, content, filename } = song;
+                        const { id, title, content, lyrics, filename } = song;
                         
-                        if (!content) {
+                        // Handle both content and lyrics fields
+                        const songContent = content || lyrics || '';
+                        
+                        if (!songContent) {
                             console.warn('Skipping song without content:', title);
                             continue;
                         }
                         
                         try {
                             let savedSong;
+                            const songData = { title, content: songContent, filename };
+                            
                             if (id) {
-                                // Try to update existing song
-                                savedSong = await SongOperations.update(userId, id, { title, content, filename });
+                                // Convert ID to string for compatibility with both timestamp and UUID formats
+                                const songId = String(id);
+                                savedSong = await SongOperations.update(userId, songId, songData);
                             } else {
                                 // Create new song
-                                savedSong = await SongOperations.create(userId, { title, content, filename, dateAdded: song.dateAdded });
+                                savedSong = await SongOperations.create(userId, { ...songData, dateAdded: song.dateAdded });
                             }
                             
-                            // Transform to API format
+                            // Transform to API format with both content and lyrics fields
                             const metadata = {
                                 id: savedSong.id,
                                 title: savedSong.title,
+                                content: savedSong.content,
+                                lyrics: savedSong.content, // Include lyrics field for frontend compatibility
                                 wordCount: savedSong.word_count,
                                 lineCount: savedSong.line_count,
                                 dateAdded: savedSong.date_added,

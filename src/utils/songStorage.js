@@ -38,14 +38,22 @@ const authFetch = async (url, options = {}) => {
 export const saveUserSongs = async (songs) => {
   try {
     const userSongs = songs.filter(song => !song.isExample);
-    // Transform songs to match new Blobs API format
-    const transformedSongs = userSongs.map(song => ({
-      id: song.id,
-      title: song.title,
-      content: song.lyrics || song.content,
-      filename: song.filename || `${song.title}.txt`,
-      dateAdded: song.dateAdded || new Date().toISOString()
-    }));
+    // Transform songs with proper field mapping
+    const transformedSongs = userSongs.map(song => {
+      const songContent = song.lyrics || song.content || '';
+      const songTitle = song.title || 'Untitled Song';
+      
+      return {
+        id: song.id ? String(song.id) : undefined, // Convert ID to string for backend compatibility
+        title: songTitle,
+        content: songContent,    // Backend saves to content field
+        lyrics: songContent,     // Include for compatibility
+        filename: song.filename || `${songTitle}.txt`,
+        dateAdded: song.dateAdded || new Date().toISOString()
+      };
+    });
+    
+    console.log('Saving songs to server:', transformedSongs.length, 'songs');
     
     await authFetch(API_URL, {
       method: 'PUT',
@@ -53,6 +61,7 @@ export const saveUserSongs = async (songs) => {
     });
   } catch (error) {
     console.error('Error saving songs to server:', error);
+    throw error; // Re-throw to handle in calling code
   }
 };
 
@@ -90,8 +99,8 @@ export const loadExampleSong = async () => {
     return {
       id: 'example-human',
       title: 'HUMAN',
-      lyrics: content,
-      content: content,
+      lyrics: content,          // Frontend expects lyrics field
+      content: content,         // Backend uses content field
       filename: 'HUMAN.txt',
       wordCount: content.split(/\s+/).filter(word => word.trim()).length,
       lineCount: content.split('\n').filter(line => line.trim()).length,
@@ -130,18 +139,23 @@ export const loadUserSongs = async (includeExample = true) => {
       if (data.songs && Array.isArray(data.songs)) {
         userSongs = data.songs
           .filter(song => song && song.id && song.title)
-          .map(song => ({
-            id: song.id,
-            title: song.title,
-            lyrics: song.content || song.lyrics,
-            content: song.content || song.lyrics,
-            filename: song.filename,
-            wordCount: song.wordCount,
-            lineCount: song.lineCount,
-            dateAdded: song.dateAdded,
-            dateModified: song.dateModified,
-            userId: song.userId
-          }));
+          .map(song => {
+            // Ensure both lyrics and content fields are always present
+            const songContent = song.content || song.lyrics || '';
+            
+            return {
+              id: song.id,
+              title: song.title || 'Untitled Song',
+              lyrics: songContent,     // Frontend expects lyrics field
+              content: songContent,    // Backend uses content field
+              filename: song.filename || `${song.title || 'Untitled Song'}.txt`,
+              wordCount: song.wordCount || song.word_count || 0,
+              lineCount: song.lineCount || song.line_count || 0,
+              dateAdded: song.dateAdded || song.date_added || new Date().toISOString(),
+              dateModified: song.dateModified || song.date_modified,
+              userId: song.userId || song.user_id
+            };
+          });
       }
     }
   } catch (error) {

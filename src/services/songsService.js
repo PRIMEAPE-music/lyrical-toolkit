@@ -239,7 +239,8 @@ export const getExampleSong = async () => {
     return {
       id: 'example-human',
       title: 'HUMAN',
-      content: content,
+      lyrics: content,           // Frontend expects lyrics field
+      content: content,          // Backend uses content field
       filename: 'HUMAN.txt',
       wordCount: content.split(/\s+/).filter(word => word.trim()).length,
       lineCount: content.split('\n').filter(line => line.trim()).length,
