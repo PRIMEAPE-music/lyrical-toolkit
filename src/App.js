@@ -11,7 +11,7 @@ import {
 } from './utils/textAnalysis';
 import { analyzeRhymeStatistics } from './utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from './data/songVocabularyPhoneticMap';
-import { saveUserSongs, loadUserSongs, clearUserSongs, saveExampleSongDeleted, loadExampleSongDeleted } from './utils/songStorage';
+import { saveUserSongs, loadUserSongs, clearUserSongs, saveExampleSongDeleted, loadExampleSongDeleted, loadAllSongs } from './utils/songStorage';
 // Import hooks
 import { useSearchHistory, useDarkMode, useHighlightWord } from './hooks/useLocalStorage';
 import { useFileUpload } from './hooks/useFileUpload';
@@ -92,7 +92,6 @@ const LyricsSearchAppContent = () => {
     (notepadState.content !== originalSongContent);
 
   // Load example song only when needed
-  const loadingExampleRef = useRef(false);
   const [userSongsLoaded, setUserSongsLoaded] = useState(!isAuthenticated);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -103,72 +102,50 @@ const LyricsSearchAppContent = () => {
     setShowAuthModal(false);
   };
   
+  // Load songs when authentication state changes or on initial load
   useEffect(() => {
-    const loadExampleSong = async () => {
-      if (exampleSongDeleted || loadingExampleRef.current) return;
-
-      const exampleExists = songs.some(song => song.isExample);
-      const userSongsExist = songs.some(song => !song.isExample);
-
-      // Only load example if no user songs exist and no example already exists
-      if (exampleExists || userSongsExist) return;
-
-      loadingExampleRef.current = true;
-
-      try {
-        const response = await fetch('/HUMAN.txt');
-        if (response.ok) {
-          const content = await response.text();
-          const exampleSong = {
-            id: 'example-song-' + Date.now(),
-            title: 'HUMAN',
-            lyrics: DOMPurify.sanitize(content),
-            wordCount: content.split(/\s+/).filter(word => word.length > 0).length,
-            dateAdded: new Date().toISOString(),
-            filename: 'HUMAN.txt',
-            isExample: true
-          };
-
-          setSongs(prev => [exampleSong, ...prev]);
-
-          // Clear any previous search states for fresh start
-          setSearchQuery('');
-          setHighlightWord('');
-          setDefinitionQuery('');
-          setDefinitionResults(null);
-          setSynonymQuery('');
-          setSynonymResults(null);
-          setRhymeQuery('');
-          setRhymeResults(null);
+    const loadSongs = async () => {
+      if (!isAuthenticated && !userSongsLoaded) {
+        // For unauthenticated users, load example song if not deleted
+        try {
+          const allSongs = await loadAllSongs(false);
+          setSongs(allSongs);
+        } catch (error) {
+          console.error('Failed to load songs for unauthenticated user:', error);
         }
-      } catch (error) {
-        console.error('Failed to load example song:', error);
-      } finally {
-        loadingExampleRef.current = false;
+        setUserSongsLoaded(true);
       }
     };
 
-    // Only try to load example if not authenticated or after user songs have been loaded
-    if (!isAuthenticated || userSongsLoaded) {
-      setTimeout(loadExampleSong, 100);
-    }
-  }, [songs.length, exampleSongDeleted, userSongsLoaded, isAuthenticated]);
+    loadSongs();
+  }, [isAuthenticated, userSongsLoaded]);
 
   // Load persisted user songs from server when authenticated
   useEffect(() => {
     const loadPersistedSongs = async () => {
       if (!isAuthenticated) {
-        setUserSongsLoaded(true);
-        return;
+        return; // Handled by the other useEffect
       }
-      const userSongs = await loadUserSongs();
-      if (userSongs.length > 0) {
-        setSongs(userSongs);
+      
+      try {
+        const allSongs = await loadAllSongs(true);
+        setSongs(allSongs);
+      } catch (error) {
+        console.error('Failed to load user songs:', error);
+        // On error, still try to show example song
+        try {
+          const allSongs = await loadAllSongs(false);
+          setSongs(allSongs);
+        } catch (fallbackError) {
+          console.error('Failed to load fallback songs:', fallbackError);
+        }
       }
       setUserSongsLoaded(true);
     };
 
-    loadPersistedSongs();
+    if (isAuthenticated) {
+      loadPersistedSongs();
+    }
   }, [isAuthenticated]);
 
   // Persist user songs whenever songs change

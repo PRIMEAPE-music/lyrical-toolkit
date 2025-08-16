@@ -238,7 +238,7 @@ export const getExampleSong = async () => {
     
     return {
       id: 'example-human',
-      title: 'HUMAN (Example Song)',
+      title: 'HUMAN',
       content: content,
       filename: 'HUMAN.txt',
       wordCount: content.split(/\s+/).filter(word => word.trim()).length,
@@ -252,30 +252,59 @@ export const getExampleSong = async () => {
   }
 };
 
-// Get songs with example song for new users
-export const getSongsWithExample = async () => {
+// Check if example song was deleted by user
+const isExampleSongDeleted = () => {
   try {
-    const { songs } = await getSongs();
-    
-    // If user has no songs, include the example song
-    if (songs.length === 0) {
-      const exampleSong = await getExampleSong();
-      if (exampleSong) {
-        return { songs: [exampleSong] };
-      }
-    }
-    
-    return { songs };
+    const stored = localStorage.getItem('lyricsExampleDeleted');
+    return stored ? JSON.parse(stored) : false;
   } catch (error) {
-    // If there's an auth error or service unavailable, try to show example
-    if (error.message.includes('token') || error.message.includes('Service temporarily unavailable')) {
-      const exampleSong = await getExampleSong();
-      if (exampleSong) {
-        return { songs: [exampleSong] };
-      }
-    }
-    throw error;
+    console.error('Error checking example deletion state:', error);
+    return false;
   }
+};
+
+// Get songs with example song for new users
+export const getSongsWithExample = async (isAuthenticated = true) => {
+  // If user deleted the example song, don't show it
+  if (isExampleSongDeleted()) {
+    if (isAuthenticated) {
+      try {
+        return await getSongs();
+      } catch (error) {
+        console.error('Error loading authenticated songs:', error);
+        return { songs: [] };
+      }
+    } else {
+      return { songs: [] };
+    }
+  }
+
+  let userSongs = [];
+  
+  // Try to get user songs if authenticated
+  if (isAuthenticated) {
+    try {
+      const result = await getSongs();
+      userSongs = result.songs || [];
+    } catch (error) {
+      console.error('Error loading user songs:', error);
+      // Don't throw error, fall through to show example song
+    }
+  }
+  
+  // If user has songs, return them without example
+  if (userSongs.length > 0) {
+    return { songs: userSongs };
+  }
+  
+  // If no user songs, show example song
+  const exampleSong = await getExampleSong();
+  if (exampleSong) {
+    return { songs: [exampleSong] };
+  }
+  
+  // Fallback to empty if can't load example
+  return { songs: [] };
 };
 
 const songsService = {

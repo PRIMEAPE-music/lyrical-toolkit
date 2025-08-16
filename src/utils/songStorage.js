@@ -89,7 +89,7 @@ export const loadExampleSong = async () => {
     
     return {
       id: 'example-human',
-      title: 'HUMAN (Example Song)',
+      title: 'HUMAN',
       lyrics: content,
       content: content,
       filename: 'HUMAN.txt',
@@ -105,14 +105,16 @@ export const loadExampleSong = async () => {
 };
 
 // Load user songs from the server
-export const loadUserSongs = async () => {
+export const loadUserSongs = async (includeExample = true) => {
+  let userSongs = [];
+  
   try {
     const response = await authFetch(API_URL);
     if (response.ok) {
       const data = await response.json();
       // Handle Supabase API response format
       if (data.songs && Array.isArray(data.songs)) {
-        const songs = data.songs
+        userSongs = data.songs
           .filter(song => song && song.id && song.title)
           .map(song => ({
             id: song.id,
@@ -126,29 +128,49 @@ export const loadUserSongs = async () => {
             dateModified: song.dateModified,
             userId: song.userId
           }));
-        
-        // If user has no songs, include the example song
-        if (songs.length === 0) {
-          const exampleSong = await loadExampleSong();
-          if (exampleSong) {
-            return [exampleSong];
-          }
-        }
-        
-        return songs;
       }
     }
   } catch (error) {
     console.error('Error loading songs from server:', error);
-    // If there's an auth error or service unavailable, try to show example
-    if (error.message.includes('token') || error.message.includes('Service temporarily unavailable')) {
-      const exampleSong = await loadExampleSong();
-      if (exampleSong) {
-        return [exampleSong];
-      }
+    // On auth errors, don't return early - fall through to example logic
+  }
+  
+  // If user has their own songs, return them without example
+  if (userSongs.length > 0) {
+    return userSongs;
+  }
+  
+  // If no user songs and example is requested, check if example was deleted
+  if (includeExample && !loadExampleSongDeleted()) {
+    const exampleSong = await loadExampleSong();
+    if (exampleSong) {
+      return [exampleSong];
     }
   }
+  
   return [];
+};
+
+// Load songs for unauthenticated users (example song only)
+export const loadSongsForUnauthenticated = async () => {
+  // Check if user deleted the example song
+  if (loadExampleSongDeleted()) {
+    return [];
+  }
+  
+  const exampleSong = await loadExampleSong();
+  return exampleSong ? [exampleSong] : [];
+};
+
+// Universal song loading function that handles both authenticated and unauthenticated states
+export const loadAllSongs = async (isAuthenticated = false) => {
+  if (!isAuthenticated) {
+    // For unauthenticated users, only show example if not deleted
+    return await loadSongsForUnauthenticated();
+  }
+  
+  // For authenticated users, load their songs with example fallback
+  return await loadUserSongs(true);
 };
 
 // Clear all user songs from the server
