@@ -604,9 +604,9 @@ const LyricsSearchAppContent = () => {
 
   const handleAudioUpload = async (songId, audioData) => {
     try {
-      console.log('Uploading audio for song:', songId, audioData);
+      console.log('Processing audio upload for song:', songId, audioData);
       
-      // Update the song with audio metadata
+      // Update the song with audio metadata in local state
       const updatedSongs = songs.map(song => {
         if (song.id === songId) {
           return {
@@ -622,18 +622,37 @@ const LyricsSearchAppContent = () => {
       
       setSongs(updatedSongs);
       
-      // Save to localStorage/backend if authenticated
+      // Save to backend database if authenticated
       if (isAuthenticated) {
+        console.log('Saving audio metadata to database...');
         await saveUserSongs(updatedSongs);
+        console.log('Audio metadata saved to database successfully');
+      } else {
+        console.warn('User not authenticated - audio metadata not saved to database');
       }
       
       // Clear selection
       setSelectedSongForAudio(null);
       
-      console.log('Audio uploaded successfully');
+      console.log('Audio upload process completed successfully');
     } catch (error) {
-      console.error('Error uploading audio:', error);
-      alert('Failed to upload audio file. Please try again.');
+      console.error('Error in audio upload process:', error);
+      alert('Failed to save audio metadata. Please try again.');
+      
+      // Revert local state on error
+      const revertedSongs = songs.map(song => {
+        if (song.id === songId) {
+          return {
+            ...song,
+            audioFileUrl: null,
+            audioFileName: null,
+            audioFileSize: null,
+            audioDuration: null
+          };
+        }
+        return song;
+      });
+      setSongs(revertedSongs);
     }
   };
 
@@ -909,6 +928,7 @@ const LyricsSearchAppContent = () => {
                 onAudioReplace={(song) => setSelectedSongForAudio(song)}
                 selectedSongForAudio={selectedSongForAudio}
                 setSelectedSongForAudio={setSelectedSongForAudio}
+                userId={user?.userId || 'anonymous'}
               />
             )}
 

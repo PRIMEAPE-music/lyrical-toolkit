@@ -1,5 +1,45 @@
-// Audio storage service using browser APIs and simulated storage
-// This provides a working demo implementation without requiring Supabase Storage setup
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client for storage operations
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+// Validate environment variables
+function isValidSupabaseConfig() {
+  if (!supabaseUrl || !supabaseKey) {
+    return false;
+  }
+  
+  // Check if they're still placeholder values
+  if (supabaseUrl.includes('your_supabase_project_url_here') || 
+      supabaseKey.includes('your_supabase_anon_key_here')) {
+    return false;
+  }
+  
+  // Validate URL format
+  try {
+    new URL(supabaseUrl);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Create Supabase client only if config is valid
+let supabase = null;
+if (isValidSupabaseConfig()) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Supabase client:', error);
+  }
+} else {
+  console.warn('Supabase not configured. Audio upload will work in demo mode only.');
+  console.warn('To enable real Supabase Storage, update your .env file with:');
+  console.warn('REACT_APP_SUPABASE_URL=https://your-project.supabase.co');
+  console.warn('REACT_APP_SUPABASE_ANON_KEY=your-actual-anon-key');
+}
 
 // Audio file validation constants
 export const AUDIO_CONFIG = {
@@ -70,25 +110,26 @@ export const generateAudioFilePath = (userId, filename) => {
   return `${userId}/${timestamp}_${sanitized}`;
 };
 
-// Upload audio file (demo implementation using local URL)
-export const uploadAudioFile = async (file, userId, onProgress = null) => {
+// Demo upload function (when Supabase is not configured)
+const uploadAudioFileDemo = async (file, userId, onProgress = null) => {
+  console.log('Demo mode: Simulating audio upload...', { filename: file.name, size: file.size, userId });
+  
   // Validate file
   const validation = validateAudioFile(file);
   if (!validation.isValid) {
+    console.error('File validation failed:', validation.errors);
     throw new Error(validation.errors.join(', '));
   }
   
   try {
     // Simulate upload progress
     if (onProgress) {
-      onProgress(0);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      onProgress(25);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      onProgress(50);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      onProgress(75);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      onProgress(10);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      onProgress(40);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      onProgress(70);
+      await new Promise(resolve => setTimeout(resolve, 200));
       onProgress(100);
     }
     
@@ -96,6 +137,7 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
     let duration = null;
     try {
       duration = await getAudioDuration(file);
+      console.log('Audio duration detected:', duration);
     } catch (error) {
       console.warn('Could not get audio duration:', error);
     }
@@ -111,16 +153,100 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
       filename: file.name,
       size: file.size,
       duration: duration,
-      uploadTime: Date.now()
+      uploadTime: Date.now(),
+      isDemo: true
     };
     
     // Store in localStorage for demo persistence
-    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
+    const storedAudio = JSON.parse(localStorage.getItem('demoAudioFiles') || '{}');
     storedAudio[filePath] = audioData;
-    localStorage.setItem('audioFiles', JSON.stringify(storedAudio));
+    localStorage.setItem('demoAudioFiles', JSON.stringify(storedAudio));
     
-    console.log('Audio file uploaded successfully (demo mode):', audioData);
-    return audioData;
+    console.log('Demo audio upload completed:', audioData);
+    return {
+      url: audioData.url,
+      path: audioData.path,
+      filename: audioData.filename,
+      size: audioData.size,
+      duration: audioData.duration
+    };
+    
+  } catch (error) {
+    console.error('Demo audio upload error:', error);
+    throw error;
+  }
+};
+
+// Upload audio file to Supabase Storage (with demo fallback)
+export const uploadAudioFile = async (file, userId, onProgress = null) => {
+  // If Supabase is not configured, use demo mode
+  if (!supabase) {
+    console.warn('Supabase not configured - using demo mode for audio upload');
+    return await uploadAudioFileDemo(file, userId, onProgress);
+  }
+  
+  console.log('Starting audio upload to Supabase Storage...', { filename: file.name, size: file.size, userId });
+  
+  // Validate file
+  const validation = validateAudioFile(file);
+  if (!validation.isValid) {
+    console.error('File validation failed:', validation.errors);
+    throw new Error(validation.errors.join(', '));
+  }
+  
+  try {
+    // Get audio duration
+    let duration = null;
+    try {
+      duration = await getAudioDuration(file);
+      console.log('Audio duration detected:', duration);
+    } catch (error) {
+      console.warn('Could not get audio duration:', error);
+    }
+    
+    // Generate file path
+    const filePath = generateAudioFilePath(userId, file.name);
+    console.log('Generated file path:', filePath);
+    
+    // Simulate progress for initial feedback
+    if (onProgress) onProgress(10);
+    
+    // Upload file to Supabase Storage
+    console.log('Uploading to Supabase Storage bucket:', AUDIO_CONFIG.BUCKET_NAME);
+    const { data, error } = await supabase.storage
+      .from(AUDIO_CONFIG.BUCKET_NAME)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type
+      });
+    
+    if (error) {
+      console.error('Supabase Storage upload error:', error);
+      throw new Error(`Upload failed: ${error.message}`);
+    }
+    
+    console.log('Upload successful, data:', data);
+    if (onProgress) onProgress(80);
+    
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(AUDIO_CONFIG.BUCKET_NAME)
+      .getPublicUrl(filePath);
+    
+    console.log('Generated public URL:', publicUrl);
+    if (onProgress) onProgress(100);
+    
+    const result = {
+      url: publicUrl,
+      path: filePath,
+      filename: file.name,
+      size: file.size,
+      duration: duration
+    };
+    
+    console.log('Audio upload completed successfully:', result);
+    return result;
     
   } catch (error) {
     console.error('Audio upload error:', error);
@@ -128,39 +254,81 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
   }
 };
 
-// Get download URL for audio file (demo implementation)
+// Get signed URL for downloading audio file (with demo fallback)
 export const getAudioDownloadUrl = async (filePath) => {
+  if (!supabase) {
+    // Demo mode: get URL from localStorage
+    try {
+      const storedAudio = JSON.parse(localStorage.getItem('demoAudioFiles') || '{}');
+      const audioData = storedAudio[filePath];
+      
+      if (!audioData) {
+        throw new Error('Demo audio file not found');
+      }
+      
+      return audioData.url;
+    } catch (error) {
+      console.error('Demo get download URL error:', error);
+      throw error;
+    }
+  }
+  
   try {
-    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
-    const audioData = storedAudio[filePath];
+    console.log('Getting download URL for:', filePath);
+    const { data, error } = await supabase.storage
+      .from(AUDIO_CONFIG.BUCKET_NAME)
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
     
-    if (!audioData) {
-      throw new Error('Audio file not found');
+    if (error) {
+      console.error('Failed to get download URL:', error);
+      throw new Error(`Failed to get download URL: ${error.message}`);
     }
     
-    return audioData.url;
+    console.log('Download URL generated:', data.signedUrl);
+    return data.signedUrl;
   } catch (error) {
     console.error('Get download URL error:', error);
     throw error;
   }
 };
 
-// Delete audio file from storage (demo implementation)
+// Delete audio file from storage (with demo fallback)
 export const deleteAudioFile = async (filePath) => {
+  if (!supabase) {
+    // Demo mode: delete from localStorage
+    try {
+      const storedAudio = JSON.parse(localStorage.getItem('demoAudioFiles') || '{}');
+      
+      if (storedAudio[filePath]) {
+        // Revoke the blob URL to free memory
+        URL.revokeObjectURL(storedAudio[filePath].url);
+        
+        // Remove from localStorage
+        delete storedAudio[filePath];
+        localStorage.setItem('demoAudioFiles', JSON.stringify(storedAudio));
+        
+        console.log('Demo audio file deleted successfully:', filePath);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Demo delete audio file error:', error);
+      throw error;
+    }
+  }
+  
   try {
-    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
+    console.log('Deleting audio file from Storage:', filePath);
+    const { error } = await supabase.storage
+      .from(AUDIO_CONFIG.BUCKET_NAME)
+      .remove([filePath]);
     
-    if (storedAudio[filePath]) {
-      // Revoke the blob URL to free memory
-      URL.revokeObjectURL(storedAudio[filePath].url);
-      
-      // Remove from localStorage
-      delete storedAudio[filePath];
-      localStorage.setItem('audioFiles', JSON.stringify(storedAudio));
-      
-      console.log('Audio file deleted successfully (demo mode):', filePath);
+    if (error) {
+      console.error('Failed to delete audio file:', error);
+      throw new Error(`Failed to delete audio file: ${error.message}`);
     }
     
+    console.log('Audio file deleted successfully:', filePath);
     return true;
   } catch (error) {
     console.error('Delete audio file error:', error);
@@ -171,6 +339,8 @@ export const deleteAudioFile = async (filePath) => {
 // Replace existing audio file
 export const replaceAudioFile = async (oldFilePath, newFile, userId, onProgress = null) => {
   try {
+    console.log('Replacing audio file:', { oldFilePath, newFilename: newFile.name });
+    
     // Upload new file
     const uploadResult = await uploadAudioFile(newFile, userId, onProgress);
     
@@ -184,6 +354,7 @@ export const replaceAudioFile = async (oldFilePath, newFile, userId, onProgress 
       }
     }
     
+    console.log('Audio file replaced successfully');
     return uploadResult;
   } catch (error) {
     console.error('Replace audio file error:', error);
@@ -194,6 +365,7 @@ export const replaceAudioFile = async (oldFilePath, newFile, userId, onProgress 
 // Download audio file with proper filename
 export const downloadAudioFile = async (filePath, filename) => {
   try {
+    console.log('Downloading audio file:', { filePath, filename });
     const downloadUrl = await getAudioDownloadUrl(filePath);
     
     // Create download link
@@ -204,6 +376,7 @@ export const downloadAudioFile = async (filePath, filename) => {
     link.click();
     document.body.removeChild(link);
     
+    console.log('Audio file download initiated');
     return true;
   } catch (error) {
     console.error('Download audio file error:', error);
@@ -211,18 +384,32 @@ export const downloadAudioFile = async (filePath, filename) => {
   }
 };
 
-// Extract file path from URL (demo implementation)
+// Extract file path from URL (with demo fallback)
 export const extractFilePathFromUrl = (url) => {
   if (!url) return null;
   
   try {
-    // For demo mode, find the file path in localStorage by matching URL
-    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
-    
-    for (const [filePath, audioData] of Object.entries(storedAudio)) {
-      if (audioData.url === url) {
-        return filePath;
+    // Check if it's a demo blob URL first
+    if (url.startsWith('blob:')) {
+      // For demo mode, find the file path in localStorage by matching URL
+      const storedAudio = JSON.parse(localStorage.getItem('demoAudioFiles') || '{}');
+      
+      for (const [filePath, audioData] of Object.entries(storedAudio)) {
+        if (audioData.url === url) {
+          return filePath;
+        }
       }
+      
+      return null;
+    }
+    
+    // For real Supabase URLs
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/');
+    const bucketIndex = pathParts.findIndex(part => part === AUDIO_CONFIG.BUCKET_NAME);
+    
+    if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+      return pathParts.slice(bucketIndex + 1).join('/');
     }
     
     return null;

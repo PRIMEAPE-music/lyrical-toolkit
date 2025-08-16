@@ -8,7 +8,8 @@ const AudioUpload = ({
   disabled = false,
   darkMode = false,
   currentAudio = null,
-  allowReplace = false
+  allowReplace = false,
+  userId = null  // Pass userId from parent component
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -39,13 +40,13 @@ const AudioUpload = ({
     setStatusMessage('Uploading audio file...');
 
     try {
-      // Get user ID from auth (you may need to adjust this based on your auth implementation)
-      const userId = localStorage.getItem('userId') || 'anonymous';
+      // Use userId passed from parent, or fallback to anonymous
+      const uploadUserId = userId || 'anonymous';
       
       // Upload file with progress
       const result = await audioStorageService.uploadAudioFile(
         file, 
-        userId,
+        uploadUserId,
         (progress) => {
           setUploadProgress(progress);
         }

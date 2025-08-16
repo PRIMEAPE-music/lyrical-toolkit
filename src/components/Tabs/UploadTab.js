@@ -24,7 +24,8 @@ const UploadTab = ({
   onAudioRemove = null,
   onAudioReplace = null,
   selectedSongForAudio = null,
-  setSelectedSongForAudio = null
+  setSelectedSongForAudio = null,
+  userId = null  // Add userId prop
 }) => {
   return (
     <div>
@@ -121,6 +122,7 @@ const UploadTab = ({
                   duration: selectedSongForAudio.audioDuration
                 } : null}
                 allowReplace={!!selectedSongForAudio.audioFileUrl}
+                userId={userId}
               />
             </div>
           )}

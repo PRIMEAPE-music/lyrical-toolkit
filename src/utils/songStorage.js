@@ -49,7 +49,12 @@ export const saveUserSongs = async (songs) => {
         content: songContent,    // Backend saves to content field
         lyrics: songContent,     // Include for compatibility
         filename: song.filename || `${songTitle}.txt`,
-        dateAdded: song.dateAdded || new Date().toISOString()
+        dateAdded: song.dateAdded || new Date().toISOString(),
+        // Audio metadata
+        audioFileUrl: song.audioFileUrl || null,
+        audioFileName: song.audioFileName || null,
+        audioFileSize: song.audioFileSize || null,
+        audioDuration: song.audioDuration || null
       };
     });
     
@@ -153,7 +158,12 @@ export const loadUserSongs = async (includeExample = true) => {
               lineCount: song.lineCount || song.line_count || 0,
               dateAdded: song.dateAdded || song.date_added || new Date().toISOString(),
               dateModified: song.dateModified || song.date_modified,
-              userId: song.userId || song.user_id
+              userId: song.userId || song.user_id,
+              // Audio metadata
+              audioFileUrl: song.audioFileUrl || null,
+              audioFileName: song.audioFileName || null,
+              audioFileSize: song.audioFileSize || null,
+              audioDuration: song.audioDuration || null
             };
           });
       }
