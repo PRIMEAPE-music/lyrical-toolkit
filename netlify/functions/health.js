@@ -1,5 +1,4 @@
-const { getCorsHeaders } = require('./shared-storage');
-const { getStore } = require('@netlify/blobs');
+const { getCorsHeaders, testDatabaseConnection } = require('./shared-storage');
 
 exports.handler = async (event, context) => {
     const headers = getCorsHeaders();
@@ -55,82 +54,54 @@ exports.handler = async (event, context) => {
         healthStatus.checks.environment.message = 'Environment variables are using default values - not secure for production';
     }
 
-    // Check Netlify Blobs connectivity
-    console.log('[HEALTH] Checking Netlify Blobs connectivity');
+    // Check Supabase database connectivity
+    console.log('[HEALTH] Checking Supabase database connectivity');
     try {
-        const testStore = getStore('health-check');
+        await testDatabaseConnection();
         
-        // Test write operation
-        const testKey = `health-test-${Date.now()}`;
-        const testData = JSON.stringify({ 
-            test: true, 
-            timestamp: new Date().toISOString() 
-        });
+        console.log('[HEALTH] Database connection test successful');
+        healthStatus.checks.database = {
+            status: 'pass',
+            message: 'Supabase database connection successful',
+            provider: 'Supabase'
+        };
         
-        await testStore.set(testKey, testData);
-        console.log('[HEALTH] Blobs write test successful');
-        
-        // Test read operation
-        const retrievedData = await testStore.get(testKey, { type: 'text' });
-        if (retrievedData && JSON.parse(retrievedData).test === true) {
-            console.log('[HEALTH] Blobs read test successful');
-            healthStatus.checks.blobsStorage = {
-                status: 'pass',
-                message: 'Netlify Blobs read/write operations successful'
-            };
-        } else {
-            throw new Error('Data integrity check failed');
-        }
-        
-        // Test list operation
-        const listResult = await testStore.list({ prefix: 'health-test' });
-        if (listResult && Array.isArray(listResult.blobs)) {
-            console.log('[HEALTH] Blobs list test successful');
-            healthStatus.checks.blobsStorage.listOperation = 'pass';
-        } else {
-            healthStatus.checks.blobsStorage.listOperation = 'fail';
-        }
-        
-        // Clean up test data
-        await testStore.delete(testKey);
-        console.log('[HEALTH] Test data cleanup successful');
-        
-    } catch (blobsError) {
-        console.error('[HEALTH] Blobs connectivity check failed:', blobsError);
-        healthStatus.checks.blobsStorage = {
+    } catch (dbError) {
+        console.error('[HEALTH] Database connectivity check failed:', dbError);
+        healthStatus.checks.database = {
             status: 'fail',
-            error: blobsError.message,
-            message: 'Netlify Blobs service is not accessible'
+            error: dbError.message,
+            message: 'Supabase database service is not accessible',
+            provider: 'Supabase'
         };
         healthStatus.status = 'degraded';
     }
 
-    // Check user store connectivity (actual production store)
-    console.log('[HEALTH] Checking user data store connectivity');
-    try {
-        const userStore = getStore('user-data');
-        
-        // Test list operation without creating data
-        const userList = await userStore.list({ limit: 1 });
-        if (userList && typeof userList.blobs !== 'undefined') {
-            console.log('[HEALTH] User store connectivity successful');
-            healthStatus.checks.userStore = {
-                status: 'pass',
-                message: 'User data store is accessible',
-                userCount: userList.blobs ? userList.blobs.length : 0
-            };
-        } else {
-            throw new Error('User store list operation returned unexpected format');
+    // Check Supabase environment variables
+    console.log('[HEALTH] Checking Supabase environment variables');
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    
+    healthStatus.checks.supabaseConfig = {
+        status: 'pass',
+        supabaseUrlConfigured: !!supabaseUrl,
+        supabaseKeyConfigured: !!supabaseKey,
+        supabaseUrlValid: false
+    };
+    
+    if (!supabaseUrl || !supabaseKey) {
+        healthStatus.checks.supabaseConfig.status = 'fail';
+        healthStatus.checks.supabaseConfig.message = 'Supabase environment variables not configured';
+        healthStatus.status = 'unhealthy';
+    } else {
+        try {
+            new URL(supabaseUrl);
+            healthStatus.checks.supabaseConfig.supabaseUrlValid = true;
+        } catch (urlError) {
+            healthStatus.checks.supabaseConfig.status = 'fail';
+            healthStatus.checks.supabaseConfig.message = 'Invalid SUPABASE_URL format';
+            healthStatus.status = 'unhealthy';
         }
-        
-    } catch (userStoreError) {
-        console.error('[HEALTH] User store connectivity check failed:', userStoreError);
-        healthStatus.checks.userStore = {
-            status: 'fail',
-            error: userStoreError.message,
-            message: 'User data store is not accessible'
-        };
-        healthStatus.status = 'degraded';
     }
 
     // Overall health status
@@ -162,8 +133,9 @@ exports.handler = async (event, context) => {
     // Add setup instructions for failed checks
     if (healthStatus.status === 'unhealthy' || healthStatus.status === 'degraded') {
         healthStatus.setupInstructions = {
-            blobsSetup: 'Ensure Netlify Blobs is enabled in your site settings under Functions > Blobs',
-            environmentVariables: 'Set JWT_SECRET and REFRESH_SECRET in your Netlify site environment variables',
+            supabaseSetup: 'Create a Supabase project and configure SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables',
+            databaseSchema: 'Ensure the users table exists with columns: id (UUID), username, email, password_hash, email_verified, failed_login_attempts, created_at, updated_at',
+            environmentVariables: 'Set JWT_SECRET, REFRESH_SECRET, SUPABASE_URL, and SUPABASE_SERVICE_KEY in your Netlify site environment variables',
             troubleshooting: 'Check the Netlify function logs for detailed error messages'
         };
     }

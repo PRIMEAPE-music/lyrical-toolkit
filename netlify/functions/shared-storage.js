@@ -1,6 +1,6 @@
-// Persistent authentication for Netlify functions using Blobs storage
+// Persistent authentication for Netlify functions using Supabase database
 const crypto = require('crypto');
-const { getStore } = require('@netlify/blobs');
+const { UserOperations, testConnection } = require('./supabase-client');
 
 // Environment variable validation with proper fallbacks
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -56,16 +56,6 @@ function base64UrlDecode(str) {
     // Replace URL-safe characters
     str = str.replace(/-/g, '+').replace(/_/g, '/');
     return Buffer.from(str, 'base64').toString();
-}
-
-// Lazy initialization function for Blobs stores
-function getBlobsStore(storeName) {
-    try {
-        return getStore(storeName);
-    } catch (error) {
-        console.error('Failed to initialize Blobs store "' + storeName + '":', error);
-        return null;
-    }
 }
 
 // Create JWT token with Node.js compatibility
@@ -196,7 +186,7 @@ function generateTokenPair(user) {
     }
 }
 
-// Save user to Blobs storage with robust error handling
+// Save user to Supabase database
 function saveUser(user) {
     return new Promise(function(resolve, reject) {
         try {
@@ -205,41 +195,27 @@ function saveUser(user) {
                 return;
             }
             
-            const userStore = getBlobsStore('user-data');
-            if (!userStore) {
-                reject(new Error('Blobs storage not available - cannot save user'));
-                return;
-            }
+            console.log('Attempting to save user to database:', user.username);
             
-            console.log('Attempting to save user:', user.username);
-            
-            const userKey = 'user:' + user.username.toLowerCase();
-            const emailKey = 'email:' + user.email.toLowerCase();
-            
-            console.log('Saving with keys:', { userKey: userKey, emailKey: emailKey });
-            
-            Promise.all([
-                userStore.set(userKey, JSON.stringify(user)),
-                userStore.set(emailKey, JSON.stringify(user))
-            ]).then(function() {
-                console.log('User saved successfully to Blobs storage:', user.username);
-                resolve(user);
-            }).catch(function(blobError) {
-                console.error('Blobs storage operation failed:', blobError);
-                reject(new Error('Blobs storage operation failed: ' + blobError.message));
+            UserOperations.create(user).then(function(savedUser) {
+                console.log('User saved successfully to database:', savedUser.username);
+                resolve(savedUser);
+            }).catch(function(dbError) {
+                console.error('Database operation failed:', dbError);
+                if (dbError.message.indexOf('already exists') !== -1) {
+                    reject(new Error('User with this username or email already exists'));
+                } else {
+                    reject(new Error('Database error: ' + dbError.message));
+                }
             });
         } catch (error) {
             console.error('Error saving user:', error);
-            if (error.message.indexOf('Blobs') !== -1) {
-                reject(error); // Re-throw Blobs-specific errors
-            } else {
-                reject(new Error('Failed to save user: ' + error.message));
-            }
+            reject(new Error('Failed to save user: ' + error.message));
         }
     });
 }
 
-// Find user by key in Blobs storage with enhanced error handling
+// Find user by key (username or email) - maintained for compatibility
 function findUserByKey(key) {
     return new Promise(function(resolve, reject) {
         try {
@@ -249,30 +225,36 @@ function findUserByKey(key) {
                 return;
             }
             
-            const userStore = getBlobsStore('user-data');
-            if (!userStore) {
-                console.error('Blobs storage not available - cannot find user');
-                resolve(null);
-                return;
+            // Extract the actual login from the key format (remove prefix)
+            let login = key;
+            if (key.startsWith('user:')) {
+                login = key.substring(5);
+            } else if (key.startsWith('email:')) {
+                login = key.substring(6);
             }
             
-            console.log('Looking for user with key:', key);
+            console.log('Looking for user with key:', key, 'login:', login);
             
-            userStore.get(key, { type: 'text' }).then(function(userData) {
-                if (userData) {
+            UserOperations.findByLogin(login).then(function(user) {
+                if (user) {
                     console.log('User found for key:', key);
-                    try {
-                        resolve(JSON.parse(userData));
-                    } catch (parseError) {
-                        console.error('Failed to parse user data for key:', key, parseError);
-                        resolve(null);
-                    }
+                    // Convert database format to application format
+                    const appUser = {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        passwordHash: user.password_hash,
+                        emailVerified: user.email_verified,
+                        createdAt: user.created_at,
+                        failedLoginAttempts: user.failed_login_attempts
+                    };
+                    resolve(appUser);
                 } else {
                     console.log('No user found for key:', key);
                     resolve(null);
                 }
-            }).catch(function(blobError) {
-                console.error('Blobs storage get operation failed for key:', key, blobError);
+            }).catch(function(dbError) {
+                console.error('Database error finding user by key:', key, dbError);
                 resolve(null);
             });
         } catch (error) {
@@ -295,41 +277,34 @@ function createUser(userData) {
                 return;
             }
             
-            console.log('Creating user:', { username: username, email: email });
+            console.log('Creating user in database:', { username: username, email: email });
             
-            // Check if user already exists
-            Promise.all([
-                findUserByKey('user:' + username.toLowerCase()),
-                findUserByKey('email:' + email.toLowerCase())
-            ]).then(function(results) {
-                const existingUserByUsername = results[0];
-                const existingUserByEmail = results[1];
-                
-                if (existingUserByUsername || existingUserByEmail) {
-                    reject(new Error('User with this username or email already exists'));
-                    return;
-                }
+            // Create user object in database format
+            const user = {
+                username: username.trim(),
+                email: email.toLowerCase().trim(),
+                passwordHash: hashPassword(password),
+                emailVerified: false,
+                createdAt: new Date().toISOString(),
+                failedLoginAttempts: 0
+            };
 
-                // Create new user object
-                const user = {
-                    id: Date.now().toString(),
-                    username: username.trim(),
-                    email: email.toLowerCase().trim(),
-                    passwordHash: hashPassword(password),
-                    emailVerified: false,
-                    createdAt: new Date().toISOString(),
-                    failedLoginAttempts: 0
+            console.log('Saving new user to database');
+            saveUser(user).then(function(savedUser) {
+                console.log('User created successfully:', savedUser.username);
+                // Convert database format to application format
+                const appUser = {
+                    id: savedUser.id,
+                    username: savedUser.username,
+                    email: savedUser.email,
+                    passwordHash: savedUser.password_hash,
+                    emailVerified: savedUser.email_verified,
+                    createdAt: savedUser.created_at,
+                    failedLoginAttempts: savedUser.failed_login_attempts
                 };
-
-                console.log('Saving new user to Blobs storage');
-                saveUser(user).then(function(savedUser) {
-                    console.log('User created successfully:', savedUser.username);
-                    resolve(savedUser);
-                }).catch(function(saveError) {
-                    reject(saveError);
-                });
-            }).catch(function(error) {
-                reject(error);
+                resolve(appUser);
+            }).catch(function(saveError) {
+                reject(saveError);
             });
         } catch (error) {
             console.error('Error creating user:', error);
@@ -350,26 +325,26 @@ function findUser(login) {
             const lowerLogin = login.toLowerCase();
             console.log('Finding user with login:', lowerLogin);
             
-            // Try to find by username first
-            findUserByKey('user:' + lowerLogin).then(function(user) {
+            UserOperations.findByLogin(lowerLogin).then(function(user) {
                 if (user) {
-                    console.log('User found by username:', user.username);
-                    resolve(user);
-                    return;
-                }
-                
-                // Try to find by email
-                findUserByKey('email:' + lowerLogin).then(function(userByEmail) {
-                    if (userByEmail) {
-                        console.log('User found by email:', userByEmail.username);
-                    } else {
-                        console.log('No user found for login:', lowerLogin);
-                    }
-                    resolve(userByEmail);
-                }).catch(function(error) {
+                    console.log('User found by login:', user.username);
+                    // Convert database format to application format
+                    const appUser = {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        passwordHash: user.password_hash,
+                        emailVerified: user.email_verified,
+                        createdAt: user.created_at,
+                        failedLoginAttempts: user.failed_login_attempts
+                    };
+                    resolve(appUser);
+                } else {
+                    console.log('No user found for login:', lowerLogin);
                     resolve(null);
-                });
-            }).catch(function(error) {
+                }
+            }).catch(function(dbError) {
+                console.error('Database error finding user:', dbError);
                 resolve(null);
             });
         } catch (error) {
@@ -416,7 +391,7 @@ function authenticateUser(login, password) {
     });
 }
 
-// Get user by ID with enhanced Blobs error handling
+// Get user by ID
 function getUserById(id) {
     return new Promise(function(resolve, reject) {
         try {
@@ -426,49 +401,28 @@ function getUserById(id) {
                 return;
             }
             
-            const userStore = getBlobsStore('user-data');
-            if (!userStore) {
-                console.error('Blobs storage not available - cannot get user by ID');
-                resolve(null);
-                return;
-            }
-            
             console.log('Getting user by ID:', id);
             
-            userStore.list({ prefix: 'user:' }).then(function(userList) {
-                if (!userList || !userList.blobs) {
-                    console.log('No users found in Blobs storage');
-                    resolve(null);
-                    return;
-                }
-                
-                const promises = [];
-                const keys = [];
-                
-                for (let i = 0; i < userList.blobs.length; i++) {
-                    const key = userList.blobs[i].key;
-                    keys.push(key);
-                    promises.push(findUserByKey(key));
-                }
-                
-                Promise.all(promises).then(function(users) {
-                    for (let i = 0; i < users.length; i++) {
-                        const user = users[i];
-                        if (user && user.id === id) {
-                            console.log('User found by ID:', user.username);
-                            resolve(user);
-                            return;
-                        }
-                    }
-                    
+            UserOperations.findById(id).then(function(user) {
+                if (user) {
+                    console.log('User found by ID:', user.username);
+                    // Convert database format to application format
+                    const appUser = {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        passwordHash: user.password_hash,
+                        emailVerified: user.email_verified,
+                        createdAt: user.created_at,
+                        failedLoginAttempts: user.failed_login_attempts
+                    };
+                    resolve(appUser);
+                } else {
                     console.log('No user found with ID:', id);
                     resolve(null);
-                }).catch(function(error) {
-                    console.error('Error processing user list:', error);
-                    resolve(null);
-                });
-            }).catch(function(blobError) {
-                console.error('Blobs storage list operation failed:', blobError);
+                }
+            }).catch(function(dbError) {
+                console.error('Database error finding user by ID:', dbError);
                 resolve(null);
             });
         } catch (error) {
@@ -476,6 +430,11 @@ function getUserById(id) {
             resolve(null);
         }
     });
+}
+
+// Test database connectivity
+function testDatabaseConnection() {
+    return testConnection();
 }
 
 // Get CORS headers
@@ -501,6 +460,7 @@ module.exports = {
     authenticateUser: authenticateUser,
     getUserById: getUserById,
     getCorsHeaders: getCorsHeaders,
+    testDatabaseConnection: testDatabaseConnection,
     JWT_SECRET: EFFECTIVE_JWT_SECRET,
     REFRESH_SECRET: EFFECTIVE_REFRESH_SECRET
 };

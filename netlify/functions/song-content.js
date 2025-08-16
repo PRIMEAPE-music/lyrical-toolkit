@@ -1,23 +1,13 @@
-const { getStore } = require('@netlify/blobs');
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
 
-// Lazy initialization function for Blobs stores
-function getBlobsStore(storeName) {
-    try {
-        return getStore(storeName);
-    } catch (error) {
-        console.error('Failed to initialize Blobs store "' + storeName + '":', error);
-        return null;
-    }
-}
-
-// Get stores with error handling
+// Note: Song storage functionality disabled - migrating from Blobs to Supabase
+// This endpoint will return appropriate errors until song storage is reimplemented
 function getMetadataStore() {
-    return getBlobsStore('song-metadata');
+    return null; // Disabled during migration
 }
 
 function getContentStore() {
-    return getBlobsStore('song-content');
+    return null; // Disabled during migration
 }
 
 // Helper function to authenticate user from JWT
