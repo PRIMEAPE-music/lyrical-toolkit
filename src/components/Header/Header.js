@@ -31,24 +31,21 @@ const Header = ({
         <div className="max-w-6xl mx-auto px-4 py-4">
           {/* Mobile header */}
           <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg transition-colors ${
-                darkMode
-                  ? 'bg-gray-700 hover:bg-gray-600'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-              }`}
-              style={darkMode ? { color: 'white' } : {}}
-              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-              Lyrical-Toolkit
-            </h1>
-
+            {/* Left side: Dark mode + Manual buttons */}
             <div className="flex gap-2">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className={`p-2 rounded-lg transition-colors ${
+                  darkMode
+                    ? 'bg-gray-700 hover:bg-gray-600'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                }`}
+                style={darkMode ? { color: 'white' } : {}}
+                title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              
               <button
                 onClick={() => setShowManual(!showManual)}
                 className={`p-2 rounded-lg transition-colors ${
@@ -64,6 +61,15 @@ const Header = ({
               >
                 <Book className="w-4 h-4" />
               </button>
+            </div>
+            
+            {/* Center: Title */}
+            <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+              Lyrical-Toolkit
+            </h1>
+            
+            {/* Right side: Login/Logout button */}
+            <div className="flex gap-2">
               {isAuthenticated ? (
                 <button
                   onClick={onLogout}
@@ -86,7 +92,7 @@ const Header = ({
                   }`}
                   title="Login or Sign Up"
                 >
-                  Login / Sign Up
+                  Login
                 </button>
               )}
             </div>
@@ -257,7 +263,7 @@ const Header = ({
                       : 'bg-green-200 text-green-800 hover:bg-green-300'
                   }`}
                 >
-                  Login / Sign Up
+                  Login
                 </button>
               )}
             </div>
