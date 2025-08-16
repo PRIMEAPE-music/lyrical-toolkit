@@ -119,7 +119,7 @@ const AuthModal = ({ isOpen, onClose, darkMode }) => {
       <div className={`relative p-6 rounded-lg shadow-xl w-96 max-w-md mx-4 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-2xl hover:opacity-70 transition-opacity"
+          className="absolute top-2 right-2 text-lg w-6 h-6 flex items-center justify-center hover:opacity-70 transition-opacity"
           aria-label="Close"
         >
           &times;
@@ -150,8 +150,8 @@ const AuthModal = ({ isOpen, onClose, darkMode }) => {
                   loading ? 'opacity-50 cursor-not-allowed' : ''
                 } ${
                   darkMode 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-black' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-black'
                 }`}
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
@@ -234,8 +234,8 @@ const AuthModal = ({ isOpen, onClose, darkMode }) => {
                   loading ? 'opacity-50 cursor-not-allowed' : ''
                 } ${
                   darkMode 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-black' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-black'
                 }`}
               >
                 {loading ? (mode === 'login' ? 'Logging in...' : 'Creating Account...') : (mode === 'login' ? 'Login' : 'Sign Up')}
