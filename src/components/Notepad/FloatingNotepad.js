@@ -310,7 +310,13 @@ const FloatingNotepad = ({
 
       {/* Content - Full-size textarea when not minimized */}
       {!isMinimized && (
-        <div style={{ height: 'calc(100% - 49px)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <div 
+          className="flex flex-col relative"
+          style={{ 
+            height: 'calc(100% - 49px)',
+            minHeight: '200px'
+          }}
+        >
           {/* Audio Player - Show if current song has audio */}
           {currentSongAudio && (
             <div className={`flex-shrink-0 p-3 border-b ${
@@ -332,7 +338,7 @@ const FloatingNotepad = ({
           )}
           
           {/* Text Area - Takes remaining space */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative min-h-0">
             <textarea
               value={content}
               onChange={handleContentChange}
@@ -345,9 +351,11 @@ const FloatingNotepad = ({
               style={{ 
                 width: '100%', 
                 height: '100%',
+                minHeight: '150px',
                 resize: 'none',
                 border: 'none',
-                outline: 'none'
+                outline: 'none',
+                boxSizing: 'border-box'
               }}
             />
             

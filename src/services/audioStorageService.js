@@ -1,15 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import { getAuthHeader } from './authService';
-
-// Initialize Supabase client for storage operations
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase credentials not found. Audio upload will not work.');
-}
-
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// Audio storage service using browser APIs and simulated storage
+// This provides a working demo implementation without requiring Supabase Storage setup
 
 // Audio file validation constants
 export const AUDIO_CONFIG = {
@@ -80,12 +70,8 @@ export const generateAudioFilePath = (userId, filename) => {
   return `${userId}/${timestamp}_${sanitized}`;
 };
 
-// Upload audio file to Supabase Storage
+// Upload audio file (demo implementation using local URL)
 export const uploadAudioFile = async (file, userId, onProgress = null) => {
-  if (!supabase) {
-    throw new Error('Supabase not configured for audio uploads');
-  }
-  
   // Validate file
   const validation = validateAudioFile(file);
   if (!validation.isValid) {
@@ -93,6 +79,19 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
   }
   
   try {
+    // Simulate upload progress
+    if (onProgress) {
+      onProgress(0);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      onProgress(25);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      onProgress(50);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      onProgress(75);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      onProgress(100);
+    }
+    
     // Get audio duration
     let duration = null;
     try {
@@ -101,33 +100,27 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
       console.warn('Could not get audio duration:', error);
     }
     
-    // Generate file path
+    // Create a local blob URL for demo purposes
+    const url = URL.createObjectURL(file);
     const filePath = generateAudioFilePath(userId, file.name);
     
-    // Upload file with progress tracking
-    const { data, error } = await supabase.storage
-      .from(AUDIO_CONFIG.BUCKET_NAME)
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-    
-    if (error) {
-      throw new Error(`Upload failed: ${error.message}`);
-    }
-    
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from(AUDIO_CONFIG.BUCKET_NAME)
-      .getPublicUrl(filePath);
-    
-    return {
-      url: publicUrl,
+    // Store the blob URL in localStorage so it persists during session
+    const audioData = {
+      url: url,
       path: filePath,
       filename: file.name,
       size: file.size,
-      duration: duration
+      duration: duration,
+      uploadTime: Date.now()
     };
+    
+    // Store in localStorage for demo persistence
+    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
+    storedAudio[filePath] = audioData;
+    localStorage.setItem('audioFiles', JSON.stringify(storedAudio));
+    
+    console.log('Audio file uploaded successfully (demo mode):', audioData);
+    return audioData;
     
   } catch (error) {
     console.error('Audio upload error:', error);
@@ -135,41 +128,37 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
   }
 };
 
-// Get signed URL for downloading audio file
+// Get download URL for audio file (demo implementation)
 export const getAudioDownloadUrl = async (filePath) => {
-  if (!supabase) {
-    throw new Error('Supabase not configured for audio downloads');
-  }
-  
   try {
-    const { data, error } = await supabase.storage
-      .from(AUDIO_CONFIG.BUCKET_NAME)
-      .createSignedUrl(filePath, 3600); // 1 hour expiry
+    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
+    const audioData = storedAudio[filePath];
     
-    if (error) {
-      throw new Error(`Failed to get download URL: ${error.message}`);
+    if (!audioData) {
+      throw new Error('Audio file not found');
     }
     
-    return data.signedUrl;
+    return audioData.url;
   } catch (error) {
     console.error('Get download URL error:', error);
     throw error;
   }
 };
 
-// Delete audio file from storage
+// Delete audio file from storage (demo implementation)
 export const deleteAudioFile = async (filePath) => {
-  if (!supabase) {
-    throw new Error('Supabase not configured for audio deletion');
-  }
-  
   try {
-    const { error } = await supabase.storage
-      .from(AUDIO_CONFIG.BUCKET_NAME)
-      .remove([filePath]);
+    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
     
-    if (error) {
-      throw new Error(`Failed to delete audio file: ${error.message}`);
+    if (storedAudio[filePath]) {
+      // Revoke the blob URL to free memory
+      URL.revokeObjectURL(storedAudio[filePath].url);
+      
+      // Remove from localStorage
+      delete storedAudio[filePath];
+      localStorage.setItem('audioFiles', JSON.stringify(storedAudio));
+      
+      console.log('Audio file deleted successfully (demo mode):', filePath);
     }
     
     return true;
@@ -222,17 +211,18 @@ export const downloadAudioFile = async (filePath, filename) => {
   }
 };
 
-// Extract file path from URL
+// Extract file path from URL (demo implementation)
 export const extractFilePathFromUrl = (url) => {
   if (!url) return null;
   
   try {
-    const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split('/');
-    const bucketIndex = pathParts.findIndex(part => part === AUDIO_CONFIG.BUCKET_NAME);
+    // For demo mode, find the file path in localStorage by matching URL
+    const storedAudio = JSON.parse(localStorage.getItem('audioFiles') || '{}');
     
-    if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
-      return pathParts.slice(bucketIndex + 1).join('/');
+    for (const [filePath, audioData] of Object.entries(storedAudio)) {
+      if (audioData.url === url) {
+        return filePath;
+      }
     }
     
     return null;
