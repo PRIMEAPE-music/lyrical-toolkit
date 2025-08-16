@@ -97,7 +97,12 @@ const SongOperations = {
             content: songData.content,
             filename: songData.filename || `${parsed.title}.txt`,
             word_count: parsed.wordCount,
-            line_count: parsed.lineCount
+            line_count: parsed.lineCount,
+            // Audio file metadata
+            audio_file_url: songData.audioFileUrl || null,
+            audio_file_name: songData.audioFileName || null,
+            audio_file_size: songData.audioFileSize || null,
+            audio_duration: songData.audioDuration || null
         };
 
         // Only set custom ID if it's a valid UUID (not timestamp or other format)
@@ -133,7 +138,12 @@ const SongOperations = {
             filename: songData.filename || `${parsed.title}.txt`,
             word_count: parsed.wordCount,
             line_count: parsed.lineCount,
-            date_modified: new Date().toISOString()
+            date_modified: new Date().toISOString(),
+            // Audio file metadata (only update if provided)
+            ...(songData.audioFileUrl !== undefined && { audio_file_url: songData.audioFileUrl }),
+            ...(songData.audioFileName !== undefined && { audio_file_name: songData.audioFileName }),
+            ...(songData.audioFileSize !== undefined && { audio_file_size: songData.audioFileSize }),
+            ...(songData.audioDuration !== undefined && { audio_duration: songData.audioDuration })
         };
 
         const { data, error } = await supabase
@@ -220,7 +230,12 @@ exports.handler = async (event, context) => {
                         lineCount: song.line_count,
                         dateAdded: song.date_added,
                         dateModified: song.date_modified,
-                        userId: song.user_id
+                        userId: song.user_id,
+                        // Audio file metadata
+                        audioFileUrl: song.audio_file_url,
+                        audioFileName: song.audio_file_name,
+                        audioFileSize: song.audio_file_size,
+                        audioDuration: song.audio_duration
                     };
                     
                     return {
@@ -240,7 +255,10 @@ exports.handler = async (event, context) => {
             case 'PUT':
                 // Update specific song
                 try {
-                    const { title, content, lyrics, filename } = JSON.parse(event.body);
+                    const { 
+                        title, content, lyrics, filename,
+                        audioFileUrl, audioFileName, audioFileSize, audioDuration 
+                    } = JSON.parse(event.body);
                     
                     // Handle both content and lyrics fields
                     const songContent = content || lyrics || '';
@@ -253,7 +271,15 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    const updatedSong = await SongOperations.update(userId, songId, { title, content: songContent, filename });
+                    const updatedSong = await SongOperations.update(userId, songId, { 
+                        title, 
+                        content: songContent, 
+                        filename,
+                        audioFileUrl,
+                        audioFileName,
+                        audioFileSize,
+                        audioDuration
+                    });
                     
                     // Transform database format to API format for backward compatibility
                     const response = {
@@ -268,7 +294,12 @@ exports.handler = async (event, context) => {
                             lineCount: updatedSong.line_count,
                             dateAdded: updatedSong.date_added,
                             dateModified: updatedSong.date_modified,
-                            userId: updatedSong.user_id
+                            userId: updatedSong.user_id,
+                            // Audio file metadata
+                            audioFileUrl: updatedSong.audio_file_url,
+                            audioFileName: updatedSong.audio_file_name,
+                            audioFileSize: updatedSong.audio_file_size,
+                            audioDuration: updatedSong.audio_duration
                         }
                     };
                     
@@ -296,7 +327,10 @@ exports.handler = async (event, context) => {
             case 'POST':
                 // Create new song with specific ID
                 try {
-                    const { title, content, lyrics, filename } = JSON.parse(event.body);
+                    const { 
+                        title, content, lyrics, filename,
+                        audioFileUrl, audioFileName, audioFileSize, audioDuration 
+                    } = JSON.parse(event.body);
                     
                     // Handle both content and lyrics fields
                     const songContent = content || lyrics || '';
@@ -316,7 +350,15 @@ exports.handler = async (event, context) => {
                     }
                     // For timestamp IDs or other formats, pass null to generate new UUID
                     
-                    const newSong = await SongOperations.create(userId, actualSongId, { title, content: songContent, filename });
+                    const newSong = await SongOperations.create(userId, actualSongId, { 
+                        title, 
+                        content: songContent, 
+                        filename,
+                        audioFileUrl,
+                        audioFileName,
+                        audioFileSize,
+                        audioDuration
+                    });
                     
                     // Transform database format to API format for backward compatibility
                     const response = {
@@ -331,7 +373,12 @@ exports.handler = async (event, context) => {
                             lineCount: newSong.line_count,
                             dateAdded: newSong.date_added,
                             dateModified: newSong.date_modified,
-                            userId: newSong.user_id
+                            userId: newSong.user_id,
+                            // Audio file metadata
+                            audioFileUrl: newSong.audio_file_url,
+                            audioFileName: newSong.audio_file_name,
+                            audioFileSize: newSong.audio_file_size,
+                            audioDuration: newSong.audio_duration
                         }
                     };
                     
@@ -357,7 +404,7 @@ exports.handler = async (event, context) => {
                 }
 
             case 'DELETE':
-                // Delete specific song
+                // Delete specific song and associated audio file
                 try {
                     // Check if song exists first
                     const existingSong = await SongOperations.getById(userId, songId);
@@ -369,7 +416,34 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
+                    // Delete from database first
                     await SongOperations.delete(userId, songId);
+                    
+                    // If song had an audio file, delete it from storage
+                    if (existingSong.audio_file_url) {
+                        try {
+                            // Extract file path from URL
+                            const urlParts = existingSong.audio_file_url.split('/');
+                            const bucketIndex = urlParts.findIndex(part => part === 'audio-files');
+                            if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+                                const filePath = urlParts.slice(bucketIndex + 1).join('/');
+                                
+                                // Delete from Supabase Storage
+                                const supabase = getSupabaseClient();
+                                const { error: deleteError } = await supabase.storage
+                                    .from('audio-files')
+                                    .remove([filePath]);
+                                
+                                if (deleteError) {
+                                    console.warn('Failed to delete audio file:', deleteError.message);
+                                    // Don't fail the song deletion if audio cleanup fails
+                                }
+                            }
+                        } catch (audioError) {
+                            console.warn('Error during audio file cleanup:', audioError);
+                            // Don't fail the song deletion if audio cleanup fails
+                        }
+                    }
                     
                     return {
                         statusCode: 200,

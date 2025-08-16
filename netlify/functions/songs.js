@@ -64,7 +64,12 @@ const SongOperations = {
             filename: songData.filename || `${parsed.title}.txt`,
             word_count: parsed.wordCount,
             line_count: parsed.lineCount,
-            date_added: songData.dateAdded || new Date().toISOString()
+            date_added: songData.dateAdded || new Date().toISOString(),
+            // Audio file metadata
+            audio_file_url: songData.audioFileUrl || null,
+            audio_file_name: songData.audioFileName || null,
+            audio_file_size: songData.audioFileSize || null,
+            audio_duration: songData.audioDuration || null
         };
 
         const { data, error } = await supabase
@@ -91,7 +96,12 @@ const SongOperations = {
             filename: songData.filename || `${parsed.title}.txt`,
             word_count: parsed.wordCount,
             line_count: parsed.lineCount,
-            date_modified: new Date().toISOString()
+            date_modified: new Date().toISOString(),
+            // Audio file metadata (only update if provided)
+            ...(songData.audioFileUrl !== undefined && { audio_file_url: songData.audioFileUrl }),
+            ...(songData.audioFileName !== undefined && { audio_file_name: songData.audioFileName }),
+            ...(songData.audioFileSize !== undefined && { audio_file_size: songData.audioFileSize }),
+            ...(songData.audioDuration !== undefined && { audio_duration: songData.audioDuration })
         };
 
         const { data, error } = await supabase
@@ -193,7 +203,12 @@ exports.handler = async (event, context) => {
                         dateAdded: song.date_added,
                         dateModified: song.date_modified,
                         userId: song.user_id,
-                        filename: song.filename
+                        filename: song.filename,
+                        // Audio file metadata
+                        audioFileUrl: song.audio_file_url,
+                        audioFileName: song.audio_file_name,
+                        audioFileSize: song.audio_file_size,
+                        audioDuration: song.audio_duration
                     }));
                     
                     return {
@@ -238,7 +253,17 @@ exports.handler = async (event, context) => {
                         
                         try {
                             let savedSong;
-                            const songData = { title, content: songContent, filename, dateAdded: song.dateAdded };
+                            const songData = { 
+                                title, 
+                                content: songContent, 
+                                filename, 
+                                dateAdded: song.dateAdded,
+                                // Include audio metadata if present
+                                audioFileUrl: song.audioFileUrl,
+                                audioFileName: song.audioFileName,
+                                audioFileSize: song.audioFileSize,
+                                audioDuration: song.audioDuration
+                            };
                             
                             // Determine action based on ID format
                             if (id && isUUID(id)) {
@@ -274,7 +299,12 @@ exports.handler = async (event, context) => {
                                 dateAdded: savedSong.date_added,
                                 dateModified: savedSong.date_modified,
                                 userId: savedSong.user_id,
-                                filename: savedSong.filename
+                                filename: savedSong.filename,
+                                // Audio file metadata
+                                audioFileUrl: savedSong.audio_file_url,
+                                audioFileName: savedSong.audio_file_name,
+                                audioFileSize: savedSong.audio_file_size,
+                                audioDuration: savedSong.audio_duration
                             };
                             
                             savedSongs.push(metadata);

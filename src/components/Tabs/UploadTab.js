@@ -1,6 +1,8 @@
 import React from 'react';
-import { Upload, Plus, FileText, Trash2 } from 'lucide-react';
+import { Upload, Plus, FileText, Trash2, Music } from 'lucide-react';
 import ExportDropdown from '../Shared/ExportDropdown';
+import AudioUpload from '../Audio/AudioUpload';
+import AudioPlayer from '../Audio/AudioPlayer';
 
 const UploadTab = ({ 
   songs,
@@ -15,7 +17,14 @@ const UploadTab = ({
   handleDragOver,
   handleDragLeave,
   handleDrop,
-  darkMode 
+  darkMode,
+  // Audio-related props
+  onAudioUpload = null,
+  onAudioDownload = null,
+  onAudioRemove = null,
+  onAudioReplace = null,
+  selectedSongForAudio = null,
+  setSelectedSongForAudio = null
 }) => {
   return (
     <div>
@@ -66,6 +75,58 @@ const UploadTab = ({
         </p>
       </div>
 
+      {/* Audio Upload Section */}
+      {songs.length > 0 && onAudioUpload && (
+        <div className="mt-8">
+          <h3 className={`text-lg font-medium mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            Add Audio Files
+          </h3>
+          <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Select a song below to upload an audio file, or upload audio files that will be linked to songs.
+          </p>
+          
+          {/* Audio Upload Component */}
+          {selectedSongForAudio && (
+            <div className={`p-4 rounded-lg border mb-4 ${
+              darkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50 border-blue-200'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Uploading audio for: {selectedSongForAudio.title}
+                  </h4>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Add an audio file to accompany this song
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedSongForAudio && setSelectedSongForAudio(null)}
+                  className={`text-sm px-3 py-1 rounded transition-colors ${
+                    darkMode 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                  }`}
+                >
+                  Cancel
+                </button>
+              </div>
+              
+              <AudioUpload
+                onUploadSuccess={(audioData) => onAudioUpload(selectedSongForAudio.id, audioData)}
+                onUploadError={(error) => console.error('Audio upload error:', error)}
+                darkMode={darkMode}
+                currentAudio={selectedSongForAudio.audioFileUrl ? {
+                  filename: selectedSongForAudio.audioFileName,
+                  size: selectedSongForAudio.audioFileSize,
+                  duration: selectedSongForAudio.audioDuration
+                } : null}
+                allowReplace={!!selectedSongForAudio.audioFileUrl}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Uploaded Songs List */}
       {songs.length > 0 && (
         <div className="mt-8">
@@ -107,13 +168,42 @@ const UploadTab = ({
                             Example
                           </span>
                         )}
+                        {song.audioFileUrl && (
+                          <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+                            darkMode 
+                              ? 'bg-green-900 text-green-200 border border-green-700' 
+                              : 'bg-green-100 text-green-800 border border-green-200'
+                          }`}>
+                            <Music className="w-3 h-3" />
+                            Audio
+                          </span>
+                        )}
                       </div>
                       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {song.wordCount} words • Added {new Date(song.dateAdded).toLocaleDateString()}
+                        {song.audioFileUrl && song.audioDuration && ` • ${Math.floor(song.audioDuration / 60)}:${(song.audioDuration % 60).toFixed(0).padStart(2, '0')} audio`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
+                    {/* Audio button - only show if audio functions are available */}
+                    {onAudioUpload && (
+                      <button
+                        onClick={() => setSelectedSongForAudio && setSelectedSongForAudio(song)}
+                        className={`text-xs md:text-sm px-2 md:px-3 py-1 rounded transition-colors ${
+                          song.audioFileUrl
+                            ? darkMode 
+                              ? 'bg-green-700 hover:bg-green-600 text-green-200' 
+                              : 'bg-green-200 hover:bg-green-300 text-green-700'
+                            : darkMode 
+                              ? 'bg-purple-700 hover:bg-purple-600 text-purple-200' 
+                              : 'bg-purple-200 hover:bg-purple-300 text-purple-700'
+                        }`}
+                        title={song.audioFileUrl ? "Manage audio" : "Add audio"}
+                      >
+                        <Music className="w-3 h-3 md:w-4 md:h-4" style={{ width: '12px', height: '12px' }} />
+                      </button>
+                    )}
                     <button
                       onClick={() => onSongSelect(song)}
                       className={`text-xs md:text-sm px-2 md:px-3 py-1 rounded transition-colors ${
@@ -149,6 +239,24 @@ const UploadTab = ({
                     </button>
                   </div>
                 </div>
+
+                {/* Audio Player - Show if song has audio and it's expanded */}
+                {song.audioFileUrl && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <AudioPlayer
+                      audioUrl={song.audioFileUrl}
+                      audioFilename={song.audioFileName}
+                      audioSize={song.audioFileSize}
+                      audioDuration={song.audioDuration}
+                      darkMode={darkMode}
+                      onDownload={() => onAudioDownload && onAudioDownload(song)}
+                      onRemove={() => onAudioRemove && onAudioRemove(song.id)}
+                      onReplace={() => setSelectedSongForAudio && setSelectedSongForAudio(song)}
+                      showControls={true}
+                      compact={false}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Edit3, Minimize2, Maximize2, Download, Upload, RotateCcw, Plus } from 'lucide-react';
+import AudioPlayer from '../Audio/AudioPlayer';
 
 const FloatingNotepad = ({ 
   notepadState, 
@@ -10,7 +11,12 @@ const FloatingNotepad = ({
   onRevertChanges,
   onStartNewContent,
   hasUnsavedChanges,
-  originalSongContent
+  originalSongContent,
+  // Audio-related props
+  currentSongAudio = null,
+  onAudioDownload = null,
+  onAudioRemove = null,
+  onAudioReplace = null
 }) => {
   const {
     content,
@@ -304,31 +310,53 @@ const FloatingNotepad = ({
 
       {/* Content - Full-size textarea when not minimized */}
       {!isMinimized && (
-        <div style={{ height: 'calc(100% - 49px)', position: 'relative' }}>
-          {/* Text Area - Takes full remaining space, no individual resize */}
-          <textarea
-            value={content}
-            onChange={handleContentChange}
-            placeholder="Start writing your lyrics..."
-            className={`w-full h-full resize-none border-none outline-none text-sm p-3 ${
-              darkMode 
-                ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
-                : 'bg-white text-gray-900 placeholder-gray-400'
-            }`}
-            style={{ 
-              width: '100%', 
-              height: '100%',
-              resize: 'none',
-              border: 'none',
-              outline: 'none'
-            }}
-          />
+        <div style={{ height: 'calc(100% - 49px)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+          {/* Audio Player - Show if current song has audio */}
+          {currentSongAudio && (
+            <div className={`flex-shrink-0 p-3 border-b ${
+              darkMode ? 'border-gray-600' : 'border-gray-200'
+            }`}>
+              <AudioPlayer
+                audioUrl={currentSongAudio.url}
+                audioFilename={currentSongAudio.filename}
+                audioSize={currentSongAudio.size}
+                audioDuration={currentSongAudio.duration}
+                darkMode={darkMode}
+                onDownload={onAudioDownload}
+                onRemove={onAudioRemove}
+                onReplace={onAudioReplace}
+                showControls={true}
+                compact={true}
+              />
+            </div>
+          )}
           
-          {/* Character count - positioned in bottom right corner */}
-          <div className={`absolute bottom-2 right-2 text-xs pointer-events-none ${
-            darkMode ? 'text-gray-500' : 'text-gray-400'
-          }`}>
-            {content.length} chars
+          {/* Text Area - Takes remaining space */}
+          <div className="flex-1 relative">
+            <textarea
+              value={content}
+              onChange={handleContentChange}
+              placeholder="Start writing your lyrics..."
+              className={`w-full h-full resize-none border-none outline-none text-sm p-3 ${
+                darkMode 
+                  ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
+                  : 'bg-white text-gray-900 placeholder-gray-400'
+              }`}
+              style={{ 
+                width: '100%', 
+                height: '100%',
+                resize: 'none',
+                border: 'none',
+                outline: 'none'
+              }}
+            />
+            
+            {/* Character count - positioned in bottom right corner */}
+            <div className={`absolute bottom-2 right-2 text-xs pointer-events-none ${
+              darkMode ? 'text-gray-500' : 'text-gray-400'
+            }`}>
+              {content.length} chars
+            </div>
           </div>
         </div>
       )}
