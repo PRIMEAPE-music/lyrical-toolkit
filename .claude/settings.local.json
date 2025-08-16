@@ -10,7 +10,8 @@
       "Bash(do echo \"Checking $file:\")",
       "Bash(node:*)",
       "Bash(done)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm start)"
     ],
     "defaultMode": "acceptEdits"
   }

@@ -12,6 +12,7 @@ import {
 import { analyzeRhymeStatistics } from './utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from './data/songVocabularyPhoneticMap';
 import { saveUserSongs, loadUserSongs, clearUserSongs, saveExampleSongDeleted, loadExampleSongDeleted, loadAllSongs } from './utils/songStorage';
+import audioStorageService from './services/audioStorageService';
 // Import hooks
 import { useSearchHistory, useDarkMode, useHighlightWord } from './hooks/useLocalStorage';
 import { useFileUpload } from './hooks/useFileUpload';
@@ -44,6 +45,9 @@ const LyricsSearchAppContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('upload');
   const [selectedSong, setSelectedSong] = useState(null);
+  
+  // Audio-related state
+  const [selectedSongForAudio, setSelectedSongForAudio] = useState(null);
   
   // Use custom hooks for localStorage
   const [searchHistory, setSearchHistory] = useSearchHistory();
@@ -593,6 +597,101 @@ const LyricsSearchAppContent = () => {
       });
     }
   };
+
+  // ====================================
+  // AUDIO HANDLERS
+  // ====================================
+
+  const handleAudioUpload = async (songId, audioData) => {
+    try {
+      console.log('Uploading audio for song:', songId, audioData);
+      
+      // Update the song with audio metadata
+      const updatedSongs = songs.map(song => {
+        if (song.id === songId) {
+          return {
+            ...song,
+            audioFileUrl: audioData.url,
+            audioFileName: audioData.filename,
+            audioFileSize: audioData.size,
+            audioDuration: audioData.duration
+          };
+        }
+        return song;
+      });
+      
+      setSongs(updatedSongs);
+      
+      // Save to localStorage/backend if authenticated
+      if (isAuthenticated) {
+        await saveUserSongs(updatedSongs);
+      }
+      
+      // Clear selection
+      setSelectedSongForAudio(null);
+      
+      console.log('Audio uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      alert('Failed to upload audio file. Please try again.');
+    }
+  };
+
+  const handleAudioDownload = async (song) => {
+    try {
+      if (!song.audioFileUrl) return;
+      
+      const filePath = audioStorageService.extractFilePathFromUrl(song.audioFileUrl);
+      if (filePath) {
+        await audioStorageService.downloadAudioFile(filePath, song.audioFileName);
+      }
+    } catch (error) {
+      console.error('Error downloading audio:', error);
+      alert('Failed to download audio file.');
+    }
+  };
+
+  const handleAudioRemove = async (songId) => {
+    try {
+      const song = songs.find(s => s.id === songId);
+      if (!song || !song.audioFileUrl) return;
+      
+      const confirmDelete = window.confirm('Are you sure you want to remove this audio file?');
+      if (!confirmDelete) return;
+      
+      // Delete from storage
+      const filePath = audioStorageService.extractFilePathFromUrl(song.audioFileUrl);
+      if (filePath) {
+        await audioStorageService.deleteAudioFile(filePath);
+      }
+      
+      // Update the song to remove audio metadata
+      const updatedSongs = songs.map(s => {
+        if (s.id === songId) {
+          return {
+            ...s,
+            audioFileUrl: null,
+            audioFileName: null,
+            audioFileSize: null,
+            audioDuration: null
+          };
+        }
+        return s;
+      });
+      
+      setSongs(updatedSongs);
+      
+      // Save to localStorage/backend if authenticated
+      if (isAuthenticated) {
+        await saveUserSongs(updatedSongs);
+      }
+      
+      console.log('Audio removed successfully');
+    } catch (error) {
+      console.error('Error removing audio:', error);
+      alert('Failed to remove audio file.');
+    }
+  };
   
   const themeClasses = darkMode 
     ? 'dark bg-gray-900 text-white' 
@@ -803,6 +902,13 @@ const LyricsSearchAppContent = () => {
                 handleDragLeave={fileUploadHook.handleDragLeave}
                 handleDrop={fileUploadHook.handleDrop}
                 darkMode={darkMode}
+                // Audio-related props
+                onAudioUpload={handleAudioUpload}
+                onAudioDownload={handleAudioDownload}
+                onAudioRemove={handleAudioRemove}
+                onAudioReplace={(song) => setSelectedSongForAudio(song)}
+                selectedSongForAudio={selectedSongForAudio}
+                setSelectedSongForAudio={setSelectedSongForAudio}
               />
             )}
 
@@ -842,6 +948,27 @@ const LyricsSearchAppContent = () => {
         onStartNewContent={handleStartNewContent}
         hasUnsavedChanges={hasUnsavedChanges}
         originalSongContent={originalSongContent}
+        // Audio-related props
+        currentSongAudio={(() => {
+          const currentSong = songs.find(s => s.id === notepadState.currentEditingSongId);
+          return currentSong && currentSong.audioFileUrl ? {
+            url: currentSong.audioFileUrl,
+            filename: currentSong.audioFileName,
+            size: currentSong.audioFileSize,
+            duration: currentSong.audioDuration
+          } : null;
+        })()}
+        onAudioDownload={() => {
+          const currentSong = songs.find(s => s.id === notepadState.currentEditingSongId);
+          if (currentSong) handleAudioDownload(currentSong);
+        }}
+        onAudioRemove={() => {
+          if (notepadState.currentEditingSongId) handleAudioRemove(notepadState.currentEditingSongId);
+        }}
+        onAudioReplace={() => {
+          const currentSong = songs.find(s => s.id === notepadState.currentEditingSongId);
+          if (currentSong) setSelectedSongForAudio(currentSong);
+        }}
       />
     </div>
   );
