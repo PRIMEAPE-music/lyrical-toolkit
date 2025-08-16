@@ -1,6 +1,15 @@
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
 const { getSupabaseClient } = require('./supabase-client');
 
+// ID format detection functions
+function isTimestampId(id) {
+    return id && /^\d+(\.\d+)?$/.test(String(id));
+}
+
+function isUUID(id) {
+    return id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
+}
+
 // Helper function to authenticate user from JWT
 function authenticateRequest(event) {
     const authHeader = event.headers.authorization;
@@ -81,7 +90,7 @@ const SongOperations = {
         const supabase = getSupabaseClient();
         const parsed = parseSongContent(songData.content, songData.filename || songData.title);
         
-        // Check if custom ID is provided, otherwise let Supabase generate UUID
+        // Only use custom ID if it's a valid UUID format
         const songRecord = {
             user_id: userId,
             title: songData.title || parsed.title,
@@ -91,10 +100,11 @@ const SongOperations = {
             line_count: parsed.lineCount
         };
 
-        // If specific ID is provided (for backward compatibility), try to use it
-        if (songId) {
+        // Only set custom ID if it's a valid UUID (not timestamp or other format)
+        if (songId && isUUID(songId)) {
             songRecord.id = songId;
         }
+        // For timestamp IDs or other formats, let Supabase generate UUID
 
         const { data, error } = await supabase
             .from('songs')
@@ -299,7 +309,14 @@ exports.handler = async (event, context) => {
                         };
                     }
                     
-                    const newSong = await SongOperations.create(userId, songId, { title, content: songContent, filename });
+                    // Determine if we should use the songId or let database generate UUID
+                    let actualSongId = null;
+                    if (songId && isUUID(songId)) {
+                        actualSongId = songId; // Use UUID ID
+                    }
+                    // For timestamp IDs or other formats, pass null to generate new UUID
+                    
+                    const newSong = await SongOperations.create(userId, actualSongId, { title, content: songContent, filename });
                     
                     // Transform database format to API format for backward compatibility
                     const response = {

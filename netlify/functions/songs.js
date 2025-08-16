@@ -1,6 +1,15 @@
 const { verifyJWT, getCorsHeaders, JWT_SECRET } = require('./shared-storage');
 const { getSupabaseClient } = require('./supabase-client');
 
+// ID format detection functions
+function isTimestampId(id) {
+    return id && /^\d+(\.\d+)?$/.test(String(id));
+}
+
+function isUUID(id) {
+    return id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
+}
+
 // Helper function to authenticate user from JWT
 function authenticateRequest(event) {
     const authHeader = event.headers.authorization;
@@ -229,15 +238,29 @@ exports.handler = async (event, context) => {
                         
                         try {
                             let savedSong;
-                            const songData = { title, content: songContent, filename };
+                            const songData = { title, content: songContent, filename, dateAdded: song.dateAdded };
                             
-                            if (id) {
-                                // Convert ID to string for compatibility with both timestamp and UUID formats
-                                const songId = String(id);
-                                savedSong = await SongOperations.update(userId, songId, songData);
+                            // Determine action based on ID format
+                            if (id && isUUID(id)) {
+                                // UUID ID: Try to update existing song
+                                console.log(`Updating existing song with UUID: ${id}`);
+                                try {
+                                    savedSong = await SongOperations.update(userId, id, songData);
+                                } catch (updateError) {
+                                    // If update fails, create new song
+                                    console.warn(`Update failed for UUID ${id}, creating new song:`, updateError.message);
+                                    savedSong = await SongOperations.create(userId, songData);
+                                }
                             } else {
-                                // Create new song
-                                savedSong = await SongOperations.create(userId, { ...songData, dateAdded: song.dateAdded });
+                                // No ID, timestamp ID, or other format: Create new song
+                                if (id && isTimestampId(id)) {
+                                    console.log(`Creating new song for timestamp ID: ${id}`);
+                                } else if (id) {
+                                    console.log(`Creating new song for unknown ID format: ${id}`);
+                                } else {
+                                    console.log('Creating new song without ID');
+                                }
+                                savedSong = await SongOperations.create(userId, songData);
                             }
                             
                             // Transform to API format with both content and lyrics fields
@@ -256,7 +279,7 @@ exports.handler = async (event, context) => {
                             
                             savedSongs.push(metadata);
                         } catch (songError) {
-                            console.warn(`Failed to save song "${title}":`, songError);
+                            console.warn(`Failed to save song "${title}":`, songError.message);
                         }
                     }
                     
