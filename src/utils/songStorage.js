@@ -104,6 +104,20 @@ export const loadExampleSong = async () => {
   }
 };
 
+// Check if user should see example song
+const shouldShowExampleSong = (userSongsCount = 0) => {
+  const isDeleted = loadExampleSongDeleted();
+  
+  // If user has no songs, always show example regardless of deletion state
+  // (deletion only matters when user has uploaded their own songs)
+  if (userSongsCount === 0) {
+    return true;
+  }
+  
+  // If user has songs, respect their deletion preference
+  return !isDeleted;
+};
+
 // Load user songs from the server
 export const loadUserSongs = async (includeExample = true) => {
   let userSongs = [];
@@ -135,13 +149,14 @@ export const loadUserSongs = async (includeExample = true) => {
     // On auth errors, don't return early - fall through to example logic
   }
   
+  
   // If user has their own songs, return them without example
   if (userSongs.length > 0) {
     return userSongs;
   }
   
-  // If no user songs and example is requested, check if example was deleted
-  if (includeExample && !loadExampleSongDeleted()) {
+  // If no user songs and example is requested, check if we should show example
+  if (includeExample && shouldShowExampleSong(userSongs.length)) {
     const exampleSong = await loadExampleSong();
     if (exampleSong) {
       return [exampleSong];
@@ -153,29 +168,19 @@ export const loadUserSongs = async (includeExample = true) => {
 
 // Load songs for unauthenticated users (example song only)
 export const loadSongsForUnauthenticated = async () => {
-  // Check if user deleted the example song
-  const isDeleted = loadExampleSongDeleted();
-  console.log('Example song deleted status:', isDeleted);
-  if (isDeleted) {
-    return [];
-  }
-  
+  // For unauthenticated users, always show example song
   const exampleSong = await loadExampleSong();
-  console.log('Loaded example song:', exampleSong);
   return exampleSong ? [exampleSong] : [];
 };
 
 // Universal song loading function that handles both authenticated and unauthenticated states
 export const loadAllSongs = async (isAuthenticated = false) => {
-  console.log('loadAllSongs called with isAuthenticated:', isAuthenticated);
   if (!isAuthenticated) {
-    // For unauthenticated users, only show example if not deleted
-    console.log('Loading songs for unauthenticated user');
+    // For unauthenticated users, always show example
     return await loadSongsForUnauthenticated();
   }
   
   // For authenticated users, load their songs with example fallback
-  console.log('Loading songs for authenticated user');
   return await loadUserSongs(true);
 };
 
