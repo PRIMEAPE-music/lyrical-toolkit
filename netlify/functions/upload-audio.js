@@ -1,75 +1,34 @@
+// Simplified Audio Upload Function with Enhanced Error Handling
 const { createClient } = require('@supabase/supabase-js');
-const multipart = require('lambda-multipart-parser');
 
-// Initialize Supabase client with service key (bypasses RLS)
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase environment variables');
-  console.error('SUPABASE_URL:', !!supabaseUrl);
-  console.error('SUPABASE_SERVICE_KEY:', !!supabaseServiceKey);
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Audio configuration
-const AUDIO_CONFIG = {
-  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB
-  ALLOWED_TYPES: [
-    'audio/mpeg',
-    'audio/mp3', 
-    'audio/wav',
-    'audio/m4a',
-    'audio/mp4',
-    'audio/x-m4a'
-  ],
-  BUCKET_NAME: 'audio-files'
-};
-
-// Generate file path for user's audio file
-const generateAudioFilePath = (userId, filename) => {
-  // Sanitize filename
-  const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-  const timestamp = Date.now();
-  return `${userId}/${timestamp}_${sanitized}`;
-};
-
-// Validate audio file
-const validateAudioFile = (file) => {
-  const errors = [];
-  
-  // Check file size
-  if (file.content.length > AUDIO_CONFIG.MAX_FILE_SIZE) {
-    errors.push(`File size must be less than ${AUDIO_CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+// Simple multipart parser fallback if lambda-multipart-parser fails
+const parseMultipart = async (event) => {
+  try {
+    const multipart = require('lambda-multipart-parser');
+    return await multipart.parse(event);
+  } catch (error) {
+    console.error('❌ Multipart parsing failed:', error);
+    throw new Error('Failed to parse multipart data: ' + error.message);
   }
-  
-  // Check MIME type
-  if (!AUDIO_CONFIG.ALLOWED_TYPES.includes(file.contentType)) {
-    errors.push(`File type must be one of: ${AUDIO_CONFIG.ALLOWED_TYPES.join(', ')}`);
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
 };
 
 exports.handler = async (event, context) => {
-  console.log('🎵 === AUDIO UPLOAD NETLIFY FUNCTION START ===');
-  console.log('Method:', event.httpMethod);
-  console.log('Headers:', JSON.stringify(event.headers, null, 2));
+  console.log('🎵 === SIMPLIFIED AUDIO UPLOAD FUNCTION START ===');
+  console.log('⏰ Timestamp:', new Date().toISOString());
+  console.log('🌐 Method:', event.httpMethod);
+  console.log('📍 Path:', event.path);
   
-  // CORS headers
+  // Enhanced CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
     'Content-Type': 'application/json'
   };
   
-  // Handle preflight requests
+  // Handle preflight
   if (event.httpMethod === 'OPTIONS') {
+    console.log('✅ Handling OPTIONS preflight request');
     return {
       statusCode: 200,
       headers,
@@ -78,147 +37,248 @@ exports.handler = async (event, context) => {
   }
   
   if (event.httpMethod !== 'POST') {
+    console.log('❌ Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
+      body: JSON.stringify({ error: `Method ${event.httpMethod} not allowed` })
     };
   }
   
   try {
-    console.log('📤 Processing file upload...');
+    // Step 1: Check Environment Variables
+    console.log('🔍 === STEP 1: ENVIRONMENT VARIABLES ===');
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
     
-    // Parse multipart form data
-    const result = await multipart.parse(event);
-    console.log('📋 Parsed form fields:', Object.keys(result));
+    console.log('SUPABASE_URL present:', !!supabaseUrl);
+    console.log('SUPABASE_SERVICE_KEY present:', !!supabaseServiceKey);
     
-    if (!result.file) {
-      console.error('❌ No file found in request');
+    if (supabaseUrl) {
+      console.log('SUPABASE_URL starts with:', supabaseUrl.substring(0, 20));
+    }
+    if (supabaseServiceKey) {
+      console.log('SUPABASE_SERVICE_KEY starts with:', supabaseServiceKey.substring(0, 20));
+    }
+    
+    // Check for placeholder values
+    if (!supabaseUrl || supabaseUrl.includes('your-supabase-url-here') || supabaseUrl.includes('placeholder')) {
+      console.error('❌ SUPABASE_URL is missing or contains placeholder');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Server configuration error: SUPABASE_URL not properly configured',
+          debug: 'Environment variable contains placeholder or is missing'
+        })
+      };
+    }
+    
+    if (!supabaseServiceKey || supabaseServiceKey.includes('your-service-key-here') || supabaseServiceKey.includes('placeholder')) {
+      console.error('❌ SUPABASE_SERVICE_KEY is missing or contains placeholder');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Server configuration error: SUPABASE_SERVICE_KEY not properly configured',
+          debug: 'Environment variable contains placeholder or is missing'
+        })
+      };
+    }
+    
+    console.log('✅ Environment variables validated');
+    
+    // Step 2: Initialize Supabase Client
+    console.log('🔍 === STEP 2: SUPABASE CLIENT ===');
+    let supabase;
+    try {
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      console.log('✅ Supabase client created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create Supabase client:', error);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Failed to initialize storage client',
+          details: error.message 
+        })
+      };
+    }
+    
+    // Step 3: Test Supabase Connection
+    console.log('🔍 === STEP 3: SUPABASE CONNECTION TEST ===');
+    try {
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      if (bucketsError) {
+        console.error('❌ Supabase connection failed:', bucketsError);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Storage connection failed',
+            details: bucketsError.message,
+            code: bucketsError.code
+          })
+        };
+      }
+      console.log('✅ Supabase connection successful');
+      console.log('📂 Available buckets:', buckets ? buckets.map(b => b.name) : 'none');
+    } catch (error) {
+      console.error('❌ Supabase connection test failed:', error);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Storage connection test failed',
+          details: error.message 
+        })
+      };
+    }
+    
+    // Step 4: Parse Request
+    console.log('🔍 === STEP 4: PARSE REQUEST ===');
+    console.log('Content-Type:', event.headers['content-type'] || event.headers['Content-Type']);
+    console.log('Body length:', event.body ? event.body.length : 0);
+    console.log('Is base64:', event.isBase64Encoded);
+    
+    let result;
+    try {
+      result = await parseMultipart(event);
+      console.log('✅ Multipart parsing successful');
+      console.log('📋 Parsed fields:', Object.keys(result));
+    } catch (error) {
+      console.error('❌ Request parsing failed:', error);
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'No file provided' })
+        body: JSON.stringify({ 
+          error: 'Failed to parse upload request',
+          details: error.message 
+        })
+      };
+    }
+    
+    // Step 5: Validate File
+    console.log('🔍 === STEP 5: FILE VALIDATION ===');
+    if (!result.file) {
+      console.error('❌ No file found in request');
+      console.log('Available fields:', Object.keys(result));
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ 
+          error: 'No file provided in request',
+          availableFields: Object.keys(result)
+        })
       };
     }
     
     const file = result.file;
     const userId = result.userId || 'anonymous';
-    const filename = result.filename || file.filename;
+    const filename = result.filename || file.filename || 'unknown.mp3';
     
     console.log('📄 File details:', {
       filename: filename,
       contentType: file.contentType,
-      size: file.content.length,
+      size: file.content ? file.content.length : 'unknown',
       userId: userId
     });
     
-    // Validate file
-    const validation = validateAudioFile(file);
-    if (!validation.isValid) {
-      console.error('❌ File validation failed:', validation.errors);
+    if (!file.content || file.content.length === 0) {
+      console.error('❌ File content is empty');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ 
-          error: 'File validation failed',
-          details: validation.errors 
-        })
+        body: JSON.stringify({ error: 'File content is empty' })
       };
     }
     
     console.log('✅ File validation passed');
     
-    // Check if bucket exists, create if it doesn't
-    console.log('🗂️ Checking bucket...');
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    if (bucketsError) {
-      console.error('❌ Failed to list buckets:', bucketsError);
-      throw bucketsError;
-    }
+    // Step 6: Simple Upload
+    console.log('🔍 === STEP 6: UPLOAD TO STORAGE ===');
+    const bucketName = 'audio-files';
+    const timestamp = Date.now();
+    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = `${userId}/${timestamp}_${sanitizedFilename}`;
     
-    console.log('📂 Available buckets:', buckets.map(b => b.name));
+    console.log('📁 Upload path:', filePath);
+    console.log('🗂️ Bucket:', bucketName);
     
-    const audioFilesBucket = buckets.find(b => b.name === AUDIO_CONFIG.BUCKET_NAME);
-    if (!audioFilesBucket) {
-      console.log('🆕 Creating audio-files bucket...');
-      const { data: newBucket, error: createError } = await supabase.storage.createBucket(AUDIO_CONFIG.BUCKET_NAME, {
-        public: true,
-        allowedMimeTypes: AUDIO_CONFIG.ALLOWED_TYPES,
-        fileSizeLimit: AUDIO_CONFIG.MAX_FILE_SIZE
-      });
-      if (createError) {
-        console.error('❌ Failed to create bucket:', createError);
-        throw createError;
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file.content, {
+          contentType: file.contentType || 'audio/mpeg',
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (uploadError) {
+        console.error('❌ Upload failed:', uploadError);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ 
+            error: 'File upload failed',
+            details: uploadError.message,
+            code: uploadError.code
+          })
+        };
       }
-      console.log('✅ Created audio-files bucket');
-    } else {
-      console.log('✅ Audio-files bucket exists');
-    }
-    
-    // Generate file path
-    const filePath = generateAudioFilePath(userId, filename);
-    console.log('📁 Generated file path:', filePath);
-    
-    // Upload file to Supabase Storage
-    console.log('📤 Uploading to Supabase Storage...');
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(AUDIO_CONFIG.BUCKET_NAME)
-      .upload(filePath, file.content, {
-        contentType: file.contentType,
-        cacheControl: '3600',
-        upsert: false
-      });
-    
-    if (uploadError) {
-      console.error('❌ Supabase Storage upload error:', uploadError);
+      
+      console.log('✅ Upload successful!');
+      console.log('📄 Upload result:', uploadData);
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+      
+      console.log('🔗 Public URL:', publicUrl);
+      
+      const responseData = {
+        success: true,
+        publicUrl: publicUrl,
+        filePath: filePath,
+        filename: filename,
+        size: file.content.length,
+        contentType: file.contentType
+      };
+      
+      console.log('🎉 === UPLOAD COMPLETED SUCCESSFULLY ===');
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(responseData)
+      };
+      
+    } catch (uploadError) {
+      console.error('❌ Upload exception:', uploadError);
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: 'Upload failed',
+          error: 'Upload operation failed',
           details: uploadError.message 
         })
       };
     }
     
-    console.log('✅ Upload successful!');
-    console.log('📄 Upload data:', uploadData);
-    
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from(AUDIO_CONFIG.BUCKET_NAME)
-      .getPublicUrl(filePath);
-    
-    console.log('🔗 Generated public URL:', publicUrl);
-    
-    const responseData = {
-      success: true,
-      publicUrl: publicUrl,
-      filePath: filePath,
-      filename: filename,
-      size: file.content.length,
-      contentType: file.contentType,
-      uploadData: uploadData
-    };
-    
-    console.log('🎉 Upload completed successfully!');
-    console.log('📊 Response data:', responseData);
-    console.log('🎵 === AUDIO UPLOAD NETLIFY FUNCTION END ===');
-    
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify(responseData)
-    };
-    
   } catch (error) {
-    console.error('❌ Upload function error:', error);
+    console.error('❌ === FUNCTION ERROR ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message 
+        details: error.message,
+        timestamp: new Date().toISOString()
       })
     };
   }
