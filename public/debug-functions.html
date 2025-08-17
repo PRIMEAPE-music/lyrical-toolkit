@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Debug Tool</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .success { background: #f0f9ff; border-color: #0ea5e9; }
+        .error { background: #fef2f2; border-color: #ef4444; }
+        .warning { background: #fffbeb; border-color: #f59e0b; }
+        button {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+        }
+        button:hover { background: #0284c7; }
+        button:disabled { 
+            background: #9ca3af; 
+            cursor: not-allowed; 
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        #status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            display: none;
+        }
+        .url-test {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Netlify Functions Debug Tool</h1>
+        <p>This tool tests if Netlify functions are accessible and working properly.</p>
+        
+        <div class="test-section">
+            <h2>Step 1: Test Function URLs</h2>
+            <p>Testing different possible function endpoints...</p>
+            <button onclick="testFunctionUrls()">Test All URLs</button>
+            <div id="url-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 2: Test Hello Function</h2>
+            <p>Test basic function connectivity with simple hello function.</p>
+            <button onclick="testHelloFunction()">Test Hello</button>
+            <div id="hello-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 3: Test Connection Function</h2>
+            <p>Test Supabase connection through function.</p>
+            <button onclick="testConnectionFunction()">Test Connection</button>
+            <div id="connection-result"></div>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div class="test-section">
+            <h2>Current Environment</h2>
+            <pre id="debug-info">Loading...</pre>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            status.className = type;
+            status.innerHTML = message;
+        }
+
+        async function testUrl(url, description) {
+            try {
+                console.log(`Testing ${description}: ${url}`);
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const responseText = await response.text();
+                
+                return {
+                    url,
+                    description,
+                    status: response.status,
+                    ok: response.ok,
+                    isJson,
+                    contentType: response.headers.get('content-type'),
+                    response: isJson ? JSON.parse(responseText) : responseText.substring(0, 200),
+                    success: response.ok && isJson
+                };
+            } catch (error) {
+                return {
+                    url,
+                    description,
+                    error: error.message,
+                    success: false
+                };
+            }
+        }
+
+        async function testFunctionUrls() {
+            showStatus('🔍 Testing function URLs...', 'warning');
+            const urlResults = document.getElementById('url-results');
+            
+            const testUrls = [
+                // Netlify dev server URLs
+                { url: 'http://localhost:8888/.netlify/functions/hello', desc: 'Netlify Dev - Hello' },
+                { url: 'http://localhost:8888/.netlify/functions/test-audio-connection', desc: 'Netlify Dev - Connection Test' },
+                // Direct function URLs
+                { url: 'http://localhost:3000/.netlify/functions/hello', desc: 'Direct - Hello' },
+                { url: 'http://localhost:3000/.netlify/functions/test-audio-connection', desc: 'Direct - Connection Test' },
+                // Alternative ports
+                { url: 'http://localhost:9999/.netlify/functions/hello', desc: 'Port 9999 - Hello' },
+                { url: 'http://localhost:8000/.netlify/functions/hello', desc: 'Port 8000 - Hello' },
+            ];
+            
+            let html = '<h3>URL Test Results:</h3>';
+            let anySuccess = false;
+            
+            for (const test of testUrls) {
+                const result = await testUrl(test.url, test.desc);
+                
+                if (result.success) {
+                    anySuccess = true;
+                    html += `<div class="url-test success">✅ ${result.description}<br><strong>URL:</strong> ${result.url}<br><strong>Response:</strong> ${JSON.stringify(result.response, null, 2)}</div>`;
+                } else if (result.error) {
+                    html += `<div class="url-test error">❌ ${result.description}<br><strong>URL:</strong> ${result.url}<br><strong>Error:</strong> ${result.error}</div>`;
+                } else {
+                    html += `<div class="url-test warning">⚠️ ${result.description}<br><strong>URL:</strong> ${result.url}<br><strong>Status:</strong> ${result.status}<br><strong>Content-Type:</strong> ${result.contentType}<br><strong>Response Preview:</strong> ${result.response}</div>`;
+                }
+            }
+            
+            if (anySuccess) {
+                showStatus('✅ Found working function endpoints!', 'success');
+            } else {
+                showStatus('❌ No working function endpoints found. Netlify dev server may not be running.', 'error');
+            }
+            
+            urlResults.innerHTML = html;
+        }
+
+        async function testHelloFunction() {
+            showStatus('🔍 Testing hello function...', 'warning');
+            const resultDiv = document.getElementById('hello-result');
+            
+            const testUrls = [
+                'http://localhost:8888/.netlify/functions/hello',
+                'http://localhost:3000/.netlify/functions/hello'
+            ];
+            
+            for (const url of testUrls) {
+                try {
+                    const response = await fetch(url);
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                <h3>✅ Hello Function Works!</h3>
+                                <p><strong>URL:</strong> ${url}</p>
+                                <pre>${JSON.stringify(result, null, 2)}</pre>
+                            </div>
+                        `;
+                        showStatus('✅ Hello function is working!', 'success');
+                        return;
+                    }
+                } catch (error) {
+                    console.log(`Failed to reach ${url}:`, error);
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="error">
+                    <h3>❌ Hello Function Failed</h3>
+                    <p>Could not reach hello function on any URL. Netlify dev server may not be running.</p>
+                    <p><strong>To fix:</strong> Run <code>npx netlify dev</code> in terminal</p>
+                </div>
+            `;
+            showStatus('❌ Hello function not accessible.', 'error');
+        }
+
+        async function testConnectionFunction() {
+            showStatus('🔍 Testing connection function...', 'warning');
+            const resultDiv = document.getElementById('connection-result');
+            
+            const testUrls = [
+                'http://localhost:8888/.netlify/functions/test-audio-connection',
+                'http://localhost:3000/.netlify/functions/test-audio-connection'
+            ];
+            
+            for (const url of testUrls) {
+                try {
+                    const response = await fetch(url);
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                <h3>✅ Connection Test Passed!</h3>
+                                <p><strong>URL:</strong> ${url}</p>
+                                <pre>${JSON.stringify(result, null, 2)}</pre>
+                            </div>
+                        `;
+                        showStatus('✅ Connection test successful!', 'success');
+                        return;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="error">
+                                <h3>❌ Connection Test Failed</h3>
+                                <p><strong>URL:</strong> ${url}</p>
+                                <pre>${JSON.stringify(result, null, 2)}</pre>
+                            </div>
+                        `;
+                        showStatus('❌ Connection test failed.', 'error');
+                        return;
+                    }
+                } catch (error) {
+                    console.log(`Failed to reach ${url}:`, error);
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="error">
+                    <h3>❌ Connection Function Not Accessible</h3>
+                    <p>Could not reach connection test function on any URL.</p>
+                </div>
+            `;
+            showStatus('❌ Connection function not accessible.', 'error');
+        }
+
+        // Initialize debug info
+        document.addEventListener('DOMContentLoaded', function() {
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.textContent = `
+Environment Check:
+- Current URL: ${window.location.href}
+- User Agent: ${navigator.userAgent}
+- Current Time: ${new Date().toISOString()}
+- Fetch Support: ${window.fetch ? 'Yes' : 'No'}
+
+Next Steps:
+1. Make sure Netlify dev server is running: npx netlify dev
+2. Check if functions are accessible on port 8888
+3. Verify environment variables are set correctly
+            `;
+        });
+    </script>
+</body>
+</html>

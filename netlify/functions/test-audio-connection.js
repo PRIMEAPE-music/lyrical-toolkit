@@ -1,177 +1,134 @@
-// Test function to verify Supabase connection and environment variables
-const { createClient } = require('@supabase/supabase-js');
-
+// Simple test function to verify Supabase connection
 exports.handler = async (event, context) => {
   console.log('🧪 === AUDIO CONNECTION TEST START ===');
   
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Content-Type': 'application/json'
   };
   
   if (event.httpMethod === 'OPTIONS') {
+    console.log('✅ Handling OPTIONS request');
     return { statusCode: 200, headers, body: '' };
   }
   
-  const testResults = {
-    timestamp: new Date().toISOString(),
-    environment: {},
-    supabase: {},
-    storage: {}
-  };
-  
   try {
-    // Test 1: Environment Variables
-    console.log('🔍 Testing environment variables...');
+    // Test 1: Basic function works
+    console.log('✅ Function is running');
+    
+    // Test 2: Environment Variables
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
     
-    testResults.environment = {
-      SUPABASE_URL: {
-        present: !!supabaseUrl,
-        isPlaceholder: supabaseUrl ? supabaseUrl.includes('your-supabase-url-here') : true,
-        startsWithHTTPS: supabaseUrl ? supabaseUrl.startsWith('https://') : false,
-        preview: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING'
-      },
-      SUPABASE_SERVICE_KEY: {
-        present: !!supabaseServiceKey,
-        isPlaceholder: supabaseServiceKey ? supabaseServiceKey.includes('your-service-key-here') : true,
-        startsWithEy: supabaseServiceKey ? supabaseServiceKey.startsWith('ey') : false,
-        preview: supabaseServiceKey ? supabaseServiceKey.substring(0, 20) + '...' : 'MISSING'
-      }
+    console.log('SUPABASE_URL present:', !!supabaseUrl);
+    console.log('SUPABASE_SERVICE_KEY present:', !!supabaseServiceKey);
+    
+    const envTest = {
+      supabaseUrlPresent: !!supabaseUrl,
+      supabaseServiceKeyPresent: !!supabaseServiceKey,
+      supabaseUrlValid: supabaseUrl && supabaseUrl.startsWith('https://') && !supabaseUrl.includes('your-supabase-url-here'),
+      supabaseServiceKeyValid: supabaseServiceKey && supabaseServiceKey.startsWith('ey') && !supabaseServiceKey.includes('your-service-key-here')
     };
     
-    if (!supabaseUrl || testResults.environment.SUPABASE_URL.isPlaceholder) {
-      testResults.environment.error = 'SUPABASE_URL is missing or contains placeholder';
-      console.error('❌', testResults.environment.error);
-    }
-    
-    if (!supabaseServiceKey || testResults.environment.SUPABASE_SERVICE_KEY.isPlaceholder) {
-      testResults.environment.error = 'SUPABASE_SERVICE_KEY is missing or contains placeholder';
-      console.error('❌', testResults.environment.error);
-    }
-    
-    if (testResults.environment.error) {
+    if (!envTest.supabaseUrlValid || !envTest.supabaseServiceKeyValid) {
+      console.log('❌ Environment variables not properly configured');
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({
-          error: 'Environment configuration error',
-          testResults,
-          fix: 'Update your .env file with real Supabase credentials'
+          success: false,
+          error: 'Environment variables not properly configured',
+          envTest,
+          message: 'Check your .env file and ensure Supabase credentials are set correctly'
         })
       };
     }
     
-    console.log('✅ Environment variables validated');
-    
-    // Test 2: Supabase Client Creation
-    console.log('🔍 Testing Supabase client creation...');
+    // Test 3: Try to load Supabase client
     let supabase;
     try {
+      const { createClient } = require('@supabase/supabase-js');
       supabase = createClient(supabaseUrl, supabaseServiceKey);
-      testResults.supabase.clientCreated = true;
       console.log('✅ Supabase client created');
     } catch (error) {
-      testResults.supabase.clientCreated = false;
-      testResults.supabase.error = error.message;
-      console.error('❌ Supabase client creation failed:', error);
-      
+      console.error('❌ Failed to create Supabase client:', error);
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({
+          success: false,
           error: 'Failed to create Supabase client',
-          testResults
+          details: error.message,
+          envTest
         })
       };
     }
     
-    // Test 3: Storage Connection
-    console.log('🔍 Testing storage connection...');
+    // Test 4: Test Supabase connection
     try {
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
-        testResults.storage.connectionFailed = true;
-        testResults.storage.error = bucketsError.message;
-        testResults.storage.errorCode = bucketsError.code;
-        console.error('❌ Storage connection failed:', bucketsError);
-        
+        console.error('❌ Supabase connection failed:', bucketsError);
         return {
           statusCode: 500,
           headers,
           body: JSON.stringify({
-            error: 'Storage connection failed',
-            testResults,
-            supabaseError: bucketsError
+            success: false,
+            error: 'Supabase connection failed',
+            details: bucketsError.message,
+            code: bucketsError.code,
+            envTest
           })
         };
       }
       
-      testResults.storage.connectionSuccessful = true;
-      testResults.storage.bucketsFound = buckets ? buckets.length : 0;
-      testResults.storage.bucketNames = buckets ? buckets.map(b => b.name) : [];
-      
-      console.log('✅ Storage connection successful');
-      console.log('📂 Found buckets:', testResults.storage.bucketNames);
-      
-      // Test 4: Audio Files Bucket
+      console.log('✅ Supabase connection successful');
       const audioFilesBucket = buckets?.find(b => b.name === 'audio-files');
-      testResults.storage.audioFilesBucketExists = !!audioFilesBucket;
       
-      if (!audioFilesBucket) {
-        console.log('⚠️ audio-files bucket does not exist (will be created on first upload)');
-        testResults.storage.note = 'audio-files bucket will be created automatically on first upload';
-      } else {
-        console.log('✅ audio-files bucket exists');
-      }
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          message: 'All tests passed!',
+          envTest,
+          supabaseTest: {
+            connectionSuccessful: true,
+            bucketsFound: buckets?.length || 0,
+            bucketNames: buckets?.map(b => b.name) || [],
+            audioFilesBucketExists: !!audioFilesBucket
+          },
+          timestamp: new Date().toISOString()
+        })
+      };
       
     } catch (error) {
-      testResults.storage.connectionFailed = true;
-      testResults.storage.error = error.message;
-      console.error('❌ Storage test failed:', error);
-      
+      console.error('❌ Supabase test failed:', error);
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({
-          error: 'Storage test failed',
-          testResults
+          success: false,
+          error: 'Supabase test failed',
+          details: error.message,
+          envTest
         })
       };
     }
     
-    console.log('🎉 All tests passed!');
-    
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'All audio upload prerequisites verified',
-        testResults,
-        nextSteps: [
-          'Environment variables are properly configured',
-          'Supabase client can be created',
-          'Storage connection is working',
-          'Ready for audio file uploads'
-        ]
-      })
-    };
-    
   } catch (error) {
-    console.error('❌ Test function error:', error);
-    
+    console.error('❌ Function error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: 'Test function failed',
+        success: false,
+        error: 'Function error',
         details: error.message,
-        testResults
+        stack: error.stack
       })
     };
   }

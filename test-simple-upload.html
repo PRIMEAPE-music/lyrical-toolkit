@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Audio Upload Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; }
+        .result { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #fee; border: 1px solid #faa; }
+        .success { background: #efe; border: 1px solid #afa; }
+    </style>
+</head>
+<body>
+    <h1>🎵 Simple Audio Upload Test</h1>
+    
+    <div>
+        <h2>1. Test Hello Function</h2>
+        <button onclick="testHello()">Test Hello</button>
+        <div id="hello-result" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>2. Test Connection</h2>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connection-result" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>3. Test Audio Upload</h2>
+        <input type="file" id="audioFile" accept="audio/*" />
+        <button onclick="testUpload()">Upload Audio</button>
+        <div id="upload-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testHello() {
+            const result = document.getElementById('hello-result');
+            try {
+                const response = await fetch('http://localhost:8888/.netlify/functions/hello');
+                const data = await response.json();
+                result.className = 'result success';
+                result.innerHTML = '<h3>✅ Hello Function Works</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = '<h3>❌ Hello Function Failed</h3><p>' + error.message + '</p>';
+            }
+        }
+
+        async function testConnection() {
+            const result = document.getElementById('connection-result');
+            try {
+                const response = await fetch('http://localhost:8888/.netlify/functions/test-audio-connection');
+                const data = await response.json();
+                if (data.success) {
+                    result.className = 'result success';
+                    result.innerHTML = '<h3>✅ Connection Test Passed</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = '<h3>❌ Connection Test Failed</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = '<h3>❌ Connection Test Error</h3><p>' + error.message + '</p>';
+            }
+        }
+
+        async function testUpload() {
+            const fileInput = document.getElementById('audioFile');
+            const result = document.getElementById('upload-result');
+            
+            if (!fileInput.files[0]) {
+                result.className = 'result error';
+                result.innerHTML = '<h3>❌ No File Selected</h3><p>Please select an audio file first.</p>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            result.innerHTML = '<h3>📤 Uploading...</h3>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('userId', 'test-user');
+                formData.append('filename', file.name);
+                
+                const response = await fetch('http://localhost:8888/.netlify/functions/upload-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <h3>✅ Upload Successful!</h3>
+                        <p><strong>File:</strong> ${data.filename}</p>
+                        <p><strong>Size:</strong> ${data.size} bytes</p>
+                        <p><strong>Public URL:</strong> <a href="${data.publicUrl}" target="_blank">${data.publicUrl}</a></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <h3>❌ Upload Failed</h3>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = '<h3>❌ Upload Error</h3><p>' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
