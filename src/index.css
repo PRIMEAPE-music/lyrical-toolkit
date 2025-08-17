@@ -694,6 +694,26 @@ input:focus {
   }
 }
 
+/* Floating notepad specific textarea overrides */
+.floating-notepad-expanded textarea {
+  text-align: left !important;
+  vertical-align: top !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Prevent button hover styles from affecting notepad buttons */
+.floating-notepad-expanded button {
+  transition: background-color 0.2s, color 0.2s !important;
+}
+
+.floating-notepad-expanded button:hover {
+  background-color: inherit !important;
+  color: inherit !important;
+}
+
 /* Music Banner Mobile Adjustments */
 @media (max-width: 768px) {
   .music-banner-mobile .flex {

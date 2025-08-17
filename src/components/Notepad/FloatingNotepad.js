@@ -311,15 +311,16 @@ const FloatingNotepad = ({
       {/* Content - Full-size textarea when not minimized */}
       {!isMinimized && (
         <div 
-          className="flex flex-col relative"
+          className="flex flex-col h-full w-full"
           style={{ 
             height: 'calc(100% - 49px)',
-            minHeight: '200px'
+            minHeight: '200px',
+            width: '100%'
           }}
         >
-          {/* Audio Player - Show if current song has audio */}
+          {/* Audio Player - Show if current song has audio at top of content area */}
           {currentSongAudio && (
-            <div className={`flex-shrink-0 p-3 border-b ${
+            <div className={`flex-shrink-0 p-3 border-b w-full ${
               darkMode ? 'border-gray-600' : 'border-gray-200'
             }`}>
               <AudioPlayer
@@ -337,13 +338,13 @@ const FloatingNotepad = ({
             </div>
           )}
           
-          {/* Text Area - Takes remaining space */}
-          <div className="flex-1 relative min-h-0">
+          {/* Text Area - Takes remaining space, full width */}
+          <div className="flex-1 w-full relative overflow-hidden">
             <textarea
               value={content}
               onChange={handleContentChange}
               placeholder="Start writing your lyrics..."
-              className={`w-full h-full resize-none border-none outline-none text-sm p-3 ${
+              className={`w-full h-full resize-none border-none outline-none text-sm p-3 block ${
                 darkMode 
                   ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
                   : 'bg-white text-gray-900 placeholder-gray-400'
@@ -355,7 +356,9 @@ const FloatingNotepad = ({
                 resize: 'none',
                 border: 'none',
                 outline: 'none',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                display: 'block',
+                textAlign: 'left'
               }}
             />
             
