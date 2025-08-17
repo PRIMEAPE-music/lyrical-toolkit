@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, CheckCircle, AlertCircle, Music } from 'lucide-react';
-import audioStorageService from '../../services/audioStorageService';
+import { Upload, X, CheckCircle, AlertCircle, Music, TestTube } from 'lucide-react';
+import audioStorageService, { testSupabaseStorageConnection } from '../../services/audioStorageService';
 
 const AudioUpload = ({ 
   onUploadSuccess, 
@@ -16,6 +16,7 @@ const AudioUpload = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState(null); // 'success', 'error', null
   const [statusMessage, setStatusMessage] = useState('');
+  const [testingConnection, setTestingConnection] = useState(false);
   const fileInputRef = useRef(null);
 
   // Handle file selection (drag & drop or click)
@@ -114,6 +115,32 @@ const AudioUpload = ({
       fileInputRef.current.click();
     }
   }, [disabled, isUploading]);
+
+  // Test Supabase Storage connection
+  const testConnection = useCallback(async () => {
+    setTestingConnection(true);
+    setUploadStatus(null);
+    setStatusMessage('Testing Supabase Storage connection...');
+    
+    try {
+      const result = await testSupabaseStorageConnection();
+      setUploadStatus('success');
+      setStatusMessage(`✅ Connection successful! Found ${result.buckets.length} buckets, ${result.files.length} files`);
+      console.log('🧪 Connection test result:', result);
+    } catch (error) {
+      setUploadStatus('error');
+      setStatusMessage(`❌ Connection failed: ${error.message}`);
+      console.error('🧪 Connection test failed:', error);
+    } finally {
+      setTestingConnection(false);
+      
+      // Clear status after delay
+      setTimeout(() => {
+        setUploadStatus(null);
+        setStatusMessage('');
+      }, 5000);
+    }
+  }, []);
 
   // Get status icon
   const getStatusIcon = () => {
@@ -258,6 +285,26 @@ const AudioUpload = ({
         )}
       </div>
       
+      {/* Test Connection Button */}
+      <div className="mt-3 text-center">
+        <button
+          onClick={testConnection}
+          disabled={disabled || isUploading || testingConnection}
+          className={`inline-flex items-center gap-2 px-3 py-1 text-xs rounded transition-colors ${
+            disabled || isUploading || testingConnection
+              ? darkMode 
+                ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : darkMode 
+                ? 'bg-blue-700 hover:bg-blue-600 text-blue-200' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
+        >
+          <TestTube className="w-3 h-3" />
+          {testingConnection ? 'Testing...' : 'Test Storage Connection'}
+        </button>
+      </div>
+
       {/* Additional info */}
       <div className="mt-2 text-xs opacity-75 text-center">
         {disabled && (

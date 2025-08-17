@@ -4,41 +4,69 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
+// Debug environment variables
+console.log('=== AUDIO STORAGE SERVICE DEBUG ===');
+console.log('REACT_APP_SUPABASE_URL:', supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'UNDEFINED');
+console.log('REACT_APP_SUPABASE_ANON_KEY:', supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'UNDEFINED');
+console.log('All REACT_APP env vars:', Object.keys(process.env).filter(key => key.startsWith('REACT_APP_')));
+
 // Validate environment variables
 function isValidSupabaseConfig() {
+  console.log('Validating Supabase config...');
+  
   if (!supabaseUrl || !supabaseKey) {
+    console.log('❌ Missing environment variables:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey });
     return false;
   }
   
   // Check if they're still placeholder values
   if (supabaseUrl.includes('your_supabase_project_url_here') || 
-      supabaseKey.includes('your_supabase_anon_key_here')) {
+      supabaseKey.includes('your_supabase_anon_key_here') ||
+      supabaseUrl.includes('your-project.supabase.co') ||
+      supabaseKey.includes('your-actual-anon-key')) {
+    console.log('❌ Placeholder values detected in environment variables');
     return false;
   }
   
   // Validate URL format
   try {
     new URL(supabaseUrl);
+    console.log('✅ Supabase config validation passed');
     return true;
-  } catch {
+  } catch (error) {
+    console.log('❌ Invalid URL format:', error.message);
     return false;
   }
 }
+
+// Force production mode for testing (set to true to bypass demo mode)
+const FORCE_PRODUCTION_MODE = false;
 
 // Create Supabase client only if config is valid
 let supabase = null;
 if (isValidSupabaseConfig()) {
   try {
     supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Supabase client initialized successfully');
+    console.log('✅ Supabase client initialized successfully for audio storage');
+    console.log('🔗 Connected to:', supabaseUrl);
   } catch (error) {
-    console.error('Failed to initialize Supabase client:', error);
+    console.error('❌ Failed to initialize Supabase client:', error);
   }
 } else {
-  console.warn('Supabase not configured. Audio upload will work in demo mode only.');
-  console.warn('To enable real Supabase Storage, update your .env file with:');
-  console.warn('REACT_APP_SUPABASE_URL=https://your-project.supabase.co');
-  console.warn('REACT_APP_SUPABASE_ANON_KEY=your-actual-anon-key');
+  console.warn('⚠️  Supabase not configured. Audio upload will work in demo mode only.');
+  console.warn('📝 To enable real Supabase Storage, update your .env file:');
+  console.warn('   1. Uncomment the Supabase lines in .env');
+  console.warn('   2. Replace with your actual values:');
+  console.warn('      REACT_APP_SUPABASE_URL=https://your-project.supabase.co');
+  console.warn('      REACT_APP_SUPABASE_ANON_KEY=your-actual-anon-key');
+  console.warn('   3. Restart the development server (npm start)');
+  console.warn('🔄 Current values detected:');
+  console.warn('   URL:', supabaseUrl || 'UNDEFINED');
+  console.warn('   KEY:', supabaseKey ? `${supabaseKey.substring(0, 8)}...` : 'UNDEFINED');
+  
+  if (FORCE_PRODUCTION_MODE) {
+    console.warn('🚨 FORCE_PRODUCTION_MODE is enabled - this will cause errors!');
+  }
 }
 
 // Audio file validation constants
@@ -177,15 +205,88 @@ const uploadAudioFileDemo = async (file, userId, onProgress = null) => {
   }
 };
 
+// Test Supabase Storage connection
+export const testSupabaseStorageConnection = async () => {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
+  try {
+    console.log('🧪 Testing Supabase Storage connection...');
+    
+    // Test 1: List buckets to verify connection
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    if (bucketsError) {
+      console.error('❌ Failed to list buckets:', bucketsError);
+      throw bucketsError;
+    }
+    console.log('✅ Successfully connected to Supabase Storage');
+    console.log('📂 Available buckets:', buckets.map(b => b.name));
+    
+    // Test 2: Check if audio-files bucket exists
+    const audioFilesBucket = buckets.find(b => b.name === AUDIO_CONFIG.BUCKET_NAME);
+    if (!audioFilesBucket) {
+      console.warn('⚠️  Audio files bucket not found. Creating bucket...');
+      const { data: newBucket, error: createError } = await supabase.storage.createBucket(AUDIO_CONFIG.BUCKET_NAME, {
+        public: true,
+        allowedMimeTypes: AUDIO_CONFIG.ALLOWED_TYPES,
+        fileSizeLimit: AUDIO_CONFIG.MAX_FILE_SIZE
+      });
+      if (createError) {
+        console.error('❌ Failed to create audio-files bucket:', createError);
+        throw createError;
+      }
+      console.log('✅ Created audio-files bucket successfully');
+    } else {
+      console.log('✅ Audio-files bucket found');
+    }
+    
+    // Test 3: Test file listing in the bucket
+    const { data: files, error: listError } = await supabase.storage
+      .from(AUDIO_CONFIG.BUCKET_NAME)
+      .list('', { limit: 5 });
+    
+    if (listError) {
+      console.error('❌ Failed to list files in bucket:', listError);
+      throw listError;
+    }
+    
+    console.log('✅ Bucket access verified');
+    console.log('📁 Files in bucket:', files.length);
+    
+    return { success: true, buckets, files };
+  } catch (error) {
+    console.error('❌ Supabase Storage connection test failed:', error);
+    throw error;
+  }
+};
+
 // Upload audio file to Supabase Storage (with demo fallback)
 export const uploadAudioFile = async (file, userId, onProgress = null) => {
-  // If Supabase is not configured, use demo mode
-  if (!supabase) {
-    console.warn('Supabase not configured - using demo mode for audio upload');
+  console.log('🎵 === AUDIO UPLOAD START ===');
+  console.log('📄 File:', file.name, '| Size:', file.size, '| User:', userId);
+  console.log('🔗 Supabase client available:', !!supabase);
+  
+  // If Supabase is not configured, use demo mode (unless forced)
+  if (!supabase && !FORCE_PRODUCTION_MODE) {
+    console.warn('⚠️  Supabase not configured - using demo mode for audio upload');
     return await uploadAudioFileDemo(file, userId, onProgress);
   }
   
-  console.log('Starting audio upload to Supabase Storage...', { filename: file.name, size: file.size, userId });
+  if (!supabase && FORCE_PRODUCTION_MODE) {
+    console.error('🚨 FORCE_PRODUCTION_MODE enabled but Supabase client not available!');
+    throw new Error('Supabase client not initialized - check environment variables');
+  }
+  
+  // Test connection first
+  try {
+    await testSupabaseStorageConnection();
+  } catch (error) {
+    console.error('❌ Storage connection test failed, falling back to demo mode:', error);
+    return await uploadAudioFileDemo(file, userId, onProgress);
+  }
+  
+  console.log('✅ Starting audio upload to Supabase Storage...');
   
   // Validate file
   const validation = validateAudioFile(file);
@@ -212,7 +313,14 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
     if (onProgress) onProgress(10);
     
     // Upload file to Supabase Storage
-    console.log('Uploading to Supabase Storage bucket:', AUDIO_CONFIG.BUCKET_NAME);
+    console.log('📤 Uploading to Supabase Storage bucket:', AUDIO_CONFIG.BUCKET_NAME);
+    console.log('📁 File path:', filePath);
+    console.log('📊 Upload options:', {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type
+    });
+    
     const { data, error } = await supabase.storage
       .from(AUDIO_CONFIG.BUCKET_NAME)
       .upload(filePath, file, {
@@ -222,11 +330,17 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
       });
     
     if (error) {
-      console.error('Supabase Storage upload error:', error);
+      console.error('❌ Supabase Storage upload error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        statusCode: error.statusCode,
+        error: error.error
+      });
       throw new Error(`Upload failed: ${error.message}`);
     }
     
-    console.log('Upload successful, data:', data);
+    console.log('✅ Upload successful to Supabase Storage!');
+    console.log('📄 Upload data:', data);
     if (onProgress) onProgress(80);
     
     // Get public URL
@@ -234,7 +348,7 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
       .from(AUDIO_CONFIG.BUCKET_NAME)
       .getPublicUrl(filePath);
     
-    console.log('Generated public URL:', publicUrl);
+    console.log('🔗 Generated public URL:', publicUrl);
     if (onProgress) onProgress(100);
     
     const result = {
@@ -245,7 +359,9 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
       duration: duration
     };
     
-    console.log('Audio upload completed successfully:', result);
+    console.log('🎉 Audio upload completed successfully!');
+    console.log('📊 Final result:', result);
+    console.log('🎵 === AUDIO UPLOAD END ===');
     return result;
     
   } catch (error) {
