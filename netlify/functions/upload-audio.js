@@ -13,10 +13,48 @@ const parseMultipart = async (event) => {
 };
 
 exports.handler = async (event, context) => {
-  console.log('🎵 === SIMPLIFIED AUDIO UPLOAD FUNCTION START ===');
-  console.log('⏰ Timestamp:', new Date().toISOString());
-  console.log('🌐 Method:', event.httpMethod);
-  console.log('📍 Path:', event.path);
+  // ========================
+  // FATAL ERROR PROTECTION
+  // ========================
+  try {
+    console.log('🎵 === FUNCTION ENTRY ===');
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    console.log('🆔 Request ID:', context.awsRequestId);
+    console.log('⚡ Memory limit:', context.memoryLimitInMB, 'MB');
+    console.log('⏱️ Remaining time:', context.getRemainingTimeInMillis(), 'ms');
+    
+    // Log raw request details BEFORE any processing
+    console.log('🔍 === RAW REQUEST ANALYSIS ===');
+    console.log('🌐 Method:', event.httpMethod);
+    console.log('📍 Path:', event.path);
+    console.log('📏 Content-Length header:', event.headers['content-length'] || 'Not set');
+    console.log('📋 Content-Type header:', event.headers['content-type'] || 'Not set');
+    console.log('📊 Body type:', typeof event.body);
+    console.log('📏 Body length:', event.body ? event.body.length : 0);
+    console.log('🔤 Is base64 encoded:', event.isBase64Encoded);
+    
+    // Check for suspiciously large requests early
+    const contentLength = event.headers['content-length'];
+    if (contentLength) {
+      const sizeInMB = parseInt(contentLength) / (1024 * 1024);
+      console.log('📐 Request size:', sizeInMB.toFixed(2), 'MB');
+      
+      if (sizeInMB > 50) {
+        console.warn('⚠️ Large request detected:', sizeInMB.toFixed(2), 'MB');
+      }
+    }
+    
+    // Memory usage check
+    if (process.memoryUsage) {
+      const memory = process.memoryUsage();
+      console.log('🧠 Memory usage:', {
+        rss: Math.round(memory.rss / 1024 / 1024) + 'MB',
+        heapUsed: Math.round(memory.heapUsed / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(memory.heapTotal / 1024 / 1024) + 'MB'
+      });
+    }
+    
+    console.log('🎵 === SIMPLIFIED AUDIO UPLOAD FUNCTION START ===');
   
   // Enhanced CORS headers
   const headers = {
@@ -142,11 +180,30 @@ exports.handler = async (event, context) => {
     console.log('Body length:', event.body ? event.body.length : 0);
     console.log('Is base64:', event.isBase64Encoded);
     
+    // Memory check before parsing
+    if (process.memoryUsage) {
+      const memoryBefore = process.memoryUsage();
+      console.log('🧠 Memory before parsing:', {
+        rss: Math.round(memoryBefore.rss / 1024 / 1024) + 'MB',
+        heapUsed: Math.round(memoryBefore.heapUsed / 1024 / 1024) + 'MB'
+      });
+    }
+    
+    console.log('⚡ Starting multipart parsing...');
     let result;
     try {
       result = await parseMultipart(event);
       console.log('✅ Multipart parsing successful');
       console.log('📋 Parsed fields:', Object.keys(result));
+      
+      // Memory check after parsing
+      if (process.memoryUsage) {
+        const memoryAfter = process.memoryUsage();
+        console.log('🧠 Memory after parsing:', {
+          rss: Math.round(memoryAfter.rss / 1024 / 1024) + 'MB',
+          heapUsed: Math.round(memoryAfter.heapUsed / 1024 / 1024) + 'MB'
+        });
+      }
     } catch (error) {
       console.error('❌ Request parsing failed:', error);
       return {
@@ -311,18 +368,68 @@ exports.handler = async (event, context) => {
     }
     
   } catch (error) {
-    console.error('❌ === FUNCTION ERROR ===');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    // ========================
+    // FATAL ERROR HANDLER
+    // ========================
+    console.error('💀 === FATAL FUNCTION ERROR ===');
+    console.error('🚨 Error type:', error.constructor.name);
+    console.error('📝 Error name:', error.name);
+    console.error('💬 Error message:', error.message);
+    console.error('📚 Error stack:', error.stack);
+    
+    // Memory usage at time of crash
+    if (process.memoryUsage) {
+      try {
+        const memory = process.memoryUsage();
+        console.error('🧠 Memory at crash:', {
+          rss: Math.round(memory.rss / 1024 / 1024) + 'MB',
+          heapUsed: Math.round(memory.heapUsed / 1024 / 1024) + 'MB',
+          heapTotal: Math.round(memory.heapTotal / 1024 / 1024) + 'MB'
+        });
+      } catch (memError) {
+        console.error('❌ Could not get memory usage:', memError.message);
+      }
+    }
+    
+    // Attempt to determine error category
+    let errorCategory = 'unknown';
+    let errorDetails = error.message;
+    
+    if (error.message && error.message.toLowerCase().includes('memory')) {
+      errorCategory = 'memory_limit';
+      errorDetails = 'Function ran out of memory processing the request';
+    } else if (error.message && error.message.toLowerCase().includes('timeout')) {
+      errorCategory = 'timeout';
+      errorDetails = 'Function timed out processing the request';
+    } else if (error.message && error.message.toLowerCase().includes('multipart')) {
+      errorCategory = 'parsing_error';
+      errorDetails = 'Failed to parse multipart form data';
+    } else if (error.name === 'RangeError') {
+      errorCategory = 'range_error';
+      errorDetails = 'Possible memory allocation issue with large file';
+    }
+    
+    console.error('🏷️ Error category:', errorCategory);
+    console.error('📖 Error details:', errorDetails);
+    
+    // Ensure we always return a proper JSON response
+    const errorHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+      'Content-Type': 'application/json'
+    };
     
     return {
       statusCode: 500,
-      headers,
+      headers: errorHeaders,
       body: JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message,
-        timestamp: new Date().toISOString()
+        error: 'Function execution failed',
+        category: errorCategory,
+        details: errorDetails,
+        originalError: error.message,
+        timestamp: new Date().toISOString(),
+        requestId: context?.awsRequestId || 'unknown'
       })
     };
   }

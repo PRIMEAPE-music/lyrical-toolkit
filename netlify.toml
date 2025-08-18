@@ -1,0 +1,25 @@
+[build]
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "nft"
+
+[[functions]]
+  name = "upload-audio"
+  timeout = 30
+  memory = 1024
+
+[[functions]]
+  name = "analyze-coherence"
+  timeout = 30
+  memory = 512
+
+[[functions]]
+  name = "analyze-performance"
+  timeout = 30
+  memory = 512
+
+# General function settings for other functions
+[functions.general]
+  timeout = 10
+  memory = 256
