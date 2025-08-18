@@ -1,15 +1,93 @@
 // Simplified Audio Upload Function with Enhanced Error Handling
 const { createClient } = require('@supabase/supabase-js');
 
-// Simple multipart parser fallback if lambda-multipart-parser fails
+// Reliable multipart parser using busboy
 const parseMultipart = async (event) => {
-  try {
-    const multipart = require('lambda-multipart-parser');
-    return await multipart.parse(event);
-  } catch (error) {
-    console.error('❌ Multipart parsing failed:', error);
-    throw new Error('Failed to parse multipart data: ' + error.message);
-  }
+  return new Promise((resolve, reject) => {
+    try {
+      const busboy = require('busboy');
+      const contentType = event.headers['content-type'] || event.headers['Content-Type'];
+      
+      if (!contentType || !contentType.includes('multipart/form-data')) {
+        reject(new Error('Invalid content type - must be multipart/form-data'));
+        return;
+      }
+
+      // Convert base64 body to buffer if needed
+      let bodyBuffer;
+      if (event.isBase64Encoded) {
+        bodyBuffer = Buffer.from(event.body, 'base64');
+      } else {
+        bodyBuffer = Buffer.from(event.body);
+      }
+
+      const bb = busboy({ 
+        headers: { 'content-type': contentType },
+        limits: {
+          fileSize: 50 * 1024 * 1024, // 50MB limit
+          files: 1
+        }
+      });
+      
+      const result = {};
+      let fileReceived = false;
+
+      bb.on('file', (name, file, info) => {
+        const { filename, mimeType } = info;
+        console.log(`📄 Receiving file: ${name} (${filename}, ${mimeType})`);
+        
+        const chunks = [];
+        
+        file.on('data', (data) => {
+          chunks.push(data);
+        });
+        
+        file.on('end', () => {
+          const content = Buffer.concat(chunks);
+          console.log(`✅ File received: ${content.length} bytes`);
+          
+          result[name] = {
+            filename: filename,
+            contentType: mimeType,
+            content: content
+          };
+          fileReceived = true;
+        });
+        
+        file.on('error', (err) => {
+          console.error('❌ File stream error:', err);
+          reject(new Error('File upload failed: ' + err.message));
+        });
+      });
+
+      bb.on('field', (name, value) => {
+        console.log(`📋 Field: ${name} = ${value}`);
+        result[name] = value;
+      });
+
+      bb.on('finish', () => {
+        if (!fileReceived) {
+          reject(new Error('No file received in multipart data'));
+          return;
+        }
+        console.log('✅ Multipart parsing completed successfully');
+        resolve(result);
+      });
+
+      bb.on('error', (err) => {
+        console.error('❌ Busboy error:', err);
+        reject(new Error('Multipart parsing failed: ' + err.message));
+      });
+
+      // Write the buffer to busboy
+      bb.write(bodyBuffer);
+      bb.end();
+      
+    } catch (error) {
+      console.error('❌ Multipart parsing setup failed:', error);
+      reject(new Error('Failed to setup multipart parser: ' + error.message));
+    }
+  });
 };
 
 exports.handler = async (event, context) => {
