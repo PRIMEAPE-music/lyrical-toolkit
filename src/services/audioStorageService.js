@@ -63,7 +63,7 @@ export const getAudioDuration = (file) => {
   });
 };
 
-// Upload audio file via Netlify function
+// Upload audio file - uses direct upload for large files to avoid Netlify payload limits
 export const uploadAudioFile = async (file, userId, onProgress = null) => {
   console.log('🎵 === AUDIO UPLOAD START ===');
   console.log('📄 File details:', {
@@ -94,7 +94,15 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
     
     if (onProgress) onProgress(20);
     
-    // Create FormData with correct field names
+    // Check if file is too large for Netlify function (>5MB becomes >7MB when base64 encoded)
+    const isVeryLargeFile = file.size > 4 * 1024 * 1024; // 4MB threshold
+    
+    if (isVeryLargeFile) {
+      console.log('🚀 File is large - using direct Supabase upload to bypass Netlify limits');
+      return await uploadAudioFileDirect(file, userId, duration, onProgress);
+    }
+    
+    // For smaller files, use the original method
     console.log('📦 Creating FormData...');
     const formData = new FormData();
     
@@ -186,6 +194,81 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
     
   } catch (error) {
     console.error('❌ === AUDIO UPLOAD ERROR ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    throw error;
+  }
+};
+
+// Direct upload to Supabase (bypasses Netlify function limits)
+export const uploadAudioFileDirect = async (file, userId, duration, onProgress = null) => {
+  console.log('🎯 === DIRECT SUPABASE UPLOAD START ===');
+  console.log('📄 File size:', (file.size / 1024 / 1024).toFixed(1), 'MB');
+  
+  try {
+    if (onProgress) onProgress(30);
+    
+    // Step 1: Get upload token from Netlify function
+    console.log('🔐 Getting upload token...');
+    const tokenResponse = await fetch('/.netlify/functions/get-upload-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type,
+        userId: userId || 'anonymous'
+      })
+    });
+    
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      throw new Error(`Failed to get upload token: ${tokenResponse.status} - ${errorText}`);
+    }
+    
+    const tokenData = await tokenResponse.json();
+    console.log('✅ Upload token received');
+    
+    if (onProgress) onProgress(40);
+    
+    // Step 2: Upload directly to Supabase storage
+    console.log('🚀 Uploading directly to Supabase...');
+    const uploadResponse = await fetch(tokenData.uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+        'Cache-Control': '3600'
+      }
+    });
+    
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('❌ Direct upload failed:', errorText);
+      throw new Error(`Direct upload failed: ${uploadResponse.status} - ${errorText}`);
+    }
+    
+    console.log('✅ Direct upload successful!');
+    
+    if (onProgress) onProgress(100);
+    
+    const uploadResult = {
+      url: tokenData.publicUrl,
+      path: tokenData.filePath,
+      filename: file.name,
+      size: file.size,
+      duration: duration
+    };
+    
+    console.log('🎉 === DIRECT UPLOAD COMPLETE ===');
+    console.log('📊 Final result:', uploadResult);
+    
+    return uploadResult;
+    
+  } catch (error) {
+    console.error('❌ === DIRECT UPLOAD ERROR ===');
     console.error('Error type:', error.constructor.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);

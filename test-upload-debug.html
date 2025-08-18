@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Debug Test</title>
+</head>
+<body>
+    <h1>Upload Debug Test</h1>
+    <p>This will test different file sizes to isolate the issue</p>
+    
+    <input type="file" id="fileInput" accept="audio/*">
+    <button onclick="testMultipleSizes()">Test Multiple Sizes</button>
+    <div id="results"></div>
+
+    <script>
+        async function testMultipleSizes() {
+            const fileInput = document.getElementById('fileInput');
+            const resultsDiv = document.getElementById('results');
+            
+            if (!fileInput.files[0]) {
+                resultsDiv.innerHTML = '❌ Please select a file first';
+                return;
+            }
+            
+            const originalFile = fileInput.files[0];
+            resultsDiv.innerHTML = '<h3>Testing different file sizes...</h3>';
+            
+            // Test different sizes: 1MB, 2MB, 3MB, 4MB, 5MB
+            const testSizes = [
+                1 * 1024 * 1024,  // 1MB
+                2 * 1024 * 1024,  // 2MB  
+                3 * 1024 * 1024,  // 3MB
+                4 * 1024 * 1024,  // 4MB
+                Math.min(5 * 1024 * 1024, originalFile.size)  // 5MB or file size
+            ];
+            
+            for (const size of testSizes) {
+                const sizeMB = (size / 1024 / 1024).toFixed(1);
+                resultsDiv.innerHTML += `<p>🧪 Testing ${sizeMB}MB...</p>`;
+                
+                try {
+                    // Create truncated file
+                    const truncatedBlob = originalFile.slice(0, size);
+                    const testFile = new File([truncatedBlob], `test-${sizeMB}MB.mp3`, { type: 'audio/mpeg' });
+                    
+                    console.log(`🧪 Testing ${sizeMB}MB file (${testFile.size} bytes)`);
+                    
+                    const formData = new FormData();
+                    formData.append('file', testFile);
+                    formData.append('userId', 'debug-test');
+                    formData.append('filename', testFile.name);
+                    
+                    const startTime = Date.now();
+                    
+                    // Try simple upload function directly
+                    const response = await fetch('/.netlify/functions/upload-audio-simple', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const duration = Date.now() - startTime;
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        resultsDiv.innerHTML += `<p>✅ ${sizeMB}MB: SUCCESS (${duration}ms)</p>`;
+                        console.log(`✅ ${sizeMB}MB success:`, result);
+                    } else {
+                        const errorText = await response.text();
+                        resultsDiv.innerHTML += `<p>❌ ${sizeMB}MB: FAILED (${response.status}) - ${duration}ms</p>`;
+                        resultsDiv.innerHTML += `<pre style="color:red; font-size:10px">${errorText}</pre>`;
+                        console.error(`❌ ${sizeMB}MB failed:`, errorText);
+                    }
+                    
+                } catch (error) {
+                    resultsDiv.innerHTML += `<p>💥 ${sizeMB}MB: ERROR - ${error.message}</p>`;
+                    console.error(`💥 ${sizeMB}MB error:`, error);
+                }
+                
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            resultsDiv.innerHTML += '<h3>Test Complete!</h3>';
+            resultsDiv.innerHTML += '<p>Check console for detailed logs</p>';
+        }
+    </script>
+</body>
+</html>
