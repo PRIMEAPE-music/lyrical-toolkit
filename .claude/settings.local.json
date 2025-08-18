@@ -24,7 +24,9 @@
       "Bash(touch:*)",
       "Bash(start http://localhost:8888/test-simple-upload.html)",
       "Bash(powershell:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(npm run build:*)",
+      "Bash(set CI=false)"
     ],
     "defaultMode": "acceptEdits"
   }

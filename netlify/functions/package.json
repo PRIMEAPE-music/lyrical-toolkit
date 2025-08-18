@@ -1,0 +1,9 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify functions for lyrical-toolkit",
+  "main": "index.js",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
+  }
+}

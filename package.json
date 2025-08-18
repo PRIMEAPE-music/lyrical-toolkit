@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@craco/craco": "^7.1.0",
-    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.55.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -33,7 +32,7 @@
   "scripts": {
     "start": "craco start",
     "server": "node server/index.js",
-    "build": "CI=false craco build",
+    "build": "set CI=false&& craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
   },
