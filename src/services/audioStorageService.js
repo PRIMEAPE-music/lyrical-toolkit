@@ -123,8 +123,16 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
     console.log('📡 Request method: POST');
     console.log('📡 Content-Type: multipart/form-data (auto-detected)');
     
+    // Choose upload endpoint based on file size
+    const isLargeFile = file.size > 3 * 1024 * 1024; // 3MB threshold
+    const uploadEndpoint = isLargeFile 
+      ? '/.netlify/functions/upload-audio-simple'
+      : '/.netlify/functions/upload-audio';
+      
+    console.log(`🎯 Using ${isLargeFile ? 'SIMPLE' : 'STANDARD'} upload for ${(file.size / 1024 / 1024).toFixed(1)}MB file`);
+    
     // Make the upload request
-    const response = await fetch('/.netlify/functions/upload-audio', {
+    const response = await fetch(uploadEndpoint, {
       method: 'POST',
       body: formData
       // IMPORTANT: Do NOT set Content-Type header - let browser set it with boundary
