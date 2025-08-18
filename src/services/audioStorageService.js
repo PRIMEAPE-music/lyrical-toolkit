@@ -99,7 +99,7 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
     const formData = new FormData();
     
     // CRITICAL: Backend expects 'file' field name exactly
-    formData.append('file', file, file.name);
+    formData.append('files', file, file.name);
     formData.append('userId', userId || 'anonymous');
     formData.append('filename', file.name);
     
