@@ -82,8 +82,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ error: `Method ${event.httpMethod} not allowed` })
     };
   }
-  
-  try {
+
     // Step 1: Check Environment Variables
     console.log('🔍 === STEP 1: ENVIRONMENT VARIABLES ===');
     const supabaseUrl = process.env.SUPABASE_URL;
