@@ -20,7 +20,11 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(netlify dev:*)",
-      "Bash(npx netlify:*)"
+      "Bash(npx netlify:*)",
+      "Bash(touch:*)",
+      "Bash(start http://localhost:8888/test-simple-upload.html)",
+      "Bash(powershell:*)",
+      "Bash(bash:*)"
     ],
     "defaultMode": "acceptEdits"
   }

@@ -161,7 +161,18 @@ exports.handler = async (event, context) => {
     
     // Step 5: Validate File
     console.log('🔍 === STEP 5: FILE VALIDATION ===');
-    if (!result.file) {
+    
+    // Check for both 'file' and 'files' field names (frontend inconsistency)
+    // Note: lambda-multipart-parser sometimes returns files as arrays
+    let file = result.file || result.files;
+    
+    // If files is an array, get the first file
+    if (Array.isArray(file)) {
+      console.log('📄 Files field is array, taking first item');
+      file = file[0];
+    }
+    
+    if (!file) {
       console.error('❌ No file found in request');
       console.log('Available fields:', Object.keys(result));
       return {
@@ -169,12 +180,12 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({ 
           error: 'No file provided in request',
-          availableFields: Object.keys(result)
+          availableFields: Object.keys(result),
+          debug: 'Expected "file" or "files" field'
         })
       };
     }
     
-    const file = result.file;
     const userId = result.userId || 'anonymous';
     const filename = result.filename || file.filename || 'unknown.mp3';
     
@@ -185,12 +196,28 @@ exports.handler = async (event, context) => {
       userId: userId
     });
     
+    // Debug file content (only in case of issues)
+    if (!file.content || file.content.length === 0) {
+      console.log('🔍 === FILE CONTENT DEBUG ===');
+      console.log('📄 File object keys:', Object.keys(file));
+      console.log('📄 File.content type:', typeof file.content);
+      console.log('📄 File.content is Buffer:', Buffer.isBuffer(file.content));
+    }
+    
     if (!file.content || file.content.length === 0) {
       console.error('❌ File content is empty');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'File content is empty' })
+        body: JSON.stringify({ 
+          error: 'File content is empty',
+          debug: {
+            fileKeys: Object.keys(file),
+            contentType: typeof file.content,
+            isBuffer: Buffer.isBuffer(file.content),
+            hasContent: !!file.content
+          }
+        })
       };
     }
     
@@ -207,10 +234,27 @@ exports.handler = async (event, context) => {
     console.log('🗂️ Bucket:', bucketName);
     
     try {
+      // Determine proper content type based on file extension
+      let contentType = file.contentType;
+      const fileExtension = sanitizedFilename.split('.').pop().toLowerCase();
+      
+      // Override content type for known audio extensions
+      if (fileExtension === 'mp3') {
+        contentType = 'audio/mpeg';
+      } else if (fileExtension === 'wav') {
+        contentType = 'audio/wav';
+      } else if (fileExtension === 'm4a' || fileExtension === 'mp4') {
+        contentType = 'audio/mp4';
+      } else if (!contentType || contentType === 'application/octet-stream') {
+        contentType = 'audio/mpeg'; // Default fallback
+      }
+      
+      console.log('📄 Final content type:', contentType);
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file.content, {
-          contentType: file.contentType || 'audio/mpeg',
+          contentType: contentType,
           cacheControl: '3600',
           upsert: false
         });
