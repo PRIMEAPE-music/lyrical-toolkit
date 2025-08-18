@@ -618,7 +618,7 @@ export const analyzeRhymeStatistics = (lyrics, vocabularyMap) => {
   };
 
   // Helper function to calculate internal cluster similarity
-  const calculateInternalSimilarity = (cluster, similarityMatrix, allWords) => {
+  const calculateInternalSimilarity = (cluster, similarityMatrix) => {
     if (cluster.words.length < 2) return 0;
     
     let totalSimilarity = 0;

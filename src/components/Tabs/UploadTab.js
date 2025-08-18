@@ -22,7 +22,6 @@ const UploadTab = ({
   onAudioUpload = null,
   onAudioDownload = null,
   onAudioRemove = null,
-  onAudioReplace = null,
   selectedSongForAudio = null,
   setSelectedSongForAudio = null,
   userId = null  // Add userId prop

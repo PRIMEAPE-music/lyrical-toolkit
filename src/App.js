@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Book, Shuffle, Music } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import jsPDF from 'jspdf';
@@ -11,7 +11,7 @@ import {
 } from './utils/textAnalysis';
 import { analyzeRhymeStatistics } from './utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from './data/songVocabularyPhoneticMap';
-import { saveUserSongs, loadUserSongs, clearUserSongs, saveExampleSongDeleted, loadExampleSongDeleted, loadAllSongs } from './utils/songStorage';
+import { saveUserSongs, clearUserSongs, saveExampleSongDeleted, loadAllSongs } from './utils/songStorage';
 import audioStorageService from './services/audioStorageService';
 // Import hooks
 import { useSearchHistory, useDarkMode, useHighlightWord } from './hooks/useLocalStorage';
@@ -76,7 +76,6 @@ const LyricsSearchAppContent = () => {
 
   // Manual states
   const [showManual, setShowManual] = useState(false);
-  const [exampleSongDeleted, setExampleSongDeleted] = useState(() => loadExampleSongDeleted());
   // Stats filter
   const [selectedStatsFilter, setSelectedStatsFilter] = useState('all');
 
@@ -305,7 +304,6 @@ const LyricsSearchAppContent = () => {
       setSongs(prev => {
         const songToDelete = prev.find(song => song.id === songId);
         if (songToDelete && songToDelete.isExample) {
-          setExampleSongDeleted(true);
           saveExampleSongDeleted(true); // Persist the deletion state
         }
         const updatedSongs = prev.filter(song => song.id !== songId);
@@ -324,7 +322,7 @@ const LyricsSearchAppContent = () => {
       setHighlightWord('');
       setSearchHistory([]);
       clearUserSongs(); // Clear from localStorage as well
-      setExampleSongDeleted(false); // Reset so example can load again
+      saveExampleSongDeleted(false); // Reset so example can load again
     }
   };
 

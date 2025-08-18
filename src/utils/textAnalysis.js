@@ -701,7 +701,7 @@ export const detectPowerWords = (lyrics) => {
   lines.forEach((line, lineIndex) => {
     const words = line.toLowerCase().split(/\s+/);
     
-    words.forEach((word, wordIndex) => {
+    words.forEach((word) => {
       const cleanWord = word.replace(/[^\w'-]/g, '');
       if (POWER_WORDS.has(cleanWord)) {
         powerWordInstances.push({

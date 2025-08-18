@@ -32,7 +32,7 @@
   "scripts": {
     "start": "craco start",
     "server": "node server/index.js",
-    "build": "set CI=false&& craco build",
+    "build": "cross-env CI=false craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
   },
@@ -60,6 +60,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.17",
     "autoprefixer": "^10.4.0",
+    "cross-env": "^10.0.0",
     "form-data": "^4.0.4",
     "node-fetch": "^3.3.2",
     "postcss": "^8.4.0",

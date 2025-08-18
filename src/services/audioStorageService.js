@@ -65,60 +65,105 @@ export const getAudioDuration = (file) => {
 
 // Upload audio file via Netlify function
 export const uploadAudioFile = async (file, userId, onProgress = null) => {
-  console.log('🎵 === NEW AUDIO UPLOAD START ===');
-  console.log('📄 File:', file.name, '| Size:', file.size, '| User:', userId);
+  console.log('🎵 === AUDIO UPLOAD START ===');
+  console.log('📄 File details:', {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    lastModified: file.lastModified
+  });
+  console.log('👤 User ID:', userId);
   
-  // Validate file
+  // Validate file first
   const validation = validateAudioFile(file);
   if (!validation.isValid) {
     console.error('❌ File validation failed:', validation.errors);
     throw new Error(validation.errors.join(', '));
   }
+  console.log('✅ File validation passed');
   
   try {
-    // Get audio duration
+    // Get audio duration (optional)
     let duration = null;
     try {
       duration = await getAudioDuration(file);
-      console.log('✅ Audio duration detected:', duration);
+      console.log('✅ Audio duration detected:', duration, 'seconds');
     } catch (error) {
-      console.warn('⚠️ Could not get audio duration:', error);
+      console.warn('⚠️ Could not get audio duration:', error.message);
     }
     
-    if (onProgress) onProgress(10);
+    if (onProgress) onProgress(20);
     
-    // Create FormData for upload
+    // Create FormData with correct field names
+    console.log('📦 Creating FormData...');
     const formData = new FormData();
-    formData.append('file', file);
+    
+    // CRITICAL: Backend expects 'file' field name exactly
+    formData.append('file', file, file.name);
     formData.append('userId', userId || 'anonymous');
     formData.append('filename', file.name);
-    if (duration) formData.append('duration', duration.toString());
     
-    console.log('📤 Uploading via Netlify function...');
+    if (duration !== null) {
+      formData.append('duration', duration.toString());
+    }
+    
+    // Debug FormData contents
+    console.log('📋 FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+    
     if (onProgress) onProgress(30);
     
-    // Upload via Netlify function
+    console.log('🚀 Sending request to /.netlify/functions/upload-audio');
+    console.log('📡 Request method: POST');
+    console.log('📡 Content-Type: multipart/form-data (auto-detected)');
+    
+    // Make the upload request
     const response = await fetch('/.netlify/functions/upload-audio', {
       method: 'POST',
       body: formData
+      // IMPORTANT: Do NOT set Content-Type header - let browser set it with boundary
     });
+    
+    console.log('📨 Response received:');
+    console.log('  Status:', response.status, response.statusText);
+    console.log('  Headers:', Object.fromEntries(response.headers.entries()));
     
     if (onProgress) onProgress(70);
     
+    // Handle response
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Upload failed:', response.status, errorData);
-      throw new Error(`Upload failed: ${response.status} ${errorData}`);
+      let errorText;
+      try {
+        errorText = await response.text();
+        console.error('❌ Upload failed with response:', errorText);
+      } catch (e) {
+        errorText = 'Could not read error response';
+        console.error('❌ Upload failed and could not read response');
+      }
+      
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
     }
     
-    const result = await response.json();
-    console.log('✅ Upload successful!');
-    console.log('📊 Result:', result);
+    // Parse successful response
+    let result;
+    try {
+      result = await response.json();
+      console.log('✅ Upload successful!');
+      console.log('📊 Server response:', result);
+    } catch (e) {
+      console.error('❌ Could not parse response as JSON');
+      throw new Error('Invalid response from server');
+    }
     
     if (onProgress) onProgress(100);
     
-    console.log('🎉 === NEW AUDIO UPLOAD END ===');
-    return {
+    const uploadResult = {
       url: result.publicUrl,
       path: result.filePath,
       filename: file.name,
@@ -126,8 +171,16 @@ export const uploadAudioFile = async (file, userId, onProgress = null) => {
       duration: duration
     };
     
+    console.log('🎉 === AUDIO UPLOAD COMPLETE ===');
+    console.log('📊 Final result:', uploadResult);
+    
+    return uploadResult;
+    
   } catch (error) {
-    console.error('❌ Audio upload error:', error);
+    console.error('❌ === AUDIO UPLOAD ERROR ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     throw error;
   }
 };
@@ -277,31 +330,65 @@ export const extractFilePathFromUrl = (url) => {
   }
 };
 
+// Test connectivity to upload function
+export const testUploadEndpoint = async () => {
+  try {
+    console.log('🧪 Testing upload endpoint connectivity...');
+    
+    // Test with a simple GET request first (should get 405 Method Not Allowed)
+    const response = await fetch('/.netlify/functions/upload-audio', {
+      method: 'GET'
+    });
+    
+    console.log('📡 GET test response:', response.status, response.statusText);
+    
+    if (response.status === 405) {
+      console.log('✅ Upload function is reachable and responding correctly');
+      return { success: true, reachable: true };
+    } else {
+      console.log('⚠️ Unexpected response from upload function');
+      return { success: false, reachable: true, unexpectedStatus: response.status };
+    }
+  } catch (error) {
+    console.error('❌ Upload function not reachable:', error);
+    return { success: false, reachable: false, error: error.message };
+  }
+};
+
 // Test upload function for debugging
 export const testAudioUpload = async () => {
   try {
-    console.log('🧪 Testing audio upload system...');
+    console.log('🧪 === FULL UPLOAD TEST START ===');
     
-    // Create a small test audio file (1 second of silence)
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
+    // First test endpoint connectivity
+    const connectivityTest = await testUploadEndpoint();
+    if (!connectivityTest.reachable) {
+      return { success: false, error: 'Upload endpoint not reachable', details: connectivityTest };
+    }
     
-    return new Promise((resolve) => {
-      canvas.toBlob(async (blob) => {
-        // Create a fake audio file for testing
-        const testFile = new File([blob], 'test-audio.mp3', { type: 'audio/mpeg' });
-        
-        try {
-          const result = await uploadAudioFile(testFile, 'test-user');
-          console.log('✅ Test upload successful:', result);
-          resolve({ success: true, result });
-        } catch (error) {
-          console.error('❌ Test upload failed:', error);
-          resolve({ success: false, error: error.message });
-        }
-      }, 'audio/mpeg');
+    console.log('✅ Endpoint reachable, proceeding with upload test...');
+    
+    // Create a minimal test file 
+    const testContent = 'fake audio content for testing';
+    const testBlob = new Blob([testContent], { type: 'audio/mpeg' });
+    const testFile = new File([testBlob], 'test-upload.mp3', { type: 'audio/mpeg' });
+    
+    console.log('📄 Test file created:', {
+      name: testFile.name,
+      size: testFile.size,
+      type: testFile.type
     });
+    
+    try {
+      const result = await uploadAudioFile(testFile, 'test-user');
+      console.log('✅ === TEST UPLOAD SUCCESSFUL ===');
+      console.log('📊 Result:', result);
+      return { success: true, result, connectivity: connectivityTest };
+    } catch (error) {
+      console.error('❌ === TEST UPLOAD FAILED ===');
+      console.error('Error:', error.message);
+      return { success: false, error: error.message, connectivity: connectivityTest };
+    }
   } catch (error) {
     console.error('❌ Test setup failed:', error);
     return { success: false, error: error.message };
@@ -317,6 +404,7 @@ const audioStorageService = {
   replaceAudioFile,
   downloadAudioFile,
   extractFilePathFromUrl,
+  testUploadEndpoint,
   testAudioUpload,
   formatFileSize,
   formatDuration,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, ChevronDown, FileText, FileImage } from 'lucide-react';
+import { Download, FileText, FileImage } from 'lucide-react';
 
 const ExportDropdown = ({ song, onExportTxt, onExportPdf, darkMode }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,9 +51,6 @@ const ExportDropdown = ({ song, onExportTxt, onExportPdf, darkMode }) => {
     setIsOpen(false);
   };
 
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
-  };
 
   return (
     <div className="relative" ref={dropdownRef}>

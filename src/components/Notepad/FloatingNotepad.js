@@ -11,7 +11,6 @@ const FloatingNotepad = ({
   onRevertChanges,
   onStartNewContent,
   hasUnsavedChanges,
-  originalSongContent,
   // Audio-related props
   currentSongAudio = null,
   onAudioDownload = null,

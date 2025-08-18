@@ -93,7 +93,7 @@ export const useNotepad = () => {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, []);
+  }, [saveToStorage]);
 
   // Update content with auto-save
   const updateContent = useCallback((newContent) => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { generateRhymingDictionary, analyzeMeter, analyzeMeterPatterns, calculateFlowConsistency, analyzeRhythmVariation, performWritingQualityAnalysis } from '../../utils/textAnalysis';
+import { generateRhymingDictionary, analyzeMeter, performWritingQualityAnalysis } from '../../utils/textAnalysis';
 import { analyzeFullTextRhymes } from '../../utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from '../../data/songVocabularyPhoneticMap';
 import geminiService from '../../services/geminiService';
@@ -40,37 +40,6 @@ const AnalysisTab = ({
     setAnalysisType('rhyming-dictionary');
   };
 
-  const handleFlowRhythm = () => {
-    if (!selectedSongForAnalysis) return;
-    const song = songs.find(s => s.id.toString() === selectedSongForAnalysis.toString());
-    if (!song) return;
-
-    setAnalysisResults(null); 
-    setAnalysisType('flow-rhythm-loading');
-    
-    try {
-      // Analyze meter patterns
-      const meterAnalysis = analyzeMeterPatterns(song.lyrics, songVocabularyPhoneticMap);
-      
-      // Calculate flow consistency
-      const flowConsistency = calculateFlowConsistency(meterAnalysis);
-      
-      // Analyze rhythm variation
-      const rhythmVariation = analyzeRhythmVariation(meterAnalysis);
-      
-      setAnalysisResults({
-        song,
-        meterAnalysis,
-        flowConsistency,
-        rhythmVariation
-      });
-      setAnalysisType('flow-rhythm');
-    } catch (error) {
-      console.error('Error in flow & rhythm analysis:', error);
-      alert('An error occurred during flow & rhythm analysis.');
-      setAnalysisType(null);
-    }
-  };
 
   const handleWritingQuality = () => {
   if (!selectedSongForAnalysis) return;

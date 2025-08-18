@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, CheckCircle, AlertCircle, Music } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, Music } from 'lucide-react';
 import audioStorageService from '../../services/audioStorageService';
 
 const AudioUpload = ({ 
@@ -74,7 +74,7 @@ const AudioUpload = ({
         setUploadProgress(0);
       }, 3000);
     }
-  }, [disabled, isUploading, onUploadSuccess, onUploadError]);
+  }, [disabled, isUploading, onUploadSuccess, onUploadError, userId]);
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e) => {
@@ -114,6 +114,19 @@ const AudioUpload = ({
       fileInputRef.current.click();
     }
   }, [disabled, isUploading]);
+
+  // Test upload functionality (for debugging)
+  const handleTestUpload = useCallback(async () => {
+    console.log('🧪 Starting upload test...');
+    try {
+      const result = await audioStorageService.testAudioUpload();
+      console.log('Test result:', result);
+      alert(`Upload test ${result.success ? 'PASSED' : 'FAILED'}: ${result.error || 'Success'}`);
+    } catch (error) {
+      console.error('Test error:', error);
+      alert(`Test failed: ${error.message}`);
+    }
+  }, []);
 
 
   // Get status icon
@@ -265,6 +278,22 @@ const AudioUpload = ({
           <p>Audio upload is temporarily disabled</p>
         )}
       </div>
+
+      {/* Debug test button (development only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-3 text-center">
+          <button
+            onClick={handleTestUpload}
+            className={`px-3 py-1 text-xs rounded border ${
+              darkMode 
+                ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                : 'border-gray-300 bg-gray-100 text-gray-600 hover:bg-gray-200'
+            } transition-colors`}
+          >
+            🧪 Test Upload Function
+          </button>
+        </div>
+      )}
     </div>
   );
 };
