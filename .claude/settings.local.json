@@ -29,7 +29,8 @@
       "Bash(set CI=false)",
       "Bash(xxd:*)",
       "Bash(rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(netlify functions:list:*)"
     ],
     "defaultMode": "acceptEdits"
   }

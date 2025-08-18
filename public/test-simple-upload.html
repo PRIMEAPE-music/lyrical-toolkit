@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Upload Test</title>
+</head>
+<body>
+    <h1>Upload Test</h1>
+    <input type="file" id="fileInput" accept="audio/*">
+    <button onclick="testUpload()">Test Upload</button>
+    <div id="result"></div>
+
+    <script>
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '❌ Please select a file first';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            console.log('📄 Testing with file:', file.name, file.size, 'bytes');
+            
+            resultDiv.innerHTML = '⏳ Testing upload...';
+            
+            try {
+                // Create a very small test file instead of the real file
+                const smallTestFile = new File(['test audio data'], 'test.mp3', { type: 'audio/mpeg' });
+                
+                const formData = new FormData();
+                formData.append('file', smallTestFile);
+                formData.append('userId', 'test-user');
+                formData.append('filename', smallTestFile.name);
+                
+                console.log('🚀 Sending small test file...');
+                
+                const response = await fetch('/.netlify/functions/upload-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('📡 Response:', response.status, response.statusText);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Success:', result);
+                    resultDiv.innerHTML = `✅ Small file upload successful!<br><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ Error:', errorText);
+                    resultDiv.innerHTML = `❌ Small file upload failed:<br><pre>${errorText}</pre>`;
+                    
+                    // If small file fails, it's definitely a Supabase config issue
+                    if (response.status === 500) {
+                        resultDiv.innerHTML += `<br><br>⚠️ <strong>Diagnosis: Supabase configuration issue</strong><br>
+                        The small test file failed, indicating environment variables or bucket setup problems.`;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Network error:', error);
+                resultDiv.innerHTML = `❌ Network error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

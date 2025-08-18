@@ -37,21 +37,53 @@ const parseMultipart = async (event) => {
         console.log(`📄 Receiving file: ${name} (${filename}, ${mimeType})`);
         
         const chunks = [];
+        let totalSize = 0;
+        const maxSize = 50 * 1024 * 1024; // 50MB safety limit
         
         file.on('data', (data) => {
+          totalSize += data.length;
+          
+          // Early size check to prevent memory issues
+          if (totalSize > maxSize) {
+            reject(new Error(`File too large: ${totalSize} bytes exceeds ${maxSize} byte limit`));
+            return;
+          }
+          
           chunks.push(data);
+          
+          // Log progress for large files
+          if (totalSize % (1024 * 1024) === 0 || totalSize > 1024 * 1024) {
+            console.log(`📈 Received: ${Math.round(totalSize / 1024 / 1024 * 10) / 10}MB`);
+          }
         });
         
         file.on('end', () => {
-          const content = Buffer.concat(chunks);
-          console.log(`✅ File received: ${content.length} bytes`);
-          
-          result[name] = {
-            filename: filename,
-            contentType: mimeType,
-            content: content
-          };
-          fileReceived = true;
+          try {
+            console.log(`🔗 Assembling file: ${totalSize} bytes`);
+            const content = Buffer.concat(chunks);
+            
+            // Verify buffer integrity
+            if (content.length !== totalSize) {
+              reject(new Error(`Buffer size mismatch: expected ${totalSize}, got ${content.length}`));
+              return;
+            }
+            
+            console.log(`✅ File received: ${content.length} bytes`);
+            
+            result[name] = {
+              filename: filename,
+              contentType: mimeType,
+              content: content
+            };
+            fileReceived = true;
+            
+            // Clear chunks array to free memory
+            chunks.length = 0;
+            
+          } catch (error) {
+            console.error('❌ Buffer assembly failed:', error);
+            reject(new Error('File processing failed: ' + error.message));
+          }
         });
         
         file.on('error', (err) => {
@@ -262,8 +294,15 @@ exports.handler = async (event, context) => {
       const memoryBefore = process.memoryUsage();
       console.log('🧠 Memory before parsing:', {
         rss: Math.round(memoryBefore.rss / 1024 / 1024) + 'MB',
-        heapUsed: Math.round(memoryBefore.heapUsed / 1024 / 1024) + 'MB'
+        heapUsed: Math.round(memoryBefore.heapUsed / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(memoryBefore.heapTotal / 1024 / 1024) + 'MB'
       });
+      
+      // Force garbage collection if available
+      if (global.gc) {
+        console.log('🧹 Running garbage collection before parsing...');
+        global.gc();
+      }
     }
     
     console.log('⚡ Starting multipart parsing...');
@@ -357,6 +396,41 @@ exports.handler = async (event, context) => {
     
     console.log('✅ File validation passed');
     
+    // Step 5.5: Additional MP3 validation for problematic files
+    console.log('🔍 === STEP 5.5: MP3 CONTENT VALIDATION ===');
+    try {
+      const fileBuffer = file.content;
+      
+      // Check MP3 header (first few bytes should be ID3 or MP3 sync)
+      const header = fileBuffer.slice(0, 10);
+      console.log('📄 File header (first 10 bytes):', header);
+      
+      // Basic MP3/ID3 validation
+      const hasID3 = fileBuffer.slice(0, 3).toString() === 'ID3';
+      const hasMP3Sync = (fileBuffer[0] === 0xFF && (fileBuffer[1] & 0xE0) === 0xE0);
+      const hasFtyp = fileBuffer.slice(4, 8).toString() === 'ftyp'; // MP4/M4A
+      
+      console.log('🎵 Audio format detection:', {
+        hasID3: hasID3,
+        hasMP3Sync: hasMP3Sync,
+        hasFtyp: hasFtyp,
+        contentType: file.contentType,
+        filename: filename
+      });
+      
+      // Validate file isn't corrupted (has some recognizable audio format)
+      if (!hasID3 && !hasMP3Sync && !hasFtyp) {
+        console.warn('⚠️ File may not be a valid audio file');
+        // Don't reject, but log warning
+      }
+      
+      console.log('✅ MP3 content validation completed');
+      
+    } catch (error) {
+      console.warn('⚠️ MP3 validation failed (non-critical):', error.message);
+      // Don't fail the upload for validation errors
+    }
+    
     // Step 6: Simple Upload
     console.log('🔍 === STEP 6: UPLOAD TO STORAGE ===');
     const bucketName = 'audio-files';
@@ -408,6 +482,23 @@ exports.handler = async (event, context) => {
       
       console.log('✅ Upload successful!');
       console.log('📄 Upload result:', uploadData);
+      
+      // Memory check after upload
+      if (process.memoryUsage) {
+        const memoryAfterUpload = process.memoryUsage();
+        console.log('🧠 Memory after upload:', {
+          rss: Math.round(memoryAfterUpload.rss / 1024 / 1024) + 'MB',
+          heapUsed: Math.round(memoryAfterUpload.heapUsed / 1024 / 1024) + 'MB'
+        });
+        
+        // Force cleanup if memory usage is high
+        if (memoryAfterUpload.heapUsed > 200 * 1024 * 1024) { // > 200MB
+          console.log('🧹 High memory usage detected, forcing cleanup...');
+          if (global.gc) {
+            global.gc();
+          }
+        }
+      }
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
