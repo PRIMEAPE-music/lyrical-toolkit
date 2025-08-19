@@ -7,7 +7,9 @@ import {
   Download, 
   Trash2,
   RotateCcw,
-  MoreHorizontal
+  MoreHorizontal,
+  Repeat,
+  X
 } from 'lucide-react';
 import audioStorageService from '../../services/audioStorageService';
 
@@ -37,6 +39,14 @@ const AudioPlayer = ({
   const [showMenu, setShowMenu] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   
+  // A-B Loop functionality state
+  const [loopStart, setLoopStart] = useState(null);
+  const [loopEnd, setLoopEnd] = useState(null);
+  const [isLooping, setIsLooping] = useState(false);
+  const [showLoopMarkers, setShowLoopMarkers] = useState(false);
+  const [draggingMarker, setDraggingMarker] = useState(null); // 'start' or 'end' or null
+  const [markerTooltip, setMarkerTooltip] = useState(null); // { type: 'start'|'end', time: number, x: number }
+  
   // Debug re-renders
   useEffect(() => {
     // console.log(`🔄 AudioPlayer [${componentId.current}] re-rendered:`, {
@@ -54,6 +64,8 @@ const AudioPlayer = ({
   const progressRef = useRef(null);
   const dropdownRef = useRef(null);
   const volumeSliderRef = useRef(null);
+  const startMarkerRef = useRef(null);
+  const endMarkerRef = useRef(null);
 
   // Initialize audio element
   useEffect(() => {
@@ -68,7 +80,17 @@ const AudioPlayer = ({
       setDuration(audio.duration);
       setIsLoading(false);
     };
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleTimeUpdate = () => {
+      const currentTime = audio.currentTime;
+      setCurrentTime(currentTime);
+      
+      // A-B Loop logic
+      if (isLooping && loopStart !== null && loopEnd !== null) {
+        if (currentTime >= loopEnd) {
+          audio.currentTime = loopStart;
+        }
+      }
+    };
     const handleEnded = () => setIsPlaying(false);
     const handleError = (e) => {
       setError('Failed to load audio file');
@@ -207,6 +229,82 @@ const AudioPlayer = ({
       console.error('Download error:', error);
     }
   }, [onDownload]);
+
+  // A-B Loop functionality
+  const toggleLoopMarkers = useCallback(() => {
+    setShowLoopMarkers(!showLoopMarkers);
+    if (showLoopMarkers) {
+      // Hide markers, clear loop
+      clearLoop();
+    } else {
+      // Show markers, set default positions if none exist
+      if (loopStart === null || loopEnd === null) {
+        const quarterDuration = duration * 0.25;
+        const threeQuarterDuration = duration * 0.75;
+        setLoopStart(quarterDuration);
+        setLoopEnd(threeQuarterDuration);
+      }
+    }
+  }, [showLoopMarkers, loopStart, loopEnd, duration]);
+
+  const toggleLoop = useCallback(() => {
+    if (loopStart === null || loopEnd === null) return;
+    setIsLooping(!isLooping);
+  }, [isLooping, loopStart, loopEnd]);
+
+  const clearLoop = useCallback(() => {
+    setLoopStart(null);
+    setLoopEnd(null);
+    setIsLooping(false);
+    setShowLoopMarkers(false);
+    setDraggingMarker(null);
+    setMarkerTooltip(null);
+  }, []);
+
+  const calculateMarkerPosition = useCallback((time) => {
+    if (!duration) return 0;
+    return (time / duration) * 100;
+  }, [duration]);
+
+  const calculateTimeFromPosition = useCallback((clientX) => {
+    if (!progressRef.current || !duration) return 0;
+    const rect = progressRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    return percentage * duration;
+  }, [duration]);
+
+  const handleMarkerDragStart = useCallback((markerType, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingMarker(markerType);
+    
+    const handleMouseMove = (e) => {
+      const newTime = calculateTimeFromPosition(e.clientX);
+      
+      if (markerType === 'start') {
+        const maxTime = loopEnd !== null ? loopEnd - 0.1 : duration;
+        const clampedTime = Math.max(0, Math.min(newTime, maxTime));
+        setLoopStart(clampedTime);
+        setMarkerTooltip({ type: 'start', time: clampedTime, x: e.clientX });
+      } else {
+        const minTime = loopStart !== null ? loopStart + 0.1 : 0;
+        const clampedTime = Math.max(minTime, Math.min(newTime, duration));
+        setLoopEnd(clampedTime);
+        setMarkerTooltip({ type: 'end', time: clampedTime, x: e.clientX });
+      }
+    };
+    
+    const handleMouseUp = () => {
+      setDraggingMarker(null);
+      setMarkerTooltip(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [loopStart, loopEnd, duration, calculateTimeFromPosition]);
 
   // Format time display
   const formatTime = (seconds) => {
@@ -404,6 +502,60 @@ const AudioPlayer = ({
             )}
           </button>
           
+          {/* Loop control buttons */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Toggle loop markers button */}
+            <button
+              onClick={toggleLoopMarkers}
+              className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                showLoopMarkers
+                  ? darkMode
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-500 text-white'
+                  : darkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+              title={showLoopMarkers ? "Hide loop markers" : "Show loop markers"}
+            >
+              <Repeat className="w-3 h-3" />
+            </button>
+            
+            {/* Toggle loop active button */}
+            {showLoopMarkers && loopStart !== null && loopEnd !== null && (
+              <button
+                onClick={toggleLoop}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                  isLooping
+                    ? darkMode
+                      ? 'bg-green-600 text-white'
+                      : 'bg-green-500 text-white'
+                    : darkMode
+                      ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+                title={isLooping ? "Disable A-B loop" : "Enable A-B loop"}
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+            )}
+            
+            {/* Clear loop button */}
+            {showLoopMarkers && (
+              <button
+                onClick={clearLoop}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                  darkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+                title="Clear loop markers"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          
           {/* Progress bar - flexible width */}
           <div 
             className="mx-2" 
@@ -423,6 +575,23 @@ const AudioPlayer = ({
               }}
               onClick={handleSeek}
             >
+              {/* Loop range overlay */}
+              {showLoopMarkers && loopStart !== null && loopEnd !== null && (
+                <div
+                  className="absolute top-0 h-full rounded-full"
+                  style={{
+                    left: `${calculateMarkerPosition(loopStart)}%`,
+                    width: `${calculateMarkerPosition(loopEnd) - calculateMarkerPosition(loopStart)}%`,
+                    backgroundColor: isLooping 
+                      ? (darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)')
+                      : (darkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)'),
+                    borderLeft: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
+                    borderRight: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
+                  }}
+                />
+              )}
+              
+              {/* Current progress bar */}
               <div 
                 className="absolute left-0 top-0 bg-blue-500 rounded-full transition-all duration-100"
                 style={{ 
@@ -432,6 +601,56 @@ const AudioPlayer = ({
                   minWidth: currentTime > 0 ? '2px' : '0px' // Ensure visibility when playing
                 }}
               />
+              
+              {/* Loop start marker (A) */}
+              {showLoopMarkers && loopStart !== null && (
+                <div
+                  ref={startMarkerRef}
+                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
+                  style={{
+                    left: `${calculateMarkerPosition(loopStart)}%`,
+                    marginLeft: '-8px',
+                    zIndex: 10
+                  }}
+                  onMouseDown={(e) => handleMarkerDragStart('start', e)}
+                >
+                  <div
+                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs font-bold"
+                    style={{
+                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      borderColor: darkMode ? '#1f2937' : '#ffffff',
+                      color: '#ffffff'
+                    }}
+                  >
+                    A
+                  </div>
+                </div>
+              )}
+              
+              {/* Loop end marker (B) */}
+              {showLoopMarkers && loopEnd !== null && (
+                <div
+                  ref={endMarkerRef}
+                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
+                  style={{
+                    left: `${calculateMarkerPosition(loopEnd)}%`,
+                    marginLeft: '-8px',
+                    zIndex: 10
+                  }}
+                  onMouseDown={(e) => handleMarkerDragStart('end', e)}
+                >
+                  <div
+                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs font-bold"
+                    style={{
+                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      borderColor: darkMode ? '#1f2937' : '#ffffff',
+                      color: '#ffffff'
+                    }}
+                  >
+                    B
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
@@ -600,6 +819,57 @@ const AudioPlayer = ({
       ) : (
         /* Original vertical layout for non-compact mode */
         <div className="space-y-3">
+          {/* Loop control buttons for vertical layout */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLoopMarkers}
+              className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
+                showLoopMarkers
+                  ? darkMode
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-500 text-white'
+                  : darkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+              title={showLoopMarkers ? "Hide loop markers" : "Show loop markers"}
+            >
+              <Repeat className="w-4 h-4" />
+            </button>
+            
+            {showLoopMarkers && loopStart !== null && loopEnd !== null && (
+              <button
+                onClick={toggleLoop}
+                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
+                  isLooping
+                    ? darkMode
+                      ? 'bg-green-600 text-white'
+                      : 'bg-green-500 text-white'
+                    : darkMode
+                      ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+                title={isLooping ? "Disable A-B loop" : "Enable A-B loop"}
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+            
+            {showLoopMarkers && (
+              <button
+                onClick={clearLoop}
+                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
+                  darkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+                title="Clear loop markers"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          
           {/* Progress bar */}
           <div className="space-y-1">
             <div
@@ -609,10 +879,78 @@ const AudioPlayer = ({
               }`}
               onClick={handleSeek}
             >
+              {/* Loop range overlay for vertical layout */}
+              {showLoopMarkers && loopStart !== null && loopEnd !== null && (
+                <div
+                  className="absolute top-0 h-full rounded-full"
+                  style={{
+                    left: `${calculateMarkerPosition(loopStart)}%`,
+                    width: `${calculateMarkerPosition(loopEnd) - calculateMarkerPosition(loopStart)}%`,
+                    backgroundColor: isLooping 
+                      ? (darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)')
+                      : (darkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)'),
+                    borderLeft: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
+                    borderRight: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
+                  }}
+                />
+              )}
+              
               <div 
                 className="absolute left-0 top-0 h-full bg-blue-500 rounded-full transition-all duration-100"
                 style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
               />
+              
+              {/* Loop start marker (A) for vertical layout */}
+              {showLoopMarkers && loopStart !== null && (
+                <div
+                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
+                  style={{
+                    left: `${calculateMarkerPosition(loopStart)}%`,
+                    marginLeft: '-6px',
+                    zIndex: 10
+                  }}
+                  onMouseDown={(e) => handleMarkerDragStart('start', e)}
+                >
+                  <div
+                    className="w-3 h-3 rounded-full border-2 flex items-center justify-center"
+                    style={{
+                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      borderColor: darkMode ? '#1f2937' : '#ffffff',
+                      fontSize: '8px',
+                      color: '#ffffff',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    A
+                  </div>
+                </div>
+              )}
+              
+              {/* Loop end marker (B) for vertical layout */}
+              {showLoopMarkers && loopEnd !== null && (
+                <div
+                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
+                  style={{
+                    left: `${calculateMarkerPosition(loopEnd)}%`,
+                    marginLeft: '-6px',
+                    zIndex: 10
+                  }}
+                  onMouseDown={(e) => handleMarkerDragStart('end', e)}
+                >
+                  <div
+                    className="w-3 h-3 rounded-full border-2 flex items-center justify-center"
+                    style={{
+                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      borderColor: darkMode ? '#1f2937' : '#ffffff',
+                      fontSize: '8px',
+                      color: '#ffffff',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    B
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Time display */}
@@ -686,6 +1024,23 @@ const AudioPlayer = ({
               />
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Marker tooltip */}
+      {markerTooltip && (
+        <div
+          className="fixed px-2 py-1 text-xs rounded shadow-lg z-50 pointer-events-none"
+          style={{
+            left: markerTooltip.x,
+            top: -30,
+            backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+            color: darkMode ? '#ffffff' : '#000000',
+            border: `1px solid ${darkMode ? '#6b7280' : '#d1d5db'}`,
+            transform: 'translateX(-50%)'
+          }}
+        >
+          {markerTooltip.type === 'start' ? 'A: ' : 'B: '}{formatTime(markerTooltip.time)}
         </div>
       )}
       
