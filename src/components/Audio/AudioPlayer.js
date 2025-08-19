@@ -459,11 +459,12 @@ const AudioPlayer = ({
             {hideMenu && showVolumeSlider && (
               <div 
                 ref={volumeSliderRef}
-                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-20 ${
-                  darkMode 
-                    ? 'border-gray-600 bg-gray-800' 
-                    : 'border-gray-200 bg-white'
-                }`}
+                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-20`}
+                style={{
+                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                  borderColor: darkMode ? '#6b7280' : '#d1d5db',
+                  minWidth: '100px'
+                }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
@@ -473,9 +474,7 @@ const AudioPlayer = ({
                   step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className={`w-20 h-2 rounded-lg appearance-none cursor-pointer ${
-                    darkMode ? 'bg-gray-700' : 'bg-gray-200'
-                  }`}
+                  className="w-20 h-2 rounded-lg appearance-none cursor-pointer"
                   style={{
                     background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, ${
                       darkMode ? '#374151' : '#e5e7eb'
