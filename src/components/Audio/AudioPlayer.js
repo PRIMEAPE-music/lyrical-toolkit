@@ -538,7 +538,8 @@ const AudioPlayer = ({
                 height: '16px',
                 backgroundColor: darkMode ? '#6b7280' : '#d1d5db',
                 borderColor: darkMode ? '#9ca3af' : '#6b7280',
-                width: '100%'
+                width: '100%',
+                zIndex: 1
               }}
               onClick={handleSeek}
             >
@@ -600,11 +601,11 @@ const AudioPlayer = ({
                     left: `${calculateMarkerPosition(loopStart)}%`,
                     top: '100%',
                     width: '2px',
-                    height: '12px',
+                    height: '8px',
                     backgroundColor: '#22c55e',
-                    opacity: 0.7,
+                    opacity: 0.8,
                     marginLeft: '-1px',
-                    zIndex: 5
+                    zIndex: 15
                   }}
                 />
               )}
@@ -642,11 +643,11 @@ const AudioPlayer = ({
                     left: `${calculateMarkerPosition(loopEnd)}%`,
                     top: '100%',
                     width: '2px',
-                    height: '12px',
+                    height: '8px',
                     backgroundColor: '#22c55e',
-                    opacity: 0.7,
+                    opacity: 0.8,
                     marginLeft: '-1px',
-                    zIndex: 5
+                    zIndex: 15
                   }}
                 />
               )}
@@ -900,23 +901,6 @@ const AudioPlayer = ({
                 </div>
               )}
               
-              {/* Precision line for A marker - vertical layout */}
-              {showLoopMarkers && loopStart !== null && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: `${calculateMarkerPosition(loopStart)}%`,
-                    top: '100%',
-                    width: '1px',
-                    height: '10px',
-                    backgroundColor: '#22c55e',
-                    opacity: 0.7,
-                    marginLeft: '-0.5px',
-                    zIndex: 5
-                  }}
-                />
-              )}
-              
               {/* Loop end marker (B) for vertical layout */}
               {showLoopMarkers && loopEnd !== null && (
                 <div
@@ -941,23 +925,6 @@ const AudioPlayer = ({
                     B
                   </div>
                 </div>
-              )}
-              
-              {/* Precision line for B marker - vertical layout */}
-              {showLoopMarkers && loopEnd !== null && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: `${calculateMarkerPosition(loopEnd)}%`,
-                    top: '100%',
-                    width: '1px',
-                    height: '10px',
-                    backgroundColor: '#22c55e',
-                    opacity: 0.7,
-                    marginLeft: '-0.5px',
-                    zIndex: 5
-                  }}
-                />
               )}
             </div>
             
