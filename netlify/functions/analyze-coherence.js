@@ -1,5 +1,36 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// DEBUG: Check environment variables at module load time
+console.log('🐛 MODULE LOAD: Function module loaded');
+console.log('🐛 MODULE LOAD: NODE_ENV:', process.env.NODE_ENV);
+console.log('🐛 MODULE LOAD: GEMINI_API_KEY available:', !!process.env.GEMINI_API_KEY);
+
+// Alternative way to access environment variables (sometimes needed in Netlify)
+function getEnvironmentVariable(name) {
+  // Try multiple ways to access the environment variable
+  const methods = [
+    () => process.env[name],
+    () => globalThis.process?.env?.[name],
+    () => global.process?.env?.[name],
+    () => require('process').env[name]
+  ];
+  
+  for (let i = 0; i < methods.length; i++) {
+    try {
+      const value = methods[i]();
+      if (value) {
+        console.log(`🐛 DEBUG: Found ${name} using method ${i + 1}`);
+        return value;
+      }
+    } catch (error) {
+      console.log(`🐛 DEBUG: Method ${i + 1} failed for ${name}:`, error.message);
+    }
+  }
+  
+  console.log(`🐛 DEBUG: All methods failed to find ${name}`);
+  return null;
+}
+
 // Rate limiting and caching for the function
 const cache = new Map();
 const lastApiCall = { time: 0 };
@@ -83,6 +114,30 @@ Return JSON with this EXACT structure in mind:
 }
 
 exports.handler = async (event, context) => {
+  // DEBUG: Log environment variable information
+  console.log('🐛 DEBUG: Function execution started');
+  console.log('🐛 DEBUG: Node environment:', process.env.NODE_ENV);
+  console.log('🐛 DEBUG: Context environment:', JSON.stringify(context, null, 2));
+  
+  // DEBUG: Check all environment variables (be careful not to log sensitive data in full)
+  console.log('🐛 DEBUG: Environment variables available:');
+  Object.keys(process.env).forEach(key => {
+    if (key.includes('GEMINI') || key.includes('API')) {
+      // Show partial value for API keys for security
+      const value = process.env[key];
+      const displayValue = value ? `${value.substring(0, 10)}...` : 'undefined';
+      console.log(`  ${key}: ${displayValue}`);
+    } else {
+      console.log(`  ${key}: ${process.env[key] ? 'SET' : 'NOT SET'}`);
+    }
+  });
+  
+  // DEBUG: Specifically check GEMINI_API_KEY
+  console.log('🐛 DEBUG: GEMINI_API_KEY check:');
+  console.log('  Direct access:', process.env.GEMINI_API_KEY ? 'DEFINED' : 'UNDEFINED');
+  console.log('  Type:', typeof process.env.GEMINI_API_KEY);
+  console.log('  Length:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 'N/A');
+  
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
@@ -125,17 +180,49 @@ exports.handler = async (event, context) => {
     }
 
     // Initialize Gemini API
-    const apiKey = process.env.GEMINI_API_KEY;
+    console.log('🐛 DEBUG: About to initialize Gemini API');
+    
+    // Try multiple methods to get the API key
+    let apiKey = process.env.GEMINI_API_KEY;
+    console.log('🐛 DEBUG: Standard method - apiKey:', apiKey ? 'PRESENT' : 'MISSING');
+    
+    // If not found, try alternative method
     if (!apiKey) {
+      console.log('🐛 DEBUG: Standard method failed, trying alternative methods');
+      apiKey = getEnvironmentVariable('GEMINI_API_KEY');
+    }
+    
+    console.log('🐛 DEBUG: Final apiKey status:', apiKey ? 'PRESENT' : 'MISSING');
+    console.log('🐛 DEBUG: apiKey type:', typeof apiKey);
+    console.log('🐛 DEBUG: apiKey length:', apiKey ? apiKey.length : 'N/A');
+    
+    if (!apiKey) {
+      console.log('❌ ERROR: GEMINI_API_KEY is not available');
+      console.log('🐛 DEBUG: Final env var check:');
+      console.log('  process.env.GEMINI_API_KEY:', process.env.GEMINI_API_KEY);
+      console.log('  Keys containing GEMINI:', Object.keys(process.env).filter(k => k.includes('GEMINI')));
+      console.log('  Keys containing API:', Object.keys(process.env).filter(k => k.includes('API')));
+      
       return {
         statusCode: 500,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ error: 'Gemini API key not configured' })
+        body: JSON.stringify({ 
+          error: 'Gemini API key not configured',
+          debug: {
+            nodeEnv: process.env.NODE_ENV,
+            envKeysCount: Object.keys(process.env).length,
+            hasGeminiKey: !!process.env.GEMINI_API_KEY,
+            geminiKeys: Object.keys(process.env).filter(k => k.includes('GEMINI')),
+            apiKeys: Object.keys(process.env).filter(k => k.includes('API'))
+          }
+        })
       };
     }
+    
+    console.log('✅ SUCCESS: GEMINI_API_KEY found, proceeding with API initialization');
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
