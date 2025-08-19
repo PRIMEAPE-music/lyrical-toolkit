@@ -13,6 +13,7 @@ import { analyzeRhymeStatistics } from './utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from './data/songVocabularyPhoneticMap';
 import { saveUserSongs, clearUserSongs, saveExampleSongDeleted, loadAllSongs } from './utils/songStorage';
 import audioStorageService from './services/audioStorageService';
+import { deleteSong as deleteSongFromServer } from './services/songsService';
 // Import hooks
 import { useSearchHistory, useDarkMode, useHighlightWord } from './hooks/useLocalStorage';
 import { useFileUpload } from './hooks/useFileUpload';
@@ -299,18 +300,31 @@ const LyricsSearchAppContent = () => {
   };
 
   // Delete individual song
-  const deleteSong = (songId) => {
-    if (window.confirm('Are you sure you want to delete this song?')) {
+  const deleteSong = async (songId) => {
+    // Add confirmation dialog
+    const confirmDelete = window.confirm('Are you sure you want to delete this song? This cannot be undone.');
+    if (!confirmDelete) return;
+
+    try {
       setSongs(prev => {
         const songToDelete = prev.find(song => song.id === songId);
         if (songToDelete && songToDelete.isExample) {
-          saveExampleSongDeleted(true); // Persist the deletion state
+          saveExampleSongDeleted(true);
         }
-        const updatedSongs = prev.filter(song => song.id !== songId);
-        
-        // The useEffect will handle persisting the updated songs
-        return updatedSongs;
+        return prev.filter(song => song.id !== songId);
       });
+
+      // If user is authenticated, delete from server too
+      if (isAuthenticated) {
+        await deleteSongFromServer(songId);
+        console.log('✅ Song deleted from server');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting song:', error);
+      alert('Failed to delete song. Please try again.');
+      // Revert local state on error by reloading songs
+      const allSongs = await loadAllSongs(isAuthenticated);
+      setSongs(allSongs);
     }
   };
 
