@@ -445,7 +445,7 @@ button:hover * {
 /* Light mode: Make audio filename and duration black for better readability */
 .audio-player h4,
 .audio-player p.text-xs {
-  color: #000000 !important;
+  color: #6b7280 !important;
 }
 
 /* Dark mode: Keep audio filename and duration white (override the above rule) */
