@@ -383,55 +383,63 @@ button:hover * {
   color: inherit !important;
 }
 
-/* Override generic button hover for AudioPlayer menu buttons to preserve text colors */
-.audio-menu-button:hover {
-  color: inherit !important;
-}
+/* Audio Player Black Text Override - Buttons Only */
 
-.audio-menu-button:hover * {
-  color: inherit !important;
-}
-
-.dark .audio-menu-button:hover {
-  color: inherit !important;
-}
-
-.dark .audio-menu-button:hover * {
-  color: inherit !important;
-}
-
-/* Audio Player Black Text Override */
-.audio-player .text-gray-400,
-.audio-player .text-gray-500,
-.audio-player .text-gray-300,
-.audio-player .text-gray-700 {
+/* Volume control button icons - make black */
+.audio-player button[class*="text-gray"] svg {
   color: #000000 !important;
 }
 
-/* Ensure black text in both light and dark modes */
-.dark .audio-player .text-gray-400,
-.dark .audio-player .text-gray-500,
-.dark .audio-player .text-gray-300,
-.dark .audio-player .text-gray-700 {
+.dark .audio-player button[class*="text-gray"] svg {
   color: #000000 !important;
 }
 
-/* Specific overrides for audio player elements */
-.audio-player button[class*="text-gray"] {
+/* Menu button (three dots) - make black */
+.audio-player button svg {
   color: #000000 !important;
 }
 
-.dark .audio-player button[class*="text-gray"] {
+.dark .audio-player button svg {
   color: #000000 !important;
 }
 
-/* Time display override */
+/* Play/Pause button - ensure icons are black */
+.audio-player button[class*="bg-blue"] svg {
+  color: #000000 !important;
+}
+
+.dark .audio-player button[class*="bg-blue"] svg {
+  color: #000000 !important;
+}
+
+/* Menu dropdown items - make black */
+.audio-player .audio-menu-button {
+  color: #000000 !important;
+}
+
+.dark .audio-player .audio-menu-button {
+  color: #000000 !important;
+}
+
+.audio-player .audio-menu-button svg {
+  color: #000000 !important;
+}
+
+.dark .audio-player .audio-menu-button svg {
+  color: #000000 !important;
+}
+
+/* Keep audio filename, metadata, and TIME DISPLAY WHITE */
+.audio-player h4,
+.audio-player p.text-xs,
 .audio-player .text-xs span {
-  color: #000000 !important;
+  color: white !important;
 }
 
+.dark .audio-player h4,
+.dark .audio-player p.text-xs,
 .dark .audio-player .text-xs span {
-  color: #000000 !important;
+  color: white !important;
 }
 
 input:focus {
