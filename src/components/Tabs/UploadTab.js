@@ -244,14 +244,6 @@ const UploadTab = ({
                 {/* Audio Player - Show if song has audio and it's expanded */}
                 {song.audioFileUrl && (
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                    {(() => {
-                      console.log('🎵 === UPLOAD TAB AUDIO PLAYER ===');
-                      console.log('Song:', song.title);
-                      console.log('onAudioDownload function:', typeof onAudioDownload, !!onAudioDownload);
-                      console.log('onAudioRemove function:', typeof onAudioRemove, !!onAudioRemove);
-                      console.log('setSelectedSongForAudio function:', typeof setSelectedSongForAudio, !!setSelectedSongForAudio);
-                      return null;
-                    })()}
                     <AudioPlayer
                       audioUrl={song.audioFileUrl}
                       audioFilename={song.audioFileName}

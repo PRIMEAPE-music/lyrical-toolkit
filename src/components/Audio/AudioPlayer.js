@@ -23,12 +23,6 @@ const AudioPlayer = ({
   showControls = true,
   compact = false
 }) => {
-  console.log('🎵 === AUDIO PLAYER PROPS ===');
-  console.log('audioUrl:', audioUrl);
-  console.log('showControls:', showControls);
-  console.log('onDownload:', typeof onDownload, !!onDownload);
-  console.log('onRemove:', typeof onRemove, !!onRemove);
-  console.log('onReplace:', typeof onReplace, !!onReplace);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(audioDuration || 0);
@@ -205,15 +199,7 @@ const AudioPlayer = ({
             </div>
             
             {/* Menu button */}
-            {(() => {
-              const shouldShowMenu = showControls && (onDownload || onRemove || onReplace);
-              console.log('🔘 Should show menu button?', {
-                showControls,
-                hasHandlers: !!(onDownload || onRemove || onReplace),
-                shouldShow: shouldShowMenu
-              });
-              return shouldShowMenu;
-            })() && (
+            {showControls && (onDownload || onRemove || onReplace) && (
               <div className="relative ml-2">
                 <button
                   onClick={() => {
@@ -235,11 +221,6 @@ const AudioPlayer = ({
                       ? 'border-gray-600 bg-gray-800' 
                       : 'border-gray-200 bg-white'
                   }`}>
-                    {console.log('📋 Menu is being rendered with buttons:', {
-                      hasDownload: !!onDownload,
-                      hasRemove: !!onRemove,
-                      hasReplace: !!onReplace
-                    })}
                     {onDownload && (
                       <button
                         onClick={() => {
