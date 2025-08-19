@@ -23,6 +23,12 @@ const AudioPlayer = ({
   showControls = true,
   compact = false
 }) => {
+  console.log('🎵 === AUDIO PLAYER PROPS ===');
+  console.log('audioUrl:', audioUrl);
+  console.log('showControls:', showControls);
+  console.log('onDownload:', typeof onDownload, !!onDownload);
+  console.log('onRemove:', typeof onRemove, !!onRemove);
+  console.log('onReplace:', typeof onReplace, !!onReplace);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(audioDuration || 0);
@@ -199,10 +205,21 @@ const AudioPlayer = ({
             </div>
             
             {/* Menu button */}
-            {showControls && (onDownload || onRemove || onReplace) && (
+            {(() => {
+              const shouldShowMenu = showControls && (onDownload || onRemove || onReplace);
+              console.log('🔘 Should show menu button?', {
+                showControls,
+                hasHandlers: !!(onDownload || onRemove || onReplace),
+                shouldShow: shouldShowMenu
+              });
+              return shouldShowMenu;
+            })() && (
               <div className="relative ml-2">
                 <button
-                  onClick={() => setShowMenu(!showMenu)}
+                  onClick={() => {
+                    console.log('🔘 Menu button clicked, current showMenu:', showMenu);
+                    setShowMenu(!showMenu);
+                  }}
                   className={`p-1 rounded hover:bg-opacity-75 ${
                     darkMode 
                       ? 'text-gray-400 hover:bg-gray-700' 
@@ -218,6 +235,11 @@ const AudioPlayer = ({
                       ? 'border-gray-600 bg-gray-800' 
                       : 'border-gray-200 bg-white'
                   }`}>
+                    {console.log('📋 Menu is being rendered with buttons:', {
+                      hasDownload: !!onDownload,
+                      hasRemove: !!onRemove,
+                      hasReplace: !!onReplace
+                    })}
                     {onDownload && (
                       <button
                         onClick={() => {

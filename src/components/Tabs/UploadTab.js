@@ -244,15 +244,32 @@ const UploadTab = ({
                 {/* Audio Player - Show if song has audio and it's expanded */}
                 {song.audioFileUrl && (
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    {(() => {
+                      console.log('🎵 === UPLOAD TAB AUDIO PLAYER ===');
+                      console.log('Song:', song.title);
+                      console.log('onAudioDownload function:', typeof onAudioDownload, !!onAudioDownload);
+                      console.log('onAudioRemove function:', typeof onAudioRemove, !!onAudioRemove);
+                      console.log('setSelectedSongForAudio function:', typeof setSelectedSongForAudio, !!setSelectedSongForAudio);
+                      return null;
+                    })()}
                     <AudioPlayer
                       audioUrl={song.audioFileUrl}
                       audioFilename={song.audioFileName}
                       audioSize={song.audioFileSize}
                       audioDuration={song.audioDuration}
                       darkMode={darkMode}
-                      onDownload={() => onAudioDownload && onAudioDownload(song)}
-                      onRemove={() => onAudioRemove && onAudioRemove(song.id)}
-                      onReplace={() => setSelectedSongForAudio && setSelectedSongForAudio(song)}
+                      onDownload={() => {
+                        console.log('🎵 UploadTab onDownload wrapper called');
+                        return onAudioDownload && onAudioDownload(song);
+                      }}
+                      onRemove={() => {
+                        console.log('🎵 UploadTab onRemove wrapper called');
+                        return onAudioRemove && onAudioRemove(song.id);
+                      }}
+                      onReplace={() => {
+                        console.log('🎵 UploadTab onReplace wrapper called');
+                        return setSelectedSongForAudio && setSelectedSongForAudio(song);
+                      }}
                       showControls={true}
                       compact={false}
                     />
