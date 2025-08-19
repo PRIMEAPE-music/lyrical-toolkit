@@ -7,9 +7,7 @@ import {
   Download, 
   Trash2,
   RotateCcw,
-  MoreHorizontal,
-  Repeat,
-  X
+  MoreHorizontal
 } from 'lucide-react';
 import audioStorageService from '../../services/audioStorageService';
 
@@ -42,7 +40,6 @@ const AudioPlayer = ({
   // A-B Loop functionality state
   const [loopStart, setLoopStart] = useState(null);
   const [loopEnd, setLoopEnd] = useState(null);
-  const [isLooping, setIsLooping] = useState(false);
   const [showLoopMarkers, setShowLoopMarkers] = useState(false);
   const [draggingMarker, setDraggingMarker] = useState(null); // 'start' or 'end' or null
   const [markerTooltip, setMarkerTooltip] = useState(null); // { type: 'start'|'end', time: number, x: number }
@@ -82,13 +79,13 @@ const AudioPlayer = ({
     };
     const handleTimeUpdate = () => {
       const currentTime = audio.currentTime;
-      setCurrentTime(currentTime);
       
-      // A-B Loop logic
-      if (isLooping && loopStart !== null && loopEnd !== null) {
-        if (currentTime >= loopEnd) {
-          audio.currentTime = loopStart;
-        }
+      // A-B Loop logic - check BEFORE setting state to prevent UI flicker
+      if (showLoopMarkers && loopStart !== null && loopEnd !== null && currentTime >= loopEnd) {
+        audio.currentTime = loopStart;
+        setCurrentTime(loopStart);
+      } else {
+        setCurrentTime(currentTime);
       }
     };
     const handleEnded = () => setIsPlaying(false);
@@ -230,36 +227,24 @@ const AudioPlayer = ({
     }
   }, [onDownload]);
 
-  // A-B Loop functionality
+  // A-B Loop functionality - simplified with single toggle
   const toggleLoopMarkers = useCallback(() => {
-    setShowLoopMarkers(!showLoopMarkers);
     if (showLoopMarkers) {
-      // Hide markers, clear loop
-      clearLoop();
+      // Hide markers and disable loop functionality
+      setShowLoopMarkers(false);
+      setDraggingMarker(null);
+      setMarkerTooltip(null);
     } else {
-      // Show markers, set default positions if none exist
-      if (loopStart === null || loopEnd === null) {
+      // Show markers and set default positions
+      setShowLoopMarkers(true);
+      if (duration > 0) {
         const quarterDuration = duration * 0.25;
         const threeQuarterDuration = duration * 0.75;
         setLoopStart(quarterDuration);
         setLoopEnd(threeQuarterDuration);
       }
     }
-  }, [showLoopMarkers, loopStart, loopEnd, duration]);
-
-  const toggleLoop = useCallback(() => {
-    if (loopStart === null || loopEnd === null) return;
-    setIsLooping(!isLooping);
-  }, [isLooping, loopStart, loopEnd]);
-
-  const clearLoop = useCallback(() => {
-    setLoopStart(null);
-    setLoopEnd(null);
-    setIsLooping(false);
-    setShowLoopMarkers(false);
-    setDraggingMarker(null);
-    setMarkerTooltip(null);
-  }, []);
+  }, [showLoopMarkers, duration]);
 
   const calculateMarkerPosition = useCallback((time) => {
     if (!duration) return 0;
@@ -502,59 +487,22 @@ const AudioPlayer = ({
             )}
           </button>
           
-          {/* Loop control buttons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Toggle loop markers button */}
-            <button
-              onClick={toggleLoopMarkers}
-              className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
-                showLoopMarkers
-                  ? darkMode
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-blue-500 text-white'
-                  : darkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
-              title={showLoopMarkers ? "Hide loop markers" : "Show loop markers"}
-            >
-              <Repeat className="w-3 h-3" />
-            </button>
-            
-            {/* Toggle loop active button */}
-            {showLoopMarkers && loopStart !== null && loopEnd !== null && (
-              <button
-                onClick={toggleLoop}
-                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
-                  isLooping
-                    ? darkMode
-                      ? 'bg-green-600 text-white'
-                      : 'bg-green-500 text-white'
-                    : darkMode
-                      ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-                title={isLooping ? "Disable A-B loop" : "Enable A-B loop"}
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
-            )}
-            
-            {/* Clear loop button */}
-            {showLoopMarkers && (
-              <button
-                onClick={clearLoop}
-                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
-                  darkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-                title="Clear loop markers"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
+          {/* A-B Loop toggle button */}
+          <button
+            onClick={toggleLoopMarkers}
+            className={`flex items-center justify-center w-6 h-6 rounded transition-colors flex-shrink-0 ${
+              showLoopMarkers
+                ? darkMode
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-blue-500 text-white'
+                : darkMode
+                  ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+            title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
+          >
+            <RotateCcw className="w-3 h-3" />
+          </button>
           
           {/* Progress bar - flexible width */}
           <div 
@@ -582,11 +530,9 @@ const AudioPlayer = ({
                   style={{
                     left: `${calculateMarkerPosition(loopStart)}%`,
                     width: `${calculateMarkerPosition(loopEnd) - calculateMarkerPosition(loopStart)}%`,
-                    backgroundColor: isLooping 
-                      ? (darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)')
-                      : (darkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)'),
-                    borderLeft: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
-                    borderRight: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
+                    backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)',
+                    borderLeft: '2px solid #22c55e',
+                    borderRight: '2px solid #22c55e',
                   }}
                 />
               )}
@@ -617,7 +563,7 @@ const AudioPlayer = ({
                   <div
                     className="w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs font-bold"
                     style={{
-                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      backgroundColor: '#22c55e',
                       borderColor: darkMode ? '#1f2937' : '#ffffff',
                       color: '#ffffff'
                     }}
@@ -642,7 +588,7 @@ const AudioPlayer = ({
                   <div
                     className="w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs font-bold"
                     style={{
-                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      backgroundColor: '#22c55e',
                       borderColor: darkMode ? '#1f2937' : '#ffffff',
                       color: '#ffffff'
                     }}
@@ -819,8 +765,8 @@ const AudioPlayer = ({
       ) : (
         /* Original vertical layout for non-compact mode */
         <div className="space-y-3">
-          {/* Loop control buttons for vertical layout */}
-          <div className="flex items-center gap-2">
+          {/* A-B Loop toggle button for vertical layout */}
+          <div className="flex items-center">
             <button
               onClick={toggleLoopMarkers}
               className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
@@ -832,42 +778,10 @@ const AudioPlayer = ({
                     ? 'text-gray-400 hover:text-white hover:bg-gray-700'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
               }`}
-              title={showLoopMarkers ? "Hide loop markers" : "Show loop markers"}
+              title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
             >
-              <Repeat className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" />
             </button>
-            
-            {showLoopMarkers && loopStart !== null && loopEnd !== null && (
-              <button
-                onClick={toggleLoop}
-                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
-                  isLooping
-                    ? darkMode
-                      ? 'bg-green-600 text-white'
-                      : 'bg-green-500 text-white'
-                    : darkMode
-                      ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-                title={isLooping ? "Disable A-B loop" : "Enable A-B loop"}
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            )}
-            
-            {showLoopMarkers && (
-              <button
-                onClick={clearLoop}
-                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
-                  darkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-                title="Clear loop markers"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
           
           {/* Progress bar */}
@@ -886,11 +800,9 @@ const AudioPlayer = ({
                   style={{
                     left: `${calculateMarkerPosition(loopStart)}%`,
                     width: `${calculateMarkerPosition(loopEnd) - calculateMarkerPosition(loopStart)}%`,
-                    backgroundColor: isLooping 
-                      ? (darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)')
-                      : (darkMode ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)'),
-                    borderLeft: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
-                    borderRight: `2px solid ${isLooping ? '#22c55e' : '#9ca3af'}`,
+                    backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)',
+                    borderLeft: '2px solid #22c55e',
+                    borderRight: '2px solid #22c55e',
                   }}
                 />
               )}
@@ -914,7 +826,7 @@ const AudioPlayer = ({
                   <div
                     className="w-3 h-3 rounded-full border-2 flex items-center justify-center"
                     style={{
-                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      backgroundColor: '#22c55e',
                       borderColor: darkMode ? '#1f2937' : '#ffffff',
                       fontSize: '8px',
                       color: '#ffffff',
@@ -940,7 +852,7 @@ const AudioPlayer = ({
                   <div
                     className="w-3 h-3 rounded-full border-2 flex items-center justify-center"
                     style={{
-                      backgroundColor: isLooping ? '#22c55e' : '#9ca3af',
+                      backgroundColor: '#22c55e',
                       borderColor: darkMode ? '#1f2937' : '#ffffff',
                       fontSize: '8px',
                       color: '#ffffff',
