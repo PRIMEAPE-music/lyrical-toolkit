@@ -82,6 +82,21 @@ const AudioPlayer = ({
     };
   }, [audioUrl]);
 
+  // Handle click outside to close menu
+  useEffect(() => {
+    if (!showMenu) return;
+    
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        console.log(`🔘 [${componentId.current}] Click outside detected, closing menu`);
+        setShowMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
+
   // Play/pause toggle
   const togglePlayPause = useCallback(async () => {
     if (!audioRef.current || isLoading) return;
@@ -405,26 +420,6 @@ const AudioPlayer = ({
         </div>
       </div>
       
-      {/* Click outside to close menu */}
-      {showMenu && (
-        <div 
-          className="fixed inset-0 z-10" 
-          onClick={(e) => {
-            console.log('🐛 DEBUG: Click target:', e.target);
-            console.log('🐛 DEBUG: dropdownRef.current:', dropdownRef.current);
-            console.log('🐛 DEBUG: dropdownRef contains target:', dropdownRef.current && dropdownRef.current.contains(e.target));
-            
-            // Don't close if clicking inside the dropdown menu
-            if (dropdownRef.current && dropdownRef.current.contains(e.target)) {
-              console.log(`🔘 [${componentId.current}] Click inside dropdown detected, keeping menu open`);
-              return;
-            }
-            
-            console.log(`🔘 [${componentId.current}] Click outside detected, closing menu`);
-            setShowMenu(false);
-          }}
-        />
-      )}
     </div>
   );
 };
