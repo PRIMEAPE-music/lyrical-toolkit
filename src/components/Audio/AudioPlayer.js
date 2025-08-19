@@ -382,7 +382,7 @@ const AudioPlayer = ({
       {/* Player controls */}
       {compact ? (
         /* Compact horizontal layout: [Play] [Seek Bar] [Volume] [Time Display] */
-        <div className="relative flex items-center gap-2">
+        <div className="relative flex items-center gap-2 w-full">
           {/* Play/pause button */}
           <button
             onClick={togglePlayPause}
@@ -407,7 +407,7 @@ const AudioPlayer = ({
           </button>
           
           {/* Progress bar - flexible width */}
-          <div className="flex-1 min-w-0 px-1">
+          <div className="flex-1 px-1" style={{ minWidth: '60px' }}>
             <div
               ref={progressRef}
               className={`relative h-2 rounded-full cursor-pointer ${
