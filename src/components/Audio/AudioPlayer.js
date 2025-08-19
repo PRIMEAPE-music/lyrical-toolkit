@@ -166,10 +166,8 @@ const AudioPlayer = ({
 
   // Volume button toggle (mute/unmute or show/hide volume slider)
   const toggleVolume = useCallback(() => {
-    console.log('🔊 toggleVolume called - hideMenu:', hideMenu, 'compact:', compact, 'showVolumeSlider:', showVolumeSlider);
     if (hideMenu && compact) {
       // In notepad mode, toggle volume slider visibility
-      console.log('🔊 Toggling volume slider visibility from', showVolumeSlider, 'to', !showVolumeSlider);
       setShowVolumeSlider(!showVolumeSlider);
     } else {
       // In normal mode, toggle mute
@@ -411,8 +409,7 @@ const AudioPlayer = ({
             className="mx-2" 
             style={{ 
               flex: 1, 
-              minWidth: '100px', 
-              backgroundColor: 'red' // Temporary debug color
+              minWidth: '100px'
             }}
           >
             <div
@@ -459,13 +456,11 @@ const AudioPlayer = ({
             {hideMenu && showVolumeSlider && (
               <div 
                 ref={volumeSliderRef}
-                className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-50"
-                style={{
-                  backgroundColor: '#ff0000', // Bright red background for debugging
-                  borderColor: '#00ff00',     // Green border for debugging
-                  minWidth: '120px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)' // Strong shadow
-                }}
+                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-50 ${
+                  darkMode 
+                    ? 'border-gray-600 bg-gray-800' 
+                    : 'border-gray-200 bg-white'
+                }`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
@@ -475,13 +470,17 @@ const AudioPlayer = ({
                   step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className="w-20 h-4 rounded-lg appearance-none cursor-pointer"
+                  className={`w-20 h-2 rounded-lg appearance-none cursor-pointer ${
+                    darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                  }`}
                   style={{
-                    backgroundColor: '#0000ff', // Blue slider for debugging
-                    width: '100px'
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, ${
+                      darkMode ? '#374151' : '#e5e7eb'
+                    } ${(isMuted ? 0 : volume) * 100}%, ${
+                      darkMode ? '#374151' : '#e5e7eb'
+                    } 100%)`
                   }}
                 />
-                <div style={{ color: 'white', fontSize: '12px' }}>DEBUG: Volume Dropdown</div>
               </div>
             )}
           </div>
