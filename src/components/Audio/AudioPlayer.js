@@ -80,13 +80,32 @@ const AudioPlayer = ({
     const handleTimeUpdate = () => {
       const currentTime = audio.currentTime;
       
-      // A-B Loop logic - check BEFORE setting state to prevent UI flicker
-      if (showLoopMarkers && loopStart !== null && loopEnd !== null && currentTime >= loopEnd) {
-        audio.currentTime = loopStart;
-        setCurrentTime(loopStart);
-      } else {
-        setCurrentTime(currentTime);
+      // A-B Loop logic with tolerance for timing precision
+      const LOOP_TOLERANCE = 0.1; // 100ms tolerance for loop detection
+      
+      if (showLoopMarkers && loopStart !== null && loopEnd !== null) {
+        // Debug logging to troubleshoot loop detection
+        if (currentTime >= (loopEnd - LOOP_TOLERANCE)) {
+          console.log('🔄 Loop triggered:', {
+            currentTime: currentTime.toFixed(3),
+            loopStart: loopStart.toFixed(3),
+            loopEnd: loopEnd.toFixed(3),
+            tolerance: LOOP_TOLERANCE,
+            showLoopMarkers
+          });
+          
+          // Use fastSeek if available for smoother seeking, fallback to currentTime
+          if (audio.fastSeek) {
+            audio.fastSeek(loopStart);
+          } else {
+            audio.currentTime = loopStart;
+          }
+          setCurrentTime(loopStart);
+          return; // Early return to prevent setting currentTime below
+        }
       }
+      
+      setCurrentTime(currentTime);
     };
     const handleEnded = () => setIsPlaying(false);
     const handleError = (e) => {
@@ -110,7 +129,7 @@ const AudioPlayer = ({
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
-  }, [audioUrl]);
+  }, [audioUrl, showLoopMarkers, loopStart, loopEnd]);
 
   // Handle click outside to close menu
   useEffect(() => {
