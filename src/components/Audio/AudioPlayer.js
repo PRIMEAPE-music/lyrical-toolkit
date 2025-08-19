@@ -487,28 +487,6 @@ const AudioPlayer = ({
             )}
           </div>
           
-          {/* Volume slider - show when not hideMenu */}
-          {!hideMenu && (
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={isMuted ? 0 : volume}
-              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-              className={`w-12 h-2 rounded-lg appearance-none cursor-pointer flex-shrink-0 ${
-                darkMode ? 'bg-gray-700' : 'bg-gray-200'
-              }`}
-              style={{
-                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, ${
-                  darkMode ? '#374151' : '#e5e7eb'
-                } ${(isMuted ? 0 : volume) * 100}%, ${
-                  darkMode ? '#374151' : '#e5e7eb'
-                } 100%)`
-              }}
-            />
-          )}
-          
           {/* Menu button - hide when hideMenu is true */}
           {!hideMenu && showControls && (onDownload || onRemove || onReplace) && (
             <div className="relative flex-shrink-0">
