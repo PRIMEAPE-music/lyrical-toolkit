@@ -841,9 +841,13 @@ const AudioPlayer = ({
           <div className="space-y-1">
             <div
               ref={progressRef}
-              className={`relative h-2 rounded-full cursor-pointer ${
-                darkMode ? 'bg-gray-700' : 'bg-gray-200'
-              }`}
+              className="relative rounded-full cursor-pointer border"
+              style={{
+                height: '8px',
+                backgroundColor: darkMode ? '#6b7280' : '#d1d5db',
+                borderColor: darkMode ? '#9ca3af' : '#6b7280',
+                width: '100%'
+              }}
               onClick={handleSeek}
             >
               {/* Loop range overlay for vertical layout */}
@@ -861,8 +865,13 @@ const AudioPlayer = ({
               )}
               
               <div 
-                className="absolute left-0 top-0 h-full bg-blue-500 rounded-full transition-all duration-100"
-                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                className="absolute left-0 top-0 bg-blue-500 rounded-full transition-all duration-100"
+                style={{ 
+                  width: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                  height: '100%',
+                  backgroundColor: '#3b82f6',
+                  minWidth: currentTime > 0 ? '2px' : '0px'
+                }}
               />
               
               {/* Loop start marker (A) for vertical layout */}
