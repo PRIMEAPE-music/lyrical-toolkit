@@ -166,10 +166,10 @@ const AudioPlayer = ({
 
   // Volume button toggle (mute/unmute or show/hide volume slider)
   const toggleVolume = useCallback(() => {
-    // console.log('🔊 toggleVolume called - hideMenu:', hideMenu, 'compact:', compact, 'showVolumeSlider:', showVolumeSlider);
+    console.log('🔊 toggleVolume called - hideMenu:', hideMenu, 'compact:', compact, 'showVolumeSlider:', showVolumeSlider);
     if (hideMenu && compact) {
       // In notepad mode, toggle volume slider visibility
-      // console.log('🔊 Toggling volume slider visibility from', showVolumeSlider, 'to', !showVolumeSlider);
+      console.log('🔊 Toggling volume slider visibility from', showVolumeSlider, 'to', !showVolumeSlider);
       setShowVolumeSlider(!showVolumeSlider);
     } else {
       // In normal mode, toggle mute
@@ -430,7 +430,9 @@ const AudioPlayer = ({
                 className="absolute left-0 top-0 bg-blue-500 rounded-full transition-all duration-100"
                 style={{ 
                   width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                  height: '100%'
+                  height: '100%',
+                  backgroundColor: '#3b82f6', // Force blue color
+                  minWidth: currentTime > 0 ? '2px' : '0px' // Ensure visibility when playing
                 }}
               />
             </div>
