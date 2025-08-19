@@ -23,6 +23,9 @@ const AudioPlayer = ({
   showControls = true,
   compact = false
 }) => {
+  // Create unique ID for this component instance
+  const componentId = useRef(Math.random().toString(36).substr(2, 9));
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(audioDuration || 0);
@@ -31,6 +34,11 @@ const AudioPlayer = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  
+  // Debug re-renders
+  useEffect(() => {
+    console.log(`🔄 AudioPlayer [${componentId.current}] re-rendered, showMenu:`, showMenu);
+  });
   
   const audioRef = useRef(null);
   const progressRef = useRef(null);
@@ -203,8 +211,12 @@ const AudioPlayer = ({
               <div className="relative ml-2">
                 <button
                   onClick={() => {
-                    console.log('🔘 Menu button clicked, current showMenu:', showMenu);
+                    console.log(`🔘 [${componentId.current}] Menu button clicked, current showMenu:`, showMenu, 'setting to:', !showMenu);
                     setShowMenu(!showMenu);
+                    // Verify the state was set
+                    setTimeout(() => {
+                      console.log(`🔘 [${componentId.current}] After setState timeout, showMenu should be:`, !showMenu);
+                    }, 0);
                   }}
                   className={`p-1 rounded hover:bg-opacity-75 ${
                     darkMode 
@@ -215,8 +227,13 @@ const AudioPlayer = ({
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
                 
-                {showMenu && (
-                  <div className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-10 ${
+                {(() => {
+                  if (showMenu) {
+                    console.log(`📋 [${componentId.current}] Rendering menu dropdown`);
+                  }
+                  return showMenu;
+                })() && (
+                  <div className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
                     darkMode 
                       ? 'border-gray-600 bg-gray-800' 
                       : 'border-gray-200 bg-white'
@@ -375,8 +392,11 @@ const AudioPlayer = ({
       {/* Click outside to close menu */}
       {showMenu && (
         <div 
-          className="fixed inset-0 z-0" 
-          onClick={() => setShowMenu(false)}
+          className="fixed inset-0 z-10" 
+          onClick={() => {
+            console.log(`🔘 [${componentId.current}] Click outside detected, closing menu`);
+            setShowMenu(false);
+          }}
         />
       )}
     </div>
