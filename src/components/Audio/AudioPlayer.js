@@ -210,7 +210,9 @@ const AudioPlayer = ({
             {showControls && (onDownload || onRemove || onReplace) && (
               <div className="relative ml-2">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log(`🔘 [${componentId.current}] Menu button clicked, current showMenu:`, showMenu, 'setting to:', !showMenu);
                     setShowMenu(!showMenu);
                     // Verify the state was set
@@ -233,11 +235,17 @@ const AudioPlayer = ({
                   }
                   return showMenu;
                 })() && (
-                  <div className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
-                    darkMode 
-                      ? 'border-gray-600 bg-gray-800' 
-                      : 'border-gray-200 bg-white'
-                  }`}>
+                  <div 
+                    className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
+                      darkMode 
+                        ? 'border-gray-600 bg-gray-800' 
+                        : 'border-gray-200 bg-white'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log(`📋 [${componentId.current}] Click inside dropdown menu`);
+                    }}
+                  >
                     {onDownload && (
                       <button
                         onClick={() => {
