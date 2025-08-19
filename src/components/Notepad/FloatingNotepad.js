@@ -309,7 +309,7 @@ const FloatingNotepad = ({
 
       {/* Audio Player Bar - Show between header and content when audio exists */}
       {!isMinimized && currentSongAudio && (
-        <div className={`flex-shrink-0 border-b ${
+        <div className={`flex-shrink-0 border-b w-full ${
           darkMode ? 'border-gray-600' : 'border-gray-200'
         }`}>
           <AudioPlayer
