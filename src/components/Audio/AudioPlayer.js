@@ -407,18 +407,30 @@ const AudioPlayer = ({
           </button>
           
           {/* Progress bar - flexible width */}
-          <div className="flex-1 mx-2">
+          <div 
+            className="mx-2" 
+            style={{ 
+              flex: 1, 
+              minWidth: '100px', 
+              backgroundColor: 'red' // Temporary debug color
+            }}
+          >
             <div
               ref={progressRef}
-              className={`relative h-4 rounded-full cursor-pointer border ${
-                darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-300 border-gray-200'
-              }`}
+              className={`relative rounded-full cursor-pointer border`}
+              style={{
+                height: '16px',
+                backgroundColor: darkMode ? '#6b7280' : '#d1d5db',
+                borderColor: darkMode ? '#9ca3af' : '#6b7280',
+                width: '100%'
+              }}
               onClick={handleSeek}
             >
               <div 
                 className="absolute left-0 top-0 h-full bg-blue-500 rounded-full transition-all duration-100"
                 style={{ 
-                  width: `${duration ? (currentTime / duration) * 100 : 0}%`
+                  width: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                  height: '16px'
                 }}
               />
             </div>
