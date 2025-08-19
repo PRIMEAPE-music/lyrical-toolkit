@@ -655,31 +655,64 @@ const LyricsSearchAppContent = () => {
   };
 
   const handleAudioDownload = async (song) => {
+    console.log('🎵 === AUDIO DOWNLOAD START ===');
+    console.log('📄 Song:', song.title);
+    console.log('🔗 Audio URL:', song.audioFileUrl);
+    console.log('📁 Audio filename:', song.audioFileName);
+    
     try {
-      if (!song.audioFileUrl) return;
+      if (!song.audioFileUrl) {
+        console.error('❌ No audio URL found for song');
+        alert('No audio file found for this song.');
+        return;
+      }
       
       const filePath = audioStorageService.extractFilePathFromUrl(song.audioFileUrl);
+      console.log('📍 Extracted file path:', filePath);
+      
       if (filePath) {
+        console.log('🚀 Starting download...');
         await audioStorageService.downloadAudioFile(filePath, song.audioFileName);
+        console.log('✅ Download completed');
+      } else {
+        console.error('❌ Could not extract file path from URL');
+        alert('Could not determine file path for download.');
       }
     } catch (error) {
-      console.error('Error downloading audio:', error);
-      alert('Failed to download audio file.');
+      console.error('❌ Error downloading audio:', error);
+      alert(`Failed to download audio file: ${error.message}`);
     }
   };
 
   const handleAudioRemove = async (songId) => {
+    console.log('🗑️ === AUDIO REMOVE START ===');
+    console.log('📄 Song ID:', songId);
+    
     try {
       const song = songs.find(s => s.id === songId);
-      if (!song || !song.audioFileUrl) return;
+      console.log('📄 Found song:', song?.title);
+      console.log('🔗 Audio URL:', song?.audioFileUrl);
+      
+      if (!song || !song.audioFileUrl) {
+        console.error('❌ No song or audio URL found');
+        alert('No audio file found for this song.');
+        return;
+      }
       
       const confirmDelete = window.confirm('Are you sure you want to remove this audio file?');
-      if (!confirmDelete) return;
+      if (!confirmDelete) {
+        console.log('❌ User cancelled removal');
+        return;
+      }
       
       // Delete from storage
       const filePath = audioStorageService.extractFilePathFromUrl(song.audioFileUrl);
+      console.log('📍 Extracted file path:', filePath);
+      
       if (filePath) {
+        console.log('🚀 Starting deletion...');
         await audioStorageService.deleteAudioFile(filePath);
+        console.log('✅ File deleted from storage');
       }
       
       // Update the song to remove audio metadata
@@ -697,16 +730,19 @@ const LyricsSearchAppContent = () => {
       });
       
       setSongs(updatedSongs);
+      console.log('✅ Song metadata updated');
       
       // Save to localStorage/backend if authenticated
       if (isAuthenticated) {
+        console.log('🔄 Saving to backend...');
         await saveUserSongs(updatedSongs);
+        console.log('✅ Backend updated');
       }
       
-      console.log('Audio removed successfully');
+      console.log('🎉 === AUDIO REMOVE COMPLETE ===');
     } catch (error) {
-      console.error('Error removing audio:', error);
-      alert('Failed to remove audio file.');
+      console.error('❌ Error removing audio:', error);
+      alert(`Failed to remove audio file: ${error.message}`);
     }
   };
   

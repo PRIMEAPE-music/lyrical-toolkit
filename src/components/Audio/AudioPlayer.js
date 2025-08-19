@@ -221,6 +221,7 @@ const AudioPlayer = ({
                     {onDownload && (
                       <button
                         onClick={() => {
+                          console.log('💾 Download audio button clicked');
                           handleDownload();
                           setShowMenu(false);
                         }}
@@ -238,6 +239,7 @@ const AudioPlayer = ({
                     {onReplace && (
                       <button
                         onClick={() => {
+                          console.log('🔄 Replace audio button clicked');
                           onReplace();
                           setShowMenu(false);
                         }}
@@ -255,6 +257,7 @@ const AudioPlayer = ({
                     {onRemove && (
                       <button
                         onClick={() => {
+                          console.log('🗑️ Remove audio button clicked');
                           onRemove();
                           setShowMenu(false);
                         }}

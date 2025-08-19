@@ -403,17 +403,32 @@ export const formatDuration = (seconds) => {
 
 // Extract file path from URL (for backend-generated URLs)
 export const extractFilePathFromUrl = (url) => {
-  if (!url) return null;
+  console.log('🔍 === EXTRACTING FILE PATH ===');
+  console.log('🔗 Input URL:', url);
+  console.log('🪣 Looking for bucket:', AUDIO_CONFIG.BUCKET_NAME);
+  
+  if (!url) {
+    console.log('❌ No URL provided');
+    return null;
+  }
   
   try {
     const urlObj = new URL(url);
+    console.log('📍 Pathname:', urlObj.pathname);
+    
     const pathParts = urlObj.pathname.split('/');
+    console.log('📂 Path parts:', pathParts);
+    
     const bucketIndex = pathParts.findIndex(part => part === AUDIO_CONFIG.BUCKET_NAME);
+    console.log('🪣 Bucket index:', bucketIndex);
     
     if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
-      return pathParts.slice(bucketIndex + 1).join('/');
+      const filePath = pathParts.slice(bucketIndex + 1).join('/');
+      console.log('✅ Extracted file path:', filePath);
+      return filePath;
     }
     
+    console.log('❌ Could not find bucket in path or no file path after bucket');
     return null;
   } catch (error) {
     console.error('❌ Extract file path error:', error);
