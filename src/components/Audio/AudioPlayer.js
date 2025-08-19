@@ -248,12 +248,14 @@ const AudioPlayer = ({
                   >
                     {onDownload && (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           console.log('💾 Download audio button clicked');
                           handleDownload();
                           setShowMenu(false);
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 ${
+                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 audio-menu-button ${
                           darkMode 
                             ? 'text-gray-300 hover:bg-gray-700' 
                             : 'text-gray-700 hover:bg-gray-100'
@@ -266,12 +268,14 @@ const AudioPlayer = ({
                     
                     {onReplace && (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           console.log('🔄 Replace audio button clicked');
                           onReplace();
                           setShowMenu(false);
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 ${
+                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 audio-menu-button ${
                           darkMode 
                             ? 'text-gray-300 hover:bg-gray-700' 
                             : 'text-gray-700 hover:bg-gray-100'
@@ -284,12 +288,14 @@ const AudioPlayer = ({
                     
                     {onRemove && (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           console.log('🗑️ Remove audio button clicked');
                           onRemove();
                           setShowMenu(false);
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 ${
+                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 audio-menu-button ${
                           darkMode 
                             ? 'text-red-300 hover:bg-red-900/20' 
                             : 'text-red-600 hover:bg-red-50'
