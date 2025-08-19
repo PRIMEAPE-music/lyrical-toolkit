@@ -452,11 +452,11 @@ const AudioPlayer = ({
               )}
             </button>
             
-            {/* Volume slider dropdown - position below button */}
+            {/* Volume slider dropdown - position below button, align to right */}
             {hideMenu && showVolumeSlider && (
               <div 
                 ref={volumeSliderRef}
-                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-50 ${
+                className={`absolute top-full right-0 mt-1 p-2 rounded-lg border shadow-lg z-50 ${
                   darkMode 
                     ? 'border-gray-600 bg-gray-800' 
                     : 'border-gray-200 bg-white'
@@ -470,7 +470,7 @@ const AudioPlayer = ({
                   step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className={`w-20 h-2 rounded-lg appearance-none cursor-pointer ${
+                  className={`w-16 h-2 rounded-lg appearance-none cursor-pointer ${
                     darkMode ? 'bg-gray-700' : 'bg-gray-200'
                   }`}
                   style={{
