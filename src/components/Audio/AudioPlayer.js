@@ -236,7 +236,7 @@ const AudioPlayer = ({
                   return showMenu;
                 })() && (
                   <div 
-                    className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
+                    className={`dropdown-menu-container absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
                       darkMode 
                         ? 'border-gray-600 bg-gray-800' 
                         : 'border-gray-200 bg-white'
@@ -407,7 +407,13 @@ const AudioPlayer = ({
       {showMenu && (
         <div 
           className="fixed inset-0 z-10" 
-          onClick={() => {
+          onClick={(e) => {
+            // Don't close if clicking inside the dropdown menu
+            if (e.target.closest('.dropdown-menu-container')) {
+              console.log(`🔘 [${componentId.current}] Click inside dropdown detected, keeping menu open`);
+              return;
+            }
+            
             console.log(`🔘 [${componentId.current}] Click outside detected, closing menu`);
             setShowMenu(false);
           }}
