@@ -427,10 +427,10 @@ const AudioPlayer = ({
               onClick={handleSeek}
             >
               <div 
-                className="absolute left-0 top-0 h-full bg-blue-500 rounded-full transition-all duration-100"
+                className="absolute left-0 top-0 bg-blue-500 rounded-full transition-all duration-100"
                 style={{ 
                   width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                  height: '16px'
+                  height: '100%'
                 }}
               />
             </div>
@@ -453,19 +453,15 @@ const AudioPlayer = ({
               )}
             </button>
             
-            {/* Volume slider dropdown - only show when hideMenu is true and showVolumeSlider is true */}
+            {/* Volume slider dropdown - position below button */}
             {hideMenu && showVolumeSlider && (
               <div 
                 ref={volumeSliderRef}
-                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 p-3 rounded-lg border shadow-xl ${
+                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-20 ${
                   darkMode 
                     ? 'border-gray-600 bg-gray-800' 
                     : 'border-gray-200 bg-white'
                 }`}
-                style={{ 
-                  zIndex: 1000,
-                  minWidth: '100px'
-                }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
