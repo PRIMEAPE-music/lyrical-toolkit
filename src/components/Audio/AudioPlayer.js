@@ -42,6 +42,7 @@ const AudioPlayer = ({
   
   const audioRef = useRef(null);
   const progressRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   // Initialize audio element
   useEffect(() => {
@@ -236,7 +237,8 @@ const AudioPlayer = ({
                   return showMenu;
                 })() && (
                   <div 
-                    className={`dropdown-menu-container absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
+                    ref={dropdownRef}
+                    className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
                       darkMode 
                         ? 'border-gray-600 bg-gray-800' 
                         : 'border-gray-200 bg-white'
@@ -408,8 +410,12 @@ const AudioPlayer = ({
         <div 
           className="fixed inset-0 z-10" 
           onClick={(e) => {
+            console.log('🐛 DEBUG: Click target:', e.target);
+            console.log('🐛 DEBUG: dropdownRef.current:', dropdownRef.current);
+            console.log('🐛 DEBUG: dropdownRef contains target:', dropdownRef.current && dropdownRef.current.contains(e.target));
+            
             // Don't close if clicking inside the dropdown menu
-            if (e.target.closest('.dropdown-menu-container')) {
+            if (dropdownRef.current && dropdownRef.current.contains(e.target)) {
               console.log(`🔘 [${componentId.current}] Click inside dropdown detected, keeping menu open`);
               return;
             }
