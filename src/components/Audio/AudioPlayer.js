@@ -410,7 +410,7 @@ const AudioPlayer = ({
           <div className="flex-1 mx-2">
             <div
               ref={progressRef}
-              className={`relative h-3 rounded-full cursor-pointer border ${
+              className={`relative h-4 rounded-full cursor-pointer border ${
                 darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-300 border-gray-200'
               }`}
               onClick={handleSeek}
