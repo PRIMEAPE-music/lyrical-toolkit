@@ -307,66 +307,63 @@ const FloatingNotepad = ({
         </div>
       </div>
 
+      {/* Audio Player Bar - Show between header and content when audio exists */}
+      {!isMinimized && currentSongAudio && (
+        <div className={`flex-shrink-0 border-b ${
+          darkMode ? 'border-gray-600' : 'border-gray-200'
+        }`}>
+          <AudioPlayer
+            audioUrl={currentSongAudio.url}
+            audioFilename={currentSongAudio.filename}
+            audioSize={currentSongAudio.size}
+            audioDuration={currentSongAudio.duration}
+            darkMode={darkMode}
+            onDownload={onAudioDownload}
+            onRemove={onAudioRemove}
+            onReplace={onAudioReplace}
+            showControls={true}
+            compact={true}
+          />
+        </div>
+      )}
+
       {/* Content - Full-size textarea when not minimized */}
       {!isMinimized && (
         <div 
-          className="flex flex-col h-full w-full"
+          className="flex-1 w-full relative overflow-hidden"
           style={{ 
-            height: 'calc(100% - 49px)',
-            minHeight: '200px',
+            height: currentSongAudio ? 'calc(100% - 49px - 60px)' : 'calc(100% - 49px)',
+            minHeight: '150px',
             width: '100%'
           }}
         >
-          {/* Audio Player - Show if current song has audio at top of content area */}
-          {currentSongAudio && (
-            <div className={`flex-shrink-0 p-3 border-b w-full ${
-              darkMode ? 'border-gray-600' : 'border-gray-200'
-            }`}>
-              <AudioPlayer
-                audioUrl={currentSongAudio.url}
-                audioFilename={currentSongAudio.filename}
-                audioSize={currentSongAudio.size}
-                audioDuration={currentSongAudio.duration}
-                darkMode={darkMode}
-                onDownload={onAudioDownload}
-                onRemove={onAudioRemove}
-                onReplace={onAudioReplace}
-                showControls={true}
-                compact={true}
-              />
-            </div>
-          )}
+          <textarea
+            value={content}
+            onChange={handleContentChange}
+            placeholder="Start writing your lyrics..."
+            className={`w-full h-full resize-none border-none outline-none text-sm p-3 block ${
+              darkMode 
+                ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
+                : 'bg-white text-gray-900 placeholder-gray-400'
+            }`}
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              minHeight: '150px',
+              resize: 'none',
+              border: 'none',
+              outline: 'none',
+              boxSizing: 'border-box',
+              display: 'block',
+              textAlign: 'left'
+            }}
+          />
           
-          {/* Text Area - Takes remaining space, full width */}
-          <div className="flex-1 w-full relative overflow-hidden">
-            <textarea
-              value={content}
-              onChange={handleContentChange}
-              placeholder="Start writing your lyrics..."
-              className={`w-full h-full resize-none border-none outline-none text-sm p-3 block ${
-                darkMode 
-                  ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
-                  : 'bg-white text-gray-900 placeholder-gray-400'
-              }`}
-              style={{ 
-                width: '100%', 
-                height: '100%',
-                minHeight: '150px',
-                resize: 'none',
-                border: 'none',
-                outline: 'none',
-                boxSizing: 'border-box',
-                display: 'block',
-                textAlign: 'left'
-              }}
-            />
-            
-            {/* Character count - positioned in bottom right corner */}
-            <div className={`absolute bottom-2 right-2 text-xs pointer-events-none ${
-              darkMode ? 'text-gray-500' : 'text-gray-400'
-            }`}>
-              {content.length} chars
-            </div>
+          {/* Character count - positioned in bottom right corner */}
+          <div className={`absolute bottom-2 right-2 text-xs pointer-events-none ${
+            darkMode ? 'text-gray-500' : 'text-gray-400'
+          }`}>
+            {content.length} chars
           </div>
         </div>
       )}

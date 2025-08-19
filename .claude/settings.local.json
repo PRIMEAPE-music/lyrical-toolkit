@@ -30,7 +30,8 @@
       "Bash(xxd:*)",
       "Bash(rm:*)",
       "Bash(grep:*)",
-      "Bash(netlify functions:list:*)"
+      "Bash(netlify functions:list:*)",
+      "Bash(npm test:*)"
     ],
     "defaultMode": "acceptEdits"
   }

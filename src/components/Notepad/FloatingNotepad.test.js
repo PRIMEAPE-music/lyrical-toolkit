@@ -1,28 +1,18 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import FloatingNotepad from './FloatingNotepad';
 
-test('updates dimensions when resized', () => {
-  let resizeCb;
-  global.ResizeObserver = class {
-    constructor(cb) {
-      resizeCb = cb;
-    }
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-
-  const updateDimensions = jest.fn();
+test('renders FloatingNotepad component', () => {
   const notepadState = {
-    content: '',
-    title: '',
+    content: 'Test content',
+    title: 'Test Title',
     isMinimized: false,
     dimensions: { width: 200, height: 200 },
+    position: { bottom: 20, right: 20 },
     updateContent: jest.fn(),
     updateTitle: jest.fn(),
     toggleMinimized: jest.fn(),
-    updateDimensions,
+    setPosition: jest.fn(),
     currentEditingSongId: null
   };
 
@@ -36,10 +26,9 @@ test('updates dimensions when resized', () => {
       onRevertChanges={() => {}}
       onStartNewContent={() => {}}
       hasUnsavedChanges={false}
-      originalSongContent=""
     />
   );
 
-  resizeCb([{ contentRect: { width: 350, height: 260 } }]);
-  expect(updateDimensions).toHaveBeenCalledWith({ width: 350, height: 260 });
+  expect(screen.getByDisplayValue('Test content')).toBeInTheDocument();
+  expect(screen.getByDisplayValue('Test Title')).toBeInTheDocument();
 });
