@@ -385,7 +385,6 @@ button:hover * {
 
 /* Override generic button hover for AudioPlayer menu buttons to preserve text colors */
 .audio-menu-button:hover {
-  background-color: transparent !important;
   color: inherit !important;
 }
 
@@ -394,7 +393,6 @@ button:hover * {
 }
 
 .dark .audio-menu-button:hover {
-  background-color: transparent !important;
   color: inherit !important;
 }
 
