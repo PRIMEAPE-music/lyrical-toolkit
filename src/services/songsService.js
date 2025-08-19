@@ -3,8 +3,8 @@ import { getAuthHeader } from './authService';
 
 // Use different API endpoints based on environment
 const SONGS_API = process.env.NODE_ENV === 'production' 
-  ? '/api' 
-  : 'http://localhost:3001/api';
+  ? '/.netlify/functions' 
+  : 'http://localhost:8888/.netlify/functions';
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
