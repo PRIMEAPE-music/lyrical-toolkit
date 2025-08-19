@@ -400,6 +400,40 @@ button:hover * {
   color: inherit !important;
 }
 
+/* Audio Player Black Text Override */
+.audio-player .text-gray-400,
+.audio-player .text-gray-500,
+.audio-player .text-gray-300,
+.audio-player .text-gray-700 {
+  color: #000000 !important;
+}
+
+/* Ensure black text in both light and dark modes */
+.dark .audio-player .text-gray-400,
+.dark .audio-player .text-gray-500,
+.dark .audio-player .text-gray-300,
+.dark .audio-player .text-gray-700 {
+  color: #000000 !important;
+}
+
+/* Specific overrides for audio player elements */
+.audio-player button[class*="text-gray"] {
+  color: #000000 !important;
+}
+
+.dark .audio-player button[class*="text-gray"] {
+  color: #000000 !important;
+}
+
+/* Time display override */
+.audio-player .text-xs span {
+  color: #000000 !important;
+}
+
+.dark .audio-player .text-xs span {
+  color: #000000 !important;
+}
+
 input:focus {
   outline: none;
   border-color: #6b7280;
