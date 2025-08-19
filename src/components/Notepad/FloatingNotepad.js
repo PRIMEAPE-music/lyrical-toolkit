@@ -323,6 +323,7 @@ const FloatingNotepad = ({
             onReplace={onAudioReplace}
             showControls={true}
             compact={true}
+            hideMenu={true}
           />
         </div>
       )}

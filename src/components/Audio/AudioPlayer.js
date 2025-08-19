@@ -21,7 +21,8 @@ const AudioPlayer = ({
   onRemove = null,
   onReplace = null,
   showControls = true,
-  compact = false
+  compact = false,
+  hideMenu = false
 }) => {
   // Create unique ID for this component instance
   const componentId = useRef(Math.random().toString(36).substr(2, 9));
@@ -34,6 +35,7 @@ const AudioPlayer = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   
   // Debug re-renders
   useEffect(() => {
@@ -43,6 +45,7 @@ const AudioPlayer = ({
   const audioRef = useRef(null);
   const progressRef = useRef(null);
   const dropdownRef = useRef(null);
+  const volumeSliderRef = useRef(null);
 
   // Initialize audio element
   useEffect(() => {
@@ -97,6 +100,20 @@ const AudioPlayer = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
 
+  // Handle click outside to close volume slider
+  useEffect(() => {
+    if (!showVolumeSlider) return;
+    
+    const handleClickOutside = (e) => {
+      if (volumeSliderRef.current && !volumeSliderRef.current.contains(e.target)) {
+        setShowVolumeSlider(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showVolumeSlider]);
+
   // Play/pause toggle
   const togglePlayPause = useCallback(async () => {
     if (!audioRef.current || isLoading) return;
@@ -137,7 +154,26 @@ const AudioPlayer = ({
     setIsMuted(newVolume === 0);
   }, []);
 
-  // Mute toggle
+  // Volume button toggle (mute/unmute or show/hide volume slider)
+  const toggleVolume = useCallback(() => {
+    if (hideMenu && compact) {
+      // In notepad mode, toggle volume slider visibility
+      setShowVolumeSlider(!showVolumeSlider);
+    } else {
+      // In normal mode, toggle mute
+      if (!audioRef.current) return;
+      
+      if (isMuted) {
+        audioRef.current.volume = volume || 0.5;
+        setIsMuted(false);
+      } else {
+        audioRef.current.volume = 0;
+        setIsMuted(true);
+      }
+    }
+  }, [hideMenu, compact, showVolumeSlider, isMuted, volume]);
+
+  // Mute toggle (for backwards compatibility)
   const toggleMute = useCallback(() => {
     if (!audioRef.current) return;
     
@@ -332,8 +368,8 @@ const AudioPlayer = ({
       
       {/* Player controls */}
       {compact ? (
-        /* Compact horizontal layout: [Play] [Seek Bar] [Volume] [Volume Slider] [Menu] */
-        <div className="flex items-center gap-2">
+        /* Compact horizontal layout: [Play] [Seek Bar] [Volume] [Time Display] */
+        <div className="relative flex items-center gap-2">
           {/* Play/pause button */}
           <button
             onClick={togglePlayPause}
@@ -373,44 +409,80 @@ const AudioPlayer = ({
             </div>
           </div>
           
-          {/* Volume button */}
-          <button
-            onClick={toggleMute}
-            className={`p-1 rounded transition-colors flex-shrink-0 ${
-              darkMode 
-                ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            {isMuted ? (
-              <VolumeX className="w-4 h-4" />
-            ) : (
-              <Volume2 className="w-4 h-4" />
+          {/* Volume button with dropdown toggle */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={toggleVolume}
+              className={`p-1 rounded transition-colors ${
+                darkMode 
+                  ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
+            </button>
+            
+            {/* Volume slider dropdown - only show when hideMenu is true and showVolumeSlider is true */}
+            {hideMenu && showVolumeSlider && (
+              <div 
+                ref={volumeSliderRef}
+                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-20 ${
+                  darkMode 
+                    ? 'border-gray-600 bg-gray-800' 
+                    : 'border-gray-200 bg-white'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                  className={`w-20 h-2 rounded-lg appearance-none cursor-pointer ${
+                    darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                  }`}
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, ${
+                      darkMode ? '#374151' : '#e5e7eb'
+                    } ${(isMuted ? 0 : volume) * 100}%, ${
+                      darkMode ? '#374151' : '#e5e7eb'
+                    } 100%)`
+                  }}
+                />
+              </div>
             )}
-          </button>
+          </div>
           
-          {/* Volume slider */}
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.1"
-            value={isMuted ? 0 : volume}
-            onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-            className={`w-12 h-2 rounded-lg appearance-none cursor-pointer flex-shrink-0 ${
-              darkMode ? 'bg-gray-700' : 'bg-gray-200'
-            }`}
-            style={{
-              background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, ${
-                darkMode ? '#374151' : '#e5e7eb'
-              } ${(isMuted ? 0 : volume) * 100}%, ${
-                darkMode ? '#374151' : '#e5e7eb'
-              } 100%)`
-            }}
-          />
+          {/* Volume slider - show when not hideMenu */}
+          {!hideMenu && (
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              className={`w-12 h-2 rounded-lg appearance-none cursor-pointer flex-shrink-0 ${
+                darkMode ? 'bg-gray-700' : 'bg-gray-200'
+              }`}
+              style={{
+                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, ${
+                  darkMode ? '#374151' : '#e5e7eb'
+                } ${(isMuted ? 0 : volume) * 100}%, ${
+                  darkMode ? '#374151' : '#e5e7eb'
+                } 100%)`
+              }}
+            />
+          )}
           
-          {/* Menu button */}
-          {showControls && (onDownload || onRemove || onReplace) && (
+          {/* Menu button - hide when hideMenu is true */}
+          {!hideMenu && showControls && (onDownload || onRemove || onReplace) && (
             <div className="relative flex-shrink-0">
               <button
                 onClick={(e) => {
