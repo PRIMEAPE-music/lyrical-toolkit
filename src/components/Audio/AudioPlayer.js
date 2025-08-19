@@ -39,7 +39,15 @@ const AudioPlayer = ({
   
   // Debug re-renders
   useEffect(() => {
-    console.log(`🔄 AudioPlayer [${componentId.current}] re-rendered, showMenu:`, showMenu);
+    // console.log(`🔄 AudioPlayer [${componentId.current}] re-rendered:`, {
+    //   showMenu,
+    //   showVolumeSlider,
+    //   hideMenu,
+    //   compact,
+    //   duration,
+    //   currentTime,
+    //   audioUrl: !!audioUrl
+    // });
   });
   
   const audioRef = useRef(null);
@@ -134,6 +142,7 @@ const AudioPlayer = ({
 
   // Seek to position
   const handleSeek = useCallback((e) => {
+    // console.log('🎯 handleSeek called - event:', e);
     if (!audioRef.current || !progressRef.current) return;
 
     const rect = progressRef.current.getBoundingClientRect();
@@ -141,6 +150,7 @@ const AudioPlayer = ({
     const percentage = x / rect.width;
     const newTime = percentage * duration;
     
+    // console.log('🎯 Seeking to:', newTime, 'duration:', duration, 'percentage:', percentage);
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   }, [duration]);
@@ -156,11 +166,14 @@ const AudioPlayer = ({
 
   // Volume button toggle (mute/unmute or show/hide volume slider)
   const toggleVolume = useCallback(() => {
+    // console.log('🔊 toggleVolume called - hideMenu:', hideMenu, 'compact:', compact, 'showVolumeSlider:', showVolumeSlider);
     if (hideMenu && compact) {
       // In notepad mode, toggle volume slider visibility
+      // console.log('🔊 Toggling volume slider visibility from', showVolumeSlider, 'to', !showVolumeSlider);
       setShowVolumeSlider(!showVolumeSlider);
     } else {
       // In normal mode, toggle mute
+      // console.log('🔊 Normal mode - toggling mute');
       if (!audioRef.current) return;
       
       if (isMuted) {
@@ -394,17 +407,21 @@ const AudioPlayer = ({
           </button>
           
           {/* Progress bar - flexible width */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 px-1">
             <div
               ref={progressRef}
               className={`relative h-2 rounded-full cursor-pointer ${
-                darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                darkMode ? 'bg-gray-600' : 'bg-gray-300'
               }`}
               onClick={handleSeek}
+              style={{ minHeight: '8px' }}
             >
               <div 
                 className="absolute left-0 top-0 h-full bg-blue-500 rounded-full transition-all duration-100"
-                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                style={{ 
+                  width: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                  minHeight: '8px'
+                }}
               />
             </div>
           </div>
@@ -430,11 +447,15 @@ const AudioPlayer = ({
             {hideMenu && showVolumeSlider && (
               <div 
                 ref={volumeSliderRef}
-                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 p-2 rounded-lg border shadow-lg z-20 ${
+                className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 p-3 rounded-lg border shadow-xl ${
                   darkMode 
                     ? 'border-gray-600 bg-gray-800' 
                     : 'border-gray-200 bg-white'
                 }`}
+                style={{ 
+                  zIndex: 1000,
+                  minWidth: '100px'
+                }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
