@@ -956,9 +956,10 @@ const AudioPlayer = ({
                           }}
                           className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 audio-menu-button ${
                             darkMode 
-                              ? 'text-gray-300 hover:bg-gray-700' 
-                              : 'text-black hover:bg-gray-100'
+                              ? 'hover:bg-gray-700' 
+                              : 'hover:bg-gray-100'
                           }`}
+                          style={{ color: darkMode ? '#ffffff' : '#000000' }}
                         >
                           <Download className="w-4 h-4" />
                           Download
@@ -976,9 +977,10 @@ const AudioPlayer = ({
                           }}
                           className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 audio-menu-button ${
                             darkMode 
-                              ? 'text-gray-300 hover:bg-gray-700' 
-                              : 'text-black hover:bg-gray-100'
+                              ? 'hover:bg-gray-700' 
+                              : 'hover:bg-gray-100'
                           }`}
+                          style={{ color: darkMode ? '#ffffff' : '#000000' }}
                         >
                           <RotateCcw className="w-4 h-4" />
                           Replace
