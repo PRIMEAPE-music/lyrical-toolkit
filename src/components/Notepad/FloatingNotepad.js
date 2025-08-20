@@ -480,9 +480,9 @@ const FloatingNotepad = ({
       {/* Resize handles - Only show when expanded and on desktop */}
       {!isMinimized && (
         <>
-          {/* Corner handles - Large and clearly visible */}
+          {/* Corner handles - Small and clearly visible */}
           <div 
-            className="absolute w-6 h-6 cursor-nw-resize"
+            className="absolute w-3 h-3 cursor-nw-resize"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
