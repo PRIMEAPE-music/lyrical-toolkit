@@ -959,7 +959,7 @@ const AudioPlayer = ({
                               ? 'hover:bg-gray-700' 
                               : 'hover:bg-gray-100'
                           }`}
-                          style={{ color: darkMode ? '#ffffff' : '#000000' }}
+                          style={{ color: '#000000' }}
                         >
                           <Download className="w-4 h-4" />
                           Download
@@ -980,7 +980,7 @@ const AudioPlayer = ({
                               ? 'hover:bg-gray-700' 
                               : 'hover:bg-gray-100'
                           }`}
-                          style={{ color: darkMode ? '#ffffff' : '#000000' }}
+                          style={{ color: '#000000' }}
                         >
                           <RotateCcw className="w-4 h-4" />
                           Replace
