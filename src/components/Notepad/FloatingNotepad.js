@@ -26,16 +26,23 @@ const FloatingNotepad = ({
     updateContent,
     updateTitle,
     toggleMinimized,
-    setPosition
+    setPosition,
+    updateDimensions
   } = notepadState;
 
   const containerRef = useRef(null);
   const dragDataRef = useRef(null);
+  const resizeDataRef = useRef(null);
   const [tempPosition, setTempPosition] = useState(position);
+  const [tempDimensions, setTempDimensions] = useState(dimensions);
 
   useEffect(() => {
     setTempPosition(position);
   }, [position]);
+
+  useEffect(() => {
+    setTempDimensions(dimensions);
+  }, [dimensions]);
 
   const startDrag = (clientX, clientY) => {
     if (isMinimized) return;
@@ -89,6 +96,102 @@ const FloatingNotepad = ({
     document.removeEventListener('touchmove', handleTouchMove);
     document.removeEventListener('touchend', endDrag);
     setPosition(tempPosition);
+  };
+
+  // Resize functionality
+  const startResize = (direction, clientX, clientY) => {
+    if (isMinimized || resizeDataRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    resizeDataRef.current = {
+      direction,
+      startX: clientX,
+      startY: clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      startLeft: rect.left,
+      startTop: rect.top,
+      startRight: tempPosition.right,
+      startBottom: tempPosition.bottom
+    };
+
+    document.addEventListener('mousemove', handleResizeMouseMove);
+    document.addEventListener('mouseup', endResize);
+    document.body.style.cursor = getResizeCursor(direction);
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleResizeMouseMove = (e) => {
+    if (!resizeDataRef.current) return;
+    
+    const { direction, startX, startY, startWidth, startHeight, startRight, startBottom } = resizeDataRef.current;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    
+    let newWidth = startWidth;
+    let newHeight = startHeight;
+    let newRight = startRight;
+    let newBottom = startBottom;
+    
+    const minWidth = 200;
+    const minHeight = 200;
+    const maxWidth = window.innerWidth - 40;
+    const maxHeight = window.innerHeight - 40;
+
+    // Handle different resize directions
+    if (direction.includes('e')) { // East (right edge)
+      newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + dx));
+    }
+    if (direction.includes('w')) { // West (left edge)
+      const widthChange = Math.max(minWidth - startWidth, Math.min(maxWidth - startWidth, -dx));
+      newWidth = startWidth + widthChange;
+      newRight = startRight + widthChange;
+    }
+    if (direction.includes('s')) { // South (bottom edge)
+      newHeight = Math.max(minHeight, Math.min(maxHeight, startHeight + dy));
+    }
+    if (direction.includes('n')) { // North (top edge)
+      const heightChange = Math.max(minHeight - startHeight, Math.min(maxHeight - startHeight, -dy));
+      newHeight = startHeight + heightChange;
+      newBottom = startBottom + heightChange;
+    }
+
+    // Ensure we don't go off screen
+    const maxRight = window.innerWidth - newWidth;
+    const maxBottom = window.innerHeight - newHeight;
+    newRight = Math.max(0, Math.min(maxRight, newRight));
+    newBottom = Math.max(0, Math.min(maxBottom, newBottom));
+
+    setTempDimensions({ width: newWidth, height: newHeight });
+    setTempPosition({ right: newRight, bottom: newBottom });
+  };
+
+  const endResize = () => {
+    if (!resizeDataRef.current) return;
+    
+    resizeDataRef.current = null;
+    document.removeEventListener('mousemove', handleResizeMouseMove);
+    document.removeEventListener('mouseup', endResize);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    
+    // Update the notepad state through the parent
+    updateDimensions(tempDimensions);
+    setPosition(tempPosition);
+  };
+
+  const getResizeCursor = (direction) => {
+    const cursors = {
+      'n': 'ns-resize',
+      'ne': 'ne-resize', 
+      'e': 'ew-resize',
+      'se': 'se-resize',
+      's': 'ns-resize',
+      'sw': 'sw-resize',
+      'w': 'ew-resize',
+      'nw': 'nw-resize'
+    };
+    return cursors[direction] || 'default';
   };
 
   const handleKeyDown = (e) => {
@@ -168,10 +271,10 @@ const FloatingNotepad = ({
             // Expanded: Floating window
             bottom: `${tempPosition.bottom}px`,
             right: `${tempPosition.right}px`,
-            width: `${dimensions.width}px`,
-            height: `${dimensions.height}px`,
+            width: `${tempDimensions.width}px`,
+            height: `${tempDimensions.height}px`,
             borderRadius: '8px',
-            resize: 'both',
+            resize: 'none', // Disable default resize, we'll use custom handles
             overflow: 'hidden',
             minWidth: '200px',
             minHeight: '200px'
@@ -367,6 +470,55 @@ const FloatingNotepad = ({
             {content.length} chars
           </div>
         </div>
+      )}
+
+      {/* Resize handles - Only show when expanded and on desktop */}
+      {!isMinimized && (
+        <>
+          {/* Corner handles */}
+          <div 
+            className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize"
+            onMouseDown={(e) => startResize('nw', e.clientX, e.clientY)}
+            style={{ margin: '-1px 0 0 -1px' }}
+          />
+          <div 
+            className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize"
+            onMouseDown={(e) => startResize('ne', e.clientX, e.clientY)}
+            style={{ margin: '-1px -1px 0 0' }}
+          />
+          <div 
+            className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize"
+            onMouseDown={(e) => startResize('sw', e.clientX, e.clientY)}
+            style={{ margin: '0 0 -1px -1px' }}
+          />
+          <div 
+            className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize"
+            onMouseDown={(e) => startResize('se', e.clientX, e.clientY)}
+            style={{ margin: '0 -1px -1px 0' }}
+          />
+          
+          {/* Edge handles */}
+          <div 
+            className="absolute top-0 left-3 right-3 h-1 cursor-n-resize"
+            onMouseDown={(e) => startResize('n', e.clientX, e.clientY)}
+            style={{ margin: '-1px 0 0 0' }}
+          />
+          <div 
+            className="absolute bottom-0 left-3 right-3 h-1 cursor-s-resize"
+            onMouseDown={(e) => startResize('s', e.clientX, e.clientY)}
+            style={{ margin: '0 0 -1px 0' }}
+          />
+          <div 
+            className="absolute top-3 bottom-3 left-0 w-1 cursor-w-resize"
+            onMouseDown={(e) => startResize('w', e.clientX, e.clientY)}
+            style={{ margin: '0 0 0 -1px' }}
+          />
+          <div 
+            className="absolute top-3 bottom-3 right-0 w-1 cursor-e-resize"
+            onMouseDown={(e) => startResize('e', e.clientX, e.clientY)}
+            style={{ margin: '0 -1px 0 0' }}
+          />
+        </>
       )}
     </div>
   );

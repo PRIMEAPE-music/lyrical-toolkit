@@ -138,9 +138,6 @@ const AudioPlayer = ({
           setWaveformLoading(percent < 100);
         });
 
-        // Store wavesurfer ref for loop logic
-        const wsRef = { current: ws };
-        
         // Use timeupdate for current time tracking and loop logic
         ws.on('timeupdate', (time) => {
           setCurrentTime(time);
