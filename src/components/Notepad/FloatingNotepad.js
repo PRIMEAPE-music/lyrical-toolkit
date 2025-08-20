@@ -61,7 +61,10 @@ const FloatingNotepad = ({
   };
 
   const handleMouseDown = (e) => {
-    if (e.target.closest('input, button')) return;
+    // Don't start drag if clicking on resize handles, inputs, or buttons
+    if (e.target.closest('input, button') || 
+        e.target.style.cursor.includes('resize') ||
+        e.target.title?.includes('Resize')) return;
     startDrag(e.clientX, e.clientY);
   };
 
@@ -101,6 +104,8 @@ const FloatingNotepad = ({
   // Resize functionality
   const startResize = (direction, clientX, clientY) => {
     if (isMinimized || resizeDataRef.current) return;
+    
+    console.log('🔄 Starting resize:', direction);
     
     const rect = containerRef.current.getBoundingClientRect();
     resizeDataRef.current = {
@@ -475,48 +480,88 @@ const FloatingNotepad = ({
       {/* Resize handles - Only show when expanded and on desktop */}
       {!isMinimized && (
         <>
-          {/* Corner handles */}
+          {/* Corner handles - Made larger and more accessible */}
           <div 
-            className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize"
-            onMouseDown={(e) => startResize('nw', e.clientX, e.clientY)}
-            style={{ margin: '-1px 0 0 -1px' }}
+            className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize bg-blue-500 bg-opacity-10 hover:bg-opacity-30 border border-blue-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('nw', e.clientX, e.clientY);
+            }}
+            style={{ margin: '-2px 0 0 -2px', zIndex: 10 }}
+            title="Resize from top-left corner"
           />
           <div 
-            className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize"
-            onMouseDown={(e) => startResize('ne', e.clientX, e.clientY)}
-            style={{ margin: '-1px -1px 0 0' }}
+            className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize bg-blue-500 bg-opacity-10 hover:bg-opacity-30 border border-blue-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('ne', e.clientX, e.clientY);
+            }}
+            style={{ margin: '-2px -2px 0 0', zIndex: 10 }}
+            title="Resize from top-right corner"
           />
           <div 
-            className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize"
-            onMouseDown={(e) => startResize('sw', e.clientX, e.clientY)}
-            style={{ margin: '0 0 -1px -1px' }}
+            className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize bg-blue-500 bg-opacity-10 hover:bg-opacity-30 border border-blue-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('sw', e.clientX, e.clientY);
+            }}
+            style={{ margin: '0 0 -2px -2px', zIndex: 10 }}
+            title="Resize from bottom-left corner"
           />
           <div 
-            className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize"
-            onMouseDown={(e) => startResize('se', e.clientX, e.clientY)}
-            style={{ margin: '0 -1px -1px 0' }}
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-blue-500 bg-opacity-10 hover:bg-opacity-30 border border-blue-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('se', e.clientX, e.clientY);
+            }}
+            style={{ margin: '0 -2px -2px 0', zIndex: 10 }}
+            title="Resize from bottom-right corner"
           />
           
-          {/* Edge handles */}
+          {/* Edge handles - Made thicker and more accessible */}
           <div 
-            className="absolute top-0 left-3 right-3 h-1 cursor-n-resize"
-            onMouseDown={(e) => startResize('n', e.clientX, e.clientY)}
-            style={{ margin: '-1px 0 0 0' }}
+            className="absolute top-0 left-4 right-4 h-2 cursor-n-resize bg-green-500 bg-opacity-10 hover:bg-opacity-30 border border-green-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('n', e.clientX, e.clientY);
+            }}
+            style={{ margin: '-1px 0 0 0', zIndex: 10 }}
+            title="Resize from top edge"
           />
           <div 
-            className="absolute bottom-0 left-3 right-3 h-1 cursor-s-resize"
-            onMouseDown={(e) => startResize('s', e.clientX, e.clientY)}
-            style={{ margin: '0 0 -1px 0' }}
+            className="absolute bottom-0 left-4 right-4 h-2 cursor-s-resize bg-green-500 bg-opacity-10 hover:bg-opacity-30 border border-green-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('s', e.clientX, e.clientY);
+            }}
+            style={{ margin: '0 0 -1px 0', zIndex: 10 }}
+            title="Resize from bottom edge"
           />
           <div 
-            className="absolute top-3 bottom-3 left-0 w-1 cursor-w-resize"
-            onMouseDown={(e) => startResize('w', e.clientX, e.clientY)}
-            style={{ margin: '0 0 0 -1px' }}
+            className="absolute top-4 bottom-4 left-0 w-2 cursor-w-resize bg-green-500 bg-opacity-10 hover:bg-opacity-30 border border-green-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('w', e.clientX, e.clientY);
+            }}
+            style={{ margin: '0 0 0 -1px', zIndex: 10 }}
+            title="Resize from left edge"
           />
           <div 
-            className="absolute top-3 bottom-3 right-0 w-1 cursor-e-resize"
-            onMouseDown={(e) => startResize('e', e.clientX, e.clientY)}
-            style={{ margin: '0 -1px 0 0' }}
+            className="absolute top-4 bottom-4 right-0 w-2 cursor-e-resize bg-green-500 bg-opacity-10 hover:bg-opacity-30 border border-green-300"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startResize('e', e.clientX, e.clientY);
+            }}
+            style={{ margin: '0 -1px 0 0', zIndex: 10 }}
+            title="Resize from right edge"
           />
         </>
       )}
