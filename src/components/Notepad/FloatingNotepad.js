@@ -359,6 +359,7 @@ const FloatingNotepad = ({
   };
 
   return (
+    <>
     <div
       ref={containerRef}
       tabIndex={0}
@@ -375,8 +376,6 @@ const FloatingNotepad = ({
         isDragging ? 'shadow-3xl scale-[1.02]' : ''
       } ${
         isResizing ? 'shadow-3xl' : ''
-      } ${
-        isMobile && isFullscreen && !isMinimized ? 'floating-notepad-fullscreen' : ''
       }`}
       style={
         isMinimized
@@ -392,31 +391,18 @@ const FloatingNotepad = ({
               resize: 'none',
               overflow: 'hidden'
             }
-          : isMobile && isFullscreen
-            ? {
-                // Mobile fullscreen
-                top: '0',
-                left: '0',
-                right: '0',
-                bottom: '0',
-                width: '100vw',
-                height: '100vh',
-                borderRadius: '0',
-                resize: 'none',
-                overflow: 'hidden'
-              }
-            : {
-                // Expanded: Floating window
-                bottom: `${tempPosition.bottom}px`,
-                right: `${tempPosition.right}px`,
-                width: `${tempDimensions.width}px`,
-                height: `${tempDimensions.height}px`,
-                borderRadius: '8px',
-                resize: 'none', // Disable default resize, we'll use custom handles
-                overflow: 'hidden',
-                minWidth: '200px',
-                minHeight: '200px'
-              }
+          : {
+              // Expanded: Floating window
+              bottom: `${tempPosition.bottom}px`,
+              right: `${tempPosition.right}px`,
+              width: `${tempDimensions.width}px`,
+              height: `${tempDimensions.height}px`,
+              borderRadius: '8px',
+              resize: 'none', // Disable default resize, we'll use custom handles
+              overflow: 'hidden',
+              minWidth: '200px',
+              minHeight: '200px'
+            }
       }
     >
       {/* Header - Contains title and buttons */}
@@ -539,18 +525,6 @@ const FloatingNotepad = ({
             </>
           )}
           
-          {/* Fullscreen toggle button - only on mobile */}
-          {isMobile && !isMinimized && (
-            <button
-              onClick={toggleFullscreen}
-              className={`p-1 rounded hover:bg-opacity-20 hover:bg-gray-500 ${
-                darkMode ? 'text-gray-400' : 'text-gray-500'
-              }`}
-              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
-              {isFullscreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
-            </button>
-          )}
           
           <button
             onClick={toggleMinimized}
@@ -616,8 +590,23 @@ const FloatingNotepad = ({
             }}
           />
           
-          {/* Character count - positioned in bottom right corner */}
-          <div className={`absolute bottom-2 right-2 text-xs pointer-events-none ${
+          {/* Fullscreen toggle button - floating in bottom right corner on mobile */}
+          {isMobile && (
+            <button
+              onClick={toggleFullscreen}
+              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full shadow-lg transition-all duration-200 ${
+                darkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
+                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+              } hover:scale-110 z-10`}
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreen ? <Shrink className="w-5 h-5" /> : <Expand className="w-5 h-5" />}
+            </button>
+          )}
+          
+          {/* Character count - positioned in bottom left corner when fullscreen button is present */}
+          <div className={`absolute bottom-2 ${isMobile ? 'left-2' : 'right-2'} text-xs pointer-events-none ${
             darkMode ? 'text-gray-500' : 'text-gray-400'
           }`}>
             {content.length} chars
@@ -770,6 +759,167 @@ const FloatingNotepad = ({
         </>
       )}
     </div>
+
+    {isMobile && isFullscreen && !isMinimized && (
+      <div className={`fixed inset-0 z-[999999] flex flex-col ${
+        darkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
+        {/* Header - Same as regular notepad but not draggable */}
+        <div className={`flex items-center justify-between p-2 border-b ${
+          darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+        }`}>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Edit3 className={`w-4 h-4 flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+            <input
+              type="text"
+              value={title + (hasUnsavedChanges ? '*' : '')}
+              onChange={(e) => updateTitle(e.target.value.replace('*', ''))}
+              placeholder="Title..."
+              className={`flex-1 px-2 py-1 text-sm border rounded ${
+                darkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+              }`}
+            />
+          </div>
+
+          {/* Header buttons - same as regular notepad */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={notepadState.currentEditingSongId ? onSaveChanges : onUploadToSongs}
+              disabled={!content.trim()}
+              className={`p-1 rounded text-xs transition-colors ${
+                content.trim()
+                  ? notepadState.currentEditingSongId
+                    ? darkMode 
+                      ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : darkMode 
+                      ? 'bg-green-800 hover:bg-green-700 text-green-200' 
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  : darkMode
+                    ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+              title={notepadState.currentEditingSongId ? "Save Changes" : "Add to Songs"}
+            >
+              <Upload className="w-3 h-3" />
+            </button>
+
+            <button
+              onClick={onExportTxt}
+              disabled={!content.trim()}
+              className={`p-1 rounded text-xs transition-colors ${
+                content.trim()
+                  ? darkMode 
+                    ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : darkMode
+                    ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+              title="Export as TXT"
+            >
+              <Download className="w-3 h-3" />
+            </button>
+
+            {notepadState.currentEditingSongId && (
+              <>
+                <button
+                  onClick={onStartNewContent}
+                  className={`p-1 rounded text-xs transition-colors ${
+                    darkMode 
+                      ? 'bg-purple-800 hover:bg-purple-700 text-purple-200' 
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }`}
+                  title="Empty Notepad"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+                
+                <button
+                  onClick={onRevertChanges}
+                  disabled={!hasUnsavedChanges}
+                  className={`p-1 rounded text-xs transition-colors ${
+                    hasUnsavedChanges
+                      ? darkMode 
+                        ? 'bg-orange-800 hover:bg-orange-700 text-orange-200' 
+                        : 'bg-orange-600 hover:bg-orange-700 text-white'
+                      : darkMode
+                        ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                  title="Revert to Original"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Audio Player Bar - Same as regular notepad if audio exists */}
+        {currentSongAudio && (
+          <div className={`flex-shrink-0 border-b w-full ${
+            darkMode ? 'border-gray-600' : 'border-gray-200'
+          }`}>
+            <AudioPlayer
+              audioUrl={currentSongAudio.url}
+              audioFilename={currentSongAudio.filename}
+              audioSize={currentSongAudio.size}
+              audioDuration={currentSongAudio.duration}
+              darkMode={darkMode}
+              onDownload={onAudioDownload}
+              onRemove={onAudioRemove}
+              onReplace={onAudioReplace}
+              showControls={true}
+              compact={true}
+              hideMenu={true}
+            />
+          </div>
+        )}
+
+        {/* Fullscreen Textarea - Takes up remaining space */}
+        <div className="flex-1 relative">
+          <textarea
+            value={content}
+            onChange={handleContentChange}
+            placeholder="Start writing your lyrics..."
+            className={`w-full h-full resize-none border-none outline-none p-4 text-base ${
+              darkMode 
+                ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
+                : 'bg-white text-gray-900 placeholder-gray-400'
+            }`}
+            style={{
+              fontSize: '16px',
+              lineHeight: '1.6',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}
+          />
+          
+          {/* Exit fullscreen button - positioned in bottom right */}
+          <button
+            onClick={toggleFullscreen}
+            className={`absolute bottom-4 right-4 w-12 h-12 rounded-full shadow-xl transition-all duration-200 ${ 
+              darkMode 
+                ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
+                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+            } hover:scale-110`}
+            title="Exit Fullscreen"
+          >
+            <Shrink className="w-6 h-6" />
+          </button>
+          
+          {/* Character count - positioned in bottom left */}
+          <div className={`absolute bottom-4 left-4 text-sm ${
+            darkMode ? 'text-gray-500' : 'text-gray-400'
+          }`}>
+            {content.length} chars
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
