@@ -486,7 +486,7 @@ const AudioPlayer = ({
                       color: '#ffffff'
                     }}
                   >
-                    <span className="absolute -top-4 text-xs bg-green-500 px-1 rounded">A</span>
+                    <span className="absolute -top-5 text-xs bg-green-500 px-1 rounded text-white font-bold">A</span>
                   </div>
                 </div>
               )}
@@ -528,7 +528,7 @@ const AudioPlayer = ({
                       color: '#ffffff'
                     }}
                   >
-                    <span className="absolute -top-4 text-xs bg-green-500 px-1 rounded">B</span>
+                    <span className="absolute -top-5 text-xs bg-green-500 px-1 rounded text-white font-bold">B</span>
                   </div>
                 </div>
               )}
