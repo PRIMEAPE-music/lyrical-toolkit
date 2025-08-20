@@ -82,7 +82,7 @@ const UploadTab = ({
             Add Audio Files
           </h3>
           <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Select a song below to upload an audio file, or upload audio files that will be linked to songs.
+            Select the music button on a song to upload an audio file.
           </p>
           
           {/* Audio Upload Component */}

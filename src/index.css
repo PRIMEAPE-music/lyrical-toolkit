@@ -751,6 +751,14 @@ input:focus {
     left: 10px !important;
     width: auto !important;
     max-width: none !important;
+    /* Fix position on mobile - disable dragging */
+    transform: none !important;
+    cursor: default !important;
+  }
+  
+  /* Hide resize handles on mobile */
+  .floating-notepad-expanded .resize-handle {
+    display: none !important;
   }
   
   .floating-notepad-expanded .notepad-header-buttons button {

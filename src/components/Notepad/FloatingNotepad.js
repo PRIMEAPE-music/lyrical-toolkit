@@ -40,6 +40,9 @@ const FloatingNotepad = ({
   
   // Store the current transform for immediate DOM updates
   const currentTransformRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  
+  // Mobile detection
+  const isMobile = window.innerWidth <= 768;
 
   useEffect(() => {
     setTempPosition(position);
@@ -62,6 +65,7 @@ const FloatingNotepad = ({
   const startDrag = (clientX, clientY) => {
     if (isMinimized) return;
     if (dragDataRef.current) return;
+    if (isMobile) return; // Disable dragging on mobile
     
     const rect = containerRef.current.getBoundingClientRect();
     dragDataRef.current = {
@@ -92,11 +96,13 @@ const FloatingNotepad = ({
     if (e.target.closest('input, button') || 
         e.target.style.cursor.includes('resize') ||
         e.target.title?.includes('Resize')) return;
+    if (isMobile) return; // Disable dragging on mobile
     startDrag(e.clientX, e.clientY);
   };
 
   const handleTouchStart = (e) => {
     if (e.target.closest('input, button')) return;
+    if (isMobile) return; // Disable touch dragging on mobile
     const touch = e.touches[0];
     startDrag(touch.clientX, touch.clientY);
   };
@@ -164,6 +170,7 @@ const FloatingNotepad = ({
   // Resize functionality
   const startResize = (direction, clientX, clientY) => {
     if (isMinimized || resizeDataRef.current) return;
+    if (isMobile) return; // Disable resizing on mobile
     
     const rect = containerRef.current.getBoundingClientRect();
     resizeDataRef.current = {
@@ -396,9 +403,11 @@ const FloatingNotepad = ({
           isMinimized ? '' : 'border-b'
         } ${
           darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+        } ${
+          isMobile ? 'cursor-default' : 'cursor-move'
         }`}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
+        onMouseDown={isMobile ? undefined : handleMouseDown}
+        onTouchStart={isMobile ? undefined : handleTouchStart}
       >
         {/* Left side - Icon + Title or Notepad label */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -582,11 +591,11 @@ const FloatingNotepad = ({
       )}
 
       {/* Resize handles - Only show when expanded and on desktop */}
-      {!isMinimized && (
+      {!isMinimized && !isMobile && (
         <>
           {/* Corner handles - Small and clearly visible */}
           <div 
-            className="absolute w-3 h-3 cursor-nw-resize"
+            className="absolute w-3 h-3 cursor-nw-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -603,7 +612,7 @@ const FloatingNotepad = ({
             title="Resize from top-left corner"
           />
           <div 
-            className="absolute w-6 h-6 cursor-ne-resize"
+            className="absolute w-6 h-6 cursor-ne-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -620,7 +629,7 @@ const FloatingNotepad = ({
             title="Resize from top-right corner"
           />
           <div 
-            className="absolute w-6 h-6 cursor-sw-resize"
+            className="absolute w-6 h-6 cursor-sw-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -637,7 +646,7 @@ const FloatingNotepad = ({
             title="Resize from bottom-left corner"
           />
           <div 
-            className="absolute w-6 h-6 cursor-se-resize"
+            className="absolute w-6 h-6 cursor-se-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -656,7 +665,7 @@ const FloatingNotepad = ({
           
           {/* Edge handles - Thick and clearly visible */}
           <div 
-            className="absolute h-3 cursor-n-resize"
+            className="absolute h-3 cursor-n-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -673,7 +682,7 @@ const FloatingNotepad = ({
             title="Resize from top edge"
           />
           <div 
-            className="absolute h-3 cursor-s-resize"
+            className="absolute h-3 cursor-s-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -690,7 +699,7 @@ const FloatingNotepad = ({
             title="Resize from bottom edge"
           />
           <div 
-            className="absolute w-3 cursor-w-resize"
+            className="absolute w-3 cursor-w-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -707,7 +716,7 @@ const FloatingNotepad = ({
             title="Resize from left edge"
           />
           <div 
-            className="absolute w-3 cursor-e-resize"
+            className="absolute w-3 cursor-e-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
