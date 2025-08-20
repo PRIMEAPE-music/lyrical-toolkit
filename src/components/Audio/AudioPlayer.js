@@ -898,7 +898,7 @@ const AudioPlayer = ({
               
               {/* Menu button - moved to after volume control */}
               {showControls && (onDownload || onRemove || onReplace) && (
-                <div className="relative ml-2 z-[99999]">
+                <div className="relative ml-2 z-[99999]" style={{ zIndex: '999999 !important', position: 'relative' }}>
                   <button
                     ref={menuButtonRef}
                     onClick={(e) => {
@@ -935,7 +935,9 @@ const AudioPlayer = ({
                       }`}
                       style={{
                         top: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().bottom + 4}px` : 'auto',
-                        left: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().right - 120}px` : 'auto'
+                        left: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().right - 120}px` : 'auto',
+                        zIndex: '999999 !important',
+                        position: 'fixed'
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
