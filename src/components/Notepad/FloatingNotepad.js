@@ -797,13 +797,18 @@ const FloatingNotepad = ({
           flexDirection: 'column'
         }}
       >
-        {console.log('🔍 SIMPLE Fullscreen overlay rendering')}
-        {/* Header - Same as regular notepad but not draggable */}
+        {/* Header - Smaller for fullscreen */}
         <div 
-          className={`flex items-center justify-between p-2 border-b flex-shrink-0 ${
-            darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-          }`}
-          style={{ minHeight: '49px' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 12px',
+            borderBottom: darkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
+            backgroundColor: darkMode ? '#374151' : '#f9fafb',
+            minHeight: '40px',
+            flexShrink: 0
+          }}
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Edit3 className={`w-4 h-4 flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
@@ -820,24 +825,33 @@ const FloatingNotepad = ({
             />
           </div>
 
-          {/* Header buttons - same as regular notepad */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Header buttons - simplified for fullscreen */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            flexShrink: 0
+          }}>
             <button
               onClick={notepadState.currentEditingSongId ? onSaveChanges : onUploadToSongs}
               disabled={!content.trim()}
-              className={`p-1 rounded text-xs transition-colors ${
-                content.trim()
-                  ? notepadState.currentEditingSongId
-                    ? darkMode 
-                      ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : darkMode 
-                      ? 'bg-green-800 hover:bg-green-700 text-green-200' 
-                      : 'bg-green-600 hover:bg-green-700 text-white'
-                  : darkMode
-                    ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
+              style={{
+                padding: '4px',
+                borderRadius: '4px',
+                border: 'none',
+                cursor: content.trim() ? 'pointer' : 'not-allowed',
+                backgroundColor: content.trim() 
+                  ? (notepadState.currentEditingSongId 
+                      ? (darkMode ? '#1e40af' : '#2563eb')
+                      : (darkMode ? '#166534' : '#16a34a'))
+                  : (darkMode ? '#4b5563' : '#d1d5db'),
+                color: content.trim() ? '#ffffff' : (darkMode ? '#9ca3af' : '#6b7280'),
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
               title={notepadState.currentEditingSongId ? "Save Changes" : "Add to Songs"}
             >
               <Upload className="w-3 h-3" />
@@ -846,15 +860,21 @@ const FloatingNotepad = ({
             <button
               onClick={onExportTxt}
               disabled={!content.trim()}
-              className={`p-1 rounded text-xs transition-colors ${
-                content.trim()
-                  ? darkMode 
-                    ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : darkMode
-                    ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
+              style={{
+                padding: '4px',
+                borderRadius: '4px',
+                border: 'none',
+                cursor: content.trim() ? 'pointer' : 'not-allowed',
+                backgroundColor: content.trim() 
+                  ? (darkMode ? '#1e40af' : '#2563eb')
+                  : (darkMode ? '#4b5563' : '#d1d5db'),
+                color: content.trim() ? '#ffffff' : (darkMode ? '#9ca3af' : '#6b7280'),
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
               title="Export as TXT"
             >
               <Download className="w-3 h-3" />
@@ -864,11 +884,19 @@ const FloatingNotepad = ({
               <>
                 <button
                   onClick={onStartNewContent}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    darkMode 
-                      ? 'bg-purple-800 hover:bg-purple-700 text-purple-200' 
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
-                  }`}
+                  style={{
+                    padding: '4px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: darkMode ? '#7c3aed' : '#9333ea',
+                    color: '#ffffff',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                   title="Empty Notepad"
                 >
                   <Plus className="w-3 h-3" />
@@ -877,21 +905,48 @@ const FloatingNotepad = ({
                 <button
                   onClick={onRevertChanges}
                   disabled={!hasUnsavedChanges}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    hasUnsavedChanges
-                      ? darkMode 
-                        ? 'bg-orange-800 hover:bg-orange-700 text-orange-200' 
-                        : 'bg-orange-600 hover:bg-orange-700 text-white'
-                      : darkMode
-                        ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                  style={{
+                    padding: '4px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
+                    backgroundColor: hasUnsavedChanges 
+                      ? (darkMode ? '#ea580c' : '#f97316')
+                      : (darkMode ? '#4b5563' : '#d1d5db'),
+                    color: hasUnsavedChanges ? '#ffffff' : (darkMode ? '#9ca3af' : '#6b7280'),
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                   title="Revert to Original"
                 >
                   <RotateCcw className="w-3 h-3" />
                 </button>
               </>
             )}
+            
+            {/* Exit fullscreen button */}
+            <button
+              onClick={toggleFullscreen}
+              style={{
+                padding: '4px',
+                borderRadius: '4px',
+                backgroundColor: darkMode ? '#4b5563' : '#e5e7eb',
+                color: darkMode ? '#d1d5db' : '#374151',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '24px',
+                height: '24px'
+              }}
+              title="Exit Fullscreen"
+            >
+              <Shrink className="w-3 h-3" />
+            </button>
           </div>
         </div>
 
@@ -919,17 +974,17 @@ const FloatingNotepad = ({
           </div>
         )}
 
-        {/* Fullscreen Textarea - SIMPLIFIED */}
+        {/* Fullscreen Textarea */}
         <div style={{
           flex: 1,
           position: 'relative',
-          backgroundColor: '#ff0000',  // RED DEBUG BACKGROUND
+          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
           minHeight: '300px'
         }}>
           <textarea
             value={content}
             onChange={handleContentChange}
-            placeholder="FULLSCREEN MODE - Start writing your lyrics..."
+            placeholder="Start writing your lyrics..."
             style={{
               width: '100%',
               height: '100%',
@@ -944,23 +999,15 @@ const FloatingNotepad = ({
             }}
           />
           
-          {/* Exit fullscreen button - positioned in bottom right */}
-          <button
-            onClick={toggleFullscreen}
-            className={`absolute bottom-4 right-4 w-12 h-12 rounded-full shadow-xl transition-all duration-200 ${ 
-              darkMode 
-                ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
-                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
-            } hover:scale-110`}
-            title="Exit Fullscreen"
-          >
-            <Shrink className="w-6 h-6" />
-          </button>
-          
-          {/* Character count - positioned in bottom left */}
-          <div className={`absolute bottom-4 left-4 text-sm ${
-            darkMode ? 'text-gray-500' : 'text-gray-400'
-          }`}>
+          {/* Character count - positioned in bottom right */}
+          <div style={{
+            position: 'absolute',
+            bottom: '8px',
+            right: '8px',
+            fontSize: '12px',
+            color: darkMode ? '#9ca3af' : '#6b7280',
+            pointerEvents: 'none'
+          }}>
             {content.length} chars
           </div>
         </div>
