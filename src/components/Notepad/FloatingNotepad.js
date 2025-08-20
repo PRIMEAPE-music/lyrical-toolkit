@@ -56,11 +56,15 @@ const FloatingNotepad = ({
   
   // Toggle fullscreen
   const toggleFullscreen = () => {
+    console.log('🔍 toggleFullscreen called, current state:', { isFullscreen, isMinimized });
     if (!isFullscreen && isMinimized) {
       // When entering fullscreen, ensure notepad is not minimized
+      console.log('🔍 Expanding notepad before fullscreen');
       toggleMinimized();
     }
-    setIsFullscreen(!isFullscreen);
+    const newFullscreenState = !isFullscreen;
+    console.log('🔍 Setting fullscreen to:', newFullscreenState);
+    setIsFullscreen(newFullscreenState);
   };
 
   useEffect(() => {
@@ -779,9 +783,6 @@ const FloatingNotepad = ({
 
     {isFullscreen && (
       <div 
-        className={`fixed inset-0 z-[999999] flex flex-col ${
-          darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}
         style={{
           position: 'fixed',
           top: 0,
@@ -790,9 +791,13 @@ const FloatingNotepad = ({
           bottom: 0,
           width: '100vw',
           height: '100vh',
-          zIndex: 999999
+          zIndex: 999999,
+          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
+        {console.log('🔍 SIMPLE Fullscreen overlay rendering')}
         {/* Header - Same as regular notepad but not draggable */}
         <div 
           className={`flex items-center justify-between p-2 border-b flex-shrink-0 ${
@@ -914,27 +919,28 @@ const FloatingNotepad = ({
           </div>
         )}
 
-        {/* Fullscreen Textarea - Takes up remaining space */}
-        <div className="flex-1 relative" style={{ 
-          minHeight: '200px',
-          backgroundColor: darkMode ? '#1f2937' : '#f9fafb'  // Temporary debug background
+        {/* Fullscreen Textarea - SIMPLIFIED */}
+        <div style={{
+          flex: 1,
+          position: 'relative',
+          backgroundColor: '#ff0000',  // RED DEBUG BACKGROUND
+          minHeight: '300px'
         }}>
           <textarea
             value={content}
             onChange={handleContentChange}
-            placeholder="Start writing your lyrics..."
-            className={`w-full h-full resize-none border-none outline-none p-4 text-base ${
-              darkMode 
-                ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
-                : 'bg-white text-gray-900 placeholder-gray-400'
-            }`}
+            placeholder="FULLSCREEN MODE - Start writing your lyrics..."
             style={{
-              fontSize: '16px',
-              lineHeight: '1.6',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              height: '100%',
               width: '100%',
-              minHeight: '200px'
+              height: '100%',
+              minHeight: '300px',
+              border: 'none',
+              outline: 'none',
+              padding: '16px',
+              fontSize: '18px',
+              backgroundColor: darkMode ? '#374151' : '#f9fafb',
+              color: darkMode ? '#d1d5db' : '#111827',
+              resize: 'none'
             }}
           />
           
