@@ -52,6 +52,7 @@ const AudioPlayer = ({
   const [regionsPlugin, setRegionsPlugin] = useState(null);
   const [waveformLoading, setWaveformLoading] = useState(false);
   const [currentRegion, setCurrentRegion] = useState(null);
+  const currentRegionRef = useRef(null);
   
   // Debug re-renders
   useEffect(() => {
@@ -78,8 +79,16 @@ const AudioPlayer = ({
     if (!audioUrl) return;
 
     const initializeWaveSurfer = async () => {
+      // Wait for next tick to ensure container is mounted
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const containerRef = compact ? waveformRef : waveformRefVertical;
-      if (!containerRef.current) return;
+      if (!containerRef.current) {
+        console.error('WaveSurfer container not found, compact:', compact);
+        return;
+      }
+      
+      console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current);
 
       // Clean up existing instance
       if (waveSurfer) {
@@ -98,44 +107,43 @@ const AudioPlayer = ({
         // Create WaveSurfer instance
         const ws = WaveSurfer.create({
           container: containerRef.current,
-          waveColor: darkMode ? '#6b7280' : '#d1d5db',
+          waveColor: darkMode ? '#9ca3af' : '#6b7280',
           progressColor: '#3b82f6',
           cursorColor: '#3b82f6',
-          barWidth: 2,
+          barWidth: 3,
+          barGap: 1,
           barRadius: 1,
           responsive: true,
           height: compact ? 16 : 8,
           normalize: true,
           plugins: [regions],
           mediaControls: false,
-          interact: true
+          interact: true,
+          backend: 'WebAudio',
+          fillParent: true
         });
 
         // Event listeners
         ws.on('ready', () => {
-          setDuration(ws.getDuration());
+          const duration = ws.getDuration();
+          setDuration(duration);
           setIsLoading(false);
           setWaveformLoading(false);
-          console.log('WaveSurfer ready, duration:', ws.getDuration());
+          console.log('✅ WaveSurfer ready, duration:', duration);
+          console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
         });
 
         ws.on('loading', (percent) => {
-          console.log('Loading progress:', percent);
+          console.log('📊 Loading progress:', percent + '%');
           setWaveformLoading(percent < 100);
         });
 
-        // Use timeupdate instead of deprecated audioprocess
+        // Store wavesurfer ref for loop logic
+        const wsRef = { current: ws };
+        
+        // Use timeupdate for current time tracking and loop logic
         ws.on('timeupdate', (time) => {
           setCurrentTime(time);
-          
-          // A-B Loop logic
-          const LOOP_TOLERANCE = 0.1;
-          if (showLoopMarkers && loopStart !== null && loopEnd !== null) {
-            if (time >= (loopEnd - LOOP_TOLERANCE)) {
-              ws.seekTo(loopStart / ws.getDuration());
-              return;
-            }
-          }
         });
 
         ws.on('play', () => setIsPlaying(true));
@@ -146,16 +154,16 @@ const AudioPlayer = ({
           setError('Failed to load audio file');
           setIsLoading(false);
           setWaveformLoading(false);
-          console.error('WaveSurfer error:', error);
+          console.error('❌ WaveSurfer error:', error);
         });
 
         // Load the audio
-        console.log('Loading audio URL:', audioUrl);
+        console.log('🎵 Loading audio URL:', audioUrl);
         await ws.load(audioUrl);
         setWaveSurfer(ws);
         
       } catch (error) {
-        console.error('Failed to initialize WaveSurfer:', error);
+        console.error('❌ Failed to initialize WaveSurfer:', error);
         setError('Failed to initialize audio player');
         setIsLoading(false);
         setWaveformLoading(false);
@@ -185,6 +193,25 @@ const AudioPlayer = ({
       }
     }
   }, [darkMode, waveSurfer]);
+
+  // Handle A-B looping logic with proper access to current state
+  useEffect(() => {
+    if (!waveSurfer || !showLoopMarkers || !currentRegion) return;
+
+    const handleTimeUpdate = (time) => {
+      const LOOP_TOLERANCE = 0.1;
+      if (time >= (currentRegion.end - LOOP_TOLERANCE)) {
+        console.log('🔄 Loop triggered - jumping from', time.toFixed(3), 'to', currentRegion.start.toFixed(3));
+        waveSurfer.seekTo(currentRegion.start / waveSurfer.getDuration());
+      }
+    };
+
+    waveSurfer.on('timeupdate', handleTimeUpdate);
+    
+    return () => {
+      waveSurfer.un('timeupdate', handleTimeUpdate);
+    };
+  }, [waveSurfer, showLoopMarkers, currentRegion]);
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -296,6 +323,7 @@ const AudioPlayer = ({
       if (currentRegion) {
         currentRegion.remove();
         setCurrentRegion(null);
+        currentRegionRef.current = null;
       }
       setLoopStart(null);
       setLoopEnd(null);
@@ -314,14 +342,18 @@ const AudioPlayer = ({
           end: threeQuarterDuration,
           color: darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)',
           drag: true,
-          resize: true
+          resize: true,
+          loop: true
         });
         setCurrentRegion(region);
+        currentRegionRef.current = region;
         
         // Handle region updates
         region.on('update-end', () => {
           setLoopStart(region.start);
           setLoopEnd(region.end);
+          currentRegionRef.current = region;
+          console.log('🔄 Region updated:', { start: region.start, end: region.end });
         });
       }
     }
@@ -459,11 +491,15 @@ const AudioPlayer = ({
             {/* WaveSurfer container for compact mode */}
             <div 
               ref={waveformRef}
-              className="rounded-full overflow-hidden"
+              className="waveform-container"
               style={{
                 height: '16px',
                 width: '100%',
-                opacity: waveformLoading ? 0.3 : 1
+                opacity: waveformLoading ? 0.3 : 1,
+                backgroundColor: darkMode ? '#374151' : '#f3f4f6',
+                border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
+                borderRadius: '8px',
+                overflow: 'hidden'
               }}
             />
           </div>
@@ -649,11 +685,15 @@ const AudioPlayer = ({
             {/* WaveSurfer container for vertical mode */}
             <div 
               ref={waveformRefVertical}
-              className="rounded-full overflow-hidden"
+              className="waveform-container"
               style={{
                 height: '8px',
                 width: '100%',
-                opacity: waveformLoading ? 0.3 : 1
+                opacity: waveformLoading ? 0.3 : 1,
+                backgroundColor: darkMode ? '#374151' : '#f3f4f6',
+                border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
+                borderRadius: '4px',
+                overflow: 'hidden'
               }}
             />
             
