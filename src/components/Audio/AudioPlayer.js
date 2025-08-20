@@ -431,7 +431,7 @@ const AudioPlayer = ({
           <button
             onClick={togglePlayPause}
             disabled={isLoading || waveformLoading}
-            className={`flex items-center justify-center w-6 h-6 rounded-full transition-colors flex-shrink-0 ${
+            className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors flex-shrink-0 ${
               isLoading 
                 ? darkMode 
                   ? 'bg-gray-700 text-gray-500' 
@@ -453,7 +453,7 @@ const AudioPlayer = ({
           {/* A-B Loop toggle button */}
           <button
             onClick={toggleLoopMarkers}
-            className={`flex items-center justify-center w-6 h-6 rounded transition-colors flex-shrink-0 ${
+            className={`flex items-center justify-center w-8 h-8 rounded transition-colors flex-shrink-0 ${
               showLoopMarkers
                 ? darkMode
                   ? 'bg-gray-700 text-white'
@@ -505,7 +505,7 @@ const AudioPlayer = ({
           <div className="relative flex-shrink-0">
             <button
               onClick={toggleVolume}
-              className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+              className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
                 darkMode 
                   ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -710,7 +710,7 @@ const AudioPlayer = ({
               <button
                 onClick={togglePlayPause}
                 disabled={isLoading || waveformLoading}
-                className={`flex items-center justify-center w-6 h-6 rounded-full transition-colors ${
+                className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
                   isLoading 
                     ? darkMode 
                       ? 'bg-gray-700 text-gray-500' 
@@ -732,7 +732,7 @@ const AudioPlayer = ({
               {/* A-B Loop toggle button for vertical layout */}
               <button
                 onClick={toggleLoopMarkers}
-                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
                   showLoopMarkers
                     ? darkMode
                       ? 'bg-gray-700 text-white'
@@ -751,7 +751,7 @@ const AudioPlayer = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleMute}
-                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
                   darkMode 
                     ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
