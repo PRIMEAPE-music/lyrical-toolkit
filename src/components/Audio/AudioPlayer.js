@@ -431,15 +431,20 @@ const AudioPlayer = ({
           <button
             onClick={togglePlayPause}
             disabled={isLoading || waveformLoading}
-            className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors flex-shrink-0 ${
-              isLoading 
-                ? darkMode 
-                  ? 'bg-gray-700 text-gray-500' 
-                  : 'bg-gray-200 text-gray-400'
-                : darkMode 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
+            style={{
+              padding: compact ? '6px' : '4px',
+              borderRadius: '4px',
+              border: '1px solid #d1d5db',
+              cursor: (isLoading || waveformLoading) ? 'not-allowed' : 'pointer',
+              backgroundColor: (isLoading || waveformLoading) ? '#f3f4f6' : '#ffffff',
+              color: (isLoading || waveformLoading) ? '#9ca3af' : '#000000',
+              width: compact ? '32px' : '24px',
+              height: compact ? '32px' : '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
           >
             {(isLoading || waveformLoading) ? (
               <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -453,15 +458,20 @@ const AudioPlayer = ({
           {/* A-B Loop toggle button */}
           <button
             onClick={toggleLoopMarkers}
-            className={`flex items-center justify-center w-8 h-8 rounded transition-colors flex-shrink-0 ${
-              showLoopMarkers
-                ? darkMode
-                  ? 'bg-gray-700 text-white'
-                  : 'bg-gray-100 text-gray-700'
-                : darkMode
-                  ? 'text-black hover:text-white hover:bg-gray-700'
-                  : 'text-black hover:text-gray-700 hover:bg-gray-100'
-            }`}
+            style={{
+              padding: compact ? '6px' : '4px',
+              borderRadius: '4px',
+              border: '1px solid #d1d5db',
+              cursor: 'pointer',
+              backgroundColor: showLoopMarkers ? (darkMode ? '#374151' : '#f3f4f6') : '#ffffff',
+              color: '#000000',
+              width: compact ? '32px' : '24px',
+              height: compact ? '32px' : '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
             title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
           >
             <span className="text-xs font-bold">Loop</span>
@@ -505,11 +515,20 @@ const AudioPlayer = ({
           <div className="relative flex-shrink-0">
             <button
               onClick={toggleVolume}
-              className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
-                darkMode 
-                  ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
+              style={{
+                padding: compact ? '6px' : '4px',
+                borderRadius: '4px',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                width: compact ? '32px' : '24px',
+                height: compact ? '32px' : '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
             >
               {isMuted ? (
                 <VolumeX className="w-4 h-4" />
@@ -710,15 +729,19 @@ const AudioPlayer = ({
               <button
                 onClick={togglePlayPause}
                 disabled={isLoading || waveformLoading}
-                className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
-                  isLoading 
-                    ? darkMode 
-                      ? 'bg-gray-700 text-gray-500' 
-                      : 'bg-gray-200 text-gray-400'
-                    : darkMode 
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                }`}
+                style={{
+                  padding: '4px',
+                  borderRadius: '4px',
+                  border: '1px solid #d1d5db',
+                  cursor: (isLoading || waveformLoading) ? 'not-allowed' : 'pointer',
+                  backgroundColor: (isLoading || waveformLoading) ? '#f3f4f6' : '#ffffff',
+                  color: (isLoading || waveformLoading) ? '#9ca3af' : '#000000',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
                 {(isLoading || waveformLoading) ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -732,15 +755,19 @@ const AudioPlayer = ({
               {/* A-B Loop toggle button for vertical layout */}
               <button
                 onClick={toggleLoopMarkers}
-                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
-                  showLoopMarkers
-                    ? darkMode
-                      ? 'bg-gray-700 text-white'
-                      : 'bg-gray-100 text-gray-700'
-                    : darkMode
-                      ? 'text-black hover:text-white hover:bg-gray-700'
-                      : 'text-black hover:text-gray-700 hover:bg-gray-100'
-                }`}
+                style={{
+                  padding: '4px',
+                  borderRadius: '4px',
+                  border: '1px solid #d1d5db',
+                  cursor: 'pointer',
+                  backgroundColor: showLoopMarkers ? (darkMode ? '#374151' : '#f3f4f6') : '#ffffff',
+                  color: '#000000',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
                 title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
               >
                 <span className="text-xs font-bold">Loop</span>
@@ -751,11 +778,19 @@ const AudioPlayer = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleMute}
-                className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
-                  darkMode 
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
+                style={{
+                  padding: '4px',
+                  borderRadius: '4px',
+                  border: '1px solid #d1d5db',
+                  cursor: 'pointer',
+                  backgroundColor: '#ffffff',
+                  color: '#000000',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
                 {isMuted ? (
                   <VolumeX className="w-4 h-4" />
