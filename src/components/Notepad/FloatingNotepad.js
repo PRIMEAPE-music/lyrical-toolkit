@@ -42,8 +42,20 @@ const FloatingNotepad = ({
   // Store the current transform for immediate DOM updates
   const currentTransformRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
   
-  // Mobile detection
-  const isMobile = window.innerWidth <= 768;
+  // Mobile detection with responsive updates
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      const newIsMobile = window.innerWidth <= 768;
+      console.log('Window resized, width:', window.innerWidth, 'isMobile:', newIsMobile);
+      setIsMobile(newIsMobile);
+    };
+    
+    console.log('Initial window width:', window.innerWidth, 'isMobile:', isMobile);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Toggle fullscreen on mobile
   const toggleFullscreen = () => {
@@ -591,14 +603,17 @@ const FloatingNotepad = ({
           />
           
           {/* Fullscreen toggle button - floating in bottom right corner on mobile */}
-          {isMobile && (
+          {(() => {
+            console.log('Notepad render - isMobile:', isMobile, 'isMinimized:', isMinimized, 'shouldShowButton:', isMobile && !isMinimized);
+            return isMobile;
+          })() && (
             <button
               onClick={toggleFullscreen}
-              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full shadow-lg transition-all duration-200 ${
+              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center ${
                 darkMode 
                   ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
                   : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
-              } hover:scale-110 z-10`}
+              } hover:scale-110 z-20`}
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
               {isFullscreen ? <Shrink className="w-5 h-5" /> : <Expand className="w-5 h-5" />}
