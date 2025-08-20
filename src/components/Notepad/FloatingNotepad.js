@@ -33,30 +33,57 @@ const FloatingNotepad = ({
   const containerRef = useRef(null);
   const dragDataRef = useRef(null);
   const resizeDataRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [tempPosition, setTempPosition] = useState(position);
   const [tempDimensions, setTempDimensions] = useState(dimensions);
+  
+  // Store the current transform for immediate DOM updates
+  const currentTransformRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
   useEffect(() => {
     setTempPosition(position);
+    currentTransformRef.current = {
+      ...currentTransformRef.current,
+      right: position.right,
+      bottom: position.bottom
+    };
   }, [position]);
 
   useEffect(() => {
     setTempDimensions(dimensions);
+    currentTransformRef.current = {
+      ...currentTransformRef.current,
+      width: dimensions.width,
+      height: dimensions.height
+    };
   }, [dimensions]);
 
   const startDrag = (clientX, clientY) => {
     if (isMinimized) return;
     if (dragDataRef.current) return;
+    
     const rect = containerRef.current.getBoundingClientRect();
     dragDataRef.current = {
       startX: clientX,
       startY: clientY,
       rect
     };
+    
+    setIsDragging(true);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'move';
+    
+    // Initialize current transform with starting position
+    currentTransformRef.current = {
+      ...currentTransformRef.current,
+      right: tempPosition.right,
+      bottom: tempPosition.bottom
+    };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousemove', handleMouseMove, { passive: false });
     document.addEventListener('mouseup', endDrag);
-    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', endDrag);
   };
 
@@ -75,15 +102,32 @@ const FloatingNotepad = ({
   };
 
   const handleMouseMove = (e) => {
-    if (!dragDataRef.current) return;
+    if (!dragDataRef.current || !containerRef.current) return;
+    
     const { startX, startY, rect } = dragDataRef.current;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     const newLeft = rect.left + dx;
     const newTop = rect.top + dy;
-    const newRight = Math.max(0, window.innerWidth - newLeft - rect.width);
-    const newBottom = Math.max(0, window.innerHeight - newTop - rect.height);
-    setTempPosition({ bottom: newBottom, right: newRight });
+    
+    // Keep within viewport bounds
+    const maxLeft = window.innerWidth - rect.width;
+    const maxTop = window.innerHeight - rect.height;
+    const constrainedLeft = Math.max(0, Math.min(maxLeft, newLeft));
+    const constrainedTop = Math.max(0, Math.min(maxTop, newTop));
+    
+    // Update DOM directly for immediate response using transform for better performance
+    const element = containerRef.current;
+    const newRight = window.innerWidth - constrainedLeft - rect.width;
+    const newBottom = window.innerHeight - constrainedTop - rect.height;
+    
+    // Use transform instead of changing position for better performance
+    const translateX = constrainedLeft - rect.left;
+    const translateY = constrainedTop - rect.top;
+    element.style.transform = `translate(${translateX}px, ${translateY}px)`;
+    
+    // Store the new position for final state update
+    currentTransformRef.current = { ...currentTransformRef.current, right: newRight, bottom: newBottom };
   };
 
   const handleTouchMove = (e) => {
@@ -93,19 +137,33 @@ const FloatingNotepad = ({
 
   const endDrag = () => {
     if (!dragDataRef.current) return;
+    
     dragDataRef.current = null;
+    setIsDragging(false);
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+    
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', endDrag);
     document.removeEventListener('touchmove', handleTouchMove);
     document.removeEventListener('touchend', endDrag);
-    setPosition(tempPosition);
+    
+    // Clear transform and update React state with final position
+    if (containerRef.current) {
+      containerRef.current.style.transform = '';
+    }
+    
+    const finalPosition = {
+      right: currentTransformRef.current.right,
+      bottom: currentTransformRef.current.bottom
+    };
+    setTempPosition(finalPosition);
+    setPosition(finalPosition);
   };
 
   // Resize functionality
   const startResize = (direction, clientX, clientY) => {
     if (isMinimized || resizeDataRef.current) return;
-    
-    console.log('🔄 Starting resize:', direction);
     
     const rect = containerRef.current.getBoundingClientRect();
     resizeDataRef.current = {
@@ -119,15 +177,25 @@ const FloatingNotepad = ({
       startRight: tempPosition.right,
       startBottom: tempPosition.bottom
     };
-
-    document.addEventListener('mousemove', handleResizeMouseMove);
+    
+    setIsResizing(true);
+    
+    // Initialize current transform with starting dimensions and position
+    currentTransformRef.current = {
+      width: rect.width,
+      height: rect.height,
+      right: tempPosition.right,
+      bottom: tempPosition.bottom
+    };
+    
+    document.addEventListener('mousemove', handleResizeMouseMove, { passive: false });
     document.addEventListener('mouseup', endResize);
     document.body.style.cursor = getResizeCursor(direction);
     document.body.style.userSelect = 'none';
   };
 
   const handleResizeMouseMove = (e) => {
-    if (!resizeDataRef.current) return;
+    if (!resizeDataRef.current || !containerRef.current) return;
     
     const { direction, startX, startY, startWidth, startHeight, startRight, startBottom } = resizeDataRef.current;
     const dx = e.clientX - startX;
@@ -148,17 +216,19 @@ const FloatingNotepad = ({
       newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + dx));
     }
     if (direction.includes('w')) { // West (left edge)
-      const widthChange = Math.max(minWidth - startWidth, Math.min(maxWidth - startWidth, -dx));
-      newWidth = startWidth + widthChange;
-      newRight = startRight + widthChange;
+      const proposedWidth = startWidth - dx;
+      newWidth = Math.max(minWidth, Math.min(maxWidth, proposedWidth));
+      const actualWidthChange = newWidth - startWidth;
+      newRight = startRight - actualWidthChange;
     }
     if (direction.includes('s')) { // South (bottom edge)
       newHeight = Math.max(minHeight, Math.min(maxHeight, startHeight + dy));
     }
     if (direction.includes('n')) { // North (top edge)
-      const heightChange = Math.max(minHeight - startHeight, Math.min(maxHeight - startHeight, -dy));
-      newHeight = startHeight + heightChange;
-      newBottom = startBottom + heightChange;
+      const proposedHeight = startHeight - dy;
+      newHeight = Math.max(minHeight, Math.min(maxHeight, proposedHeight));
+      const actualHeightChange = newHeight - startHeight;
+      newBottom = startBottom - actualHeightChange;
     }
 
     // Ensure we don't go off screen
@@ -167,22 +237,50 @@ const FloatingNotepad = ({
     newRight = Math.max(0, Math.min(maxRight, newRight));
     newBottom = Math.max(0, Math.min(maxBottom, newBottom));
 
-    setTempDimensions({ width: newWidth, height: newHeight });
-    setTempPosition({ right: newRight, bottom: newBottom });
+    // Update DOM directly for immediate response
+    const element = containerRef.current;
+    element.style.width = `${newWidth}px`;
+    element.style.height = `${newHeight}px`;
+    
+    // Only update position if it changed to avoid unnecessary reflows
+    if (newRight !== startRight || newBottom !== startBottom) {
+      element.style.right = `${newRight}px`;
+      element.style.bottom = `${newBottom}px`;
+    }
+    
+    // Store the new dimensions and position for final state update
+    currentTransformRef.current = {
+      width: newWidth,
+      height: newHeight,
+      right: newRight,
+      bottom: newBottom
+    };
   };
 
   const endResize = () => {
     if (!resizeDataRef.current) return;
     
     resizeDataRef.current = null;
+    setIsResizing(false);
     document.removeEventListener('mousemove', handleResizeMouseMove);
     document.removeEventListener('mouseup', endResize);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     
-    // Update the notepad state through the parent
-    updateDimensions(tempDimensions);
-    setPosition(tempPosition);
+    // Update React state with final dimensions and position
+    const finalDimensions = {
+      width: currentTransformRef.current.width,
+      height: currentTransformRef.current.height
+    };
+    const finalPosition = {
+      right: currentTransformRef.current.right,
+      bottom: currentTransformRef.current.bottom
+    };
+    
+    setTempDimensions(finalDimensions);
+    setTempPosition(finalPosition);
+    updateDimensions(finalDimensions);
+    setPosition(finalPosition);
   };
 
   const getResizeCursor = (direction) => {
@@ -251,13 +349,19 @@ const FloatingNotepad = ({
       ref={containerRef}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`fixed shadow-2xl border transition-all duration-300 ${
+      className={`fixed shadow-2xl border ${
+        isDragging || isResizing ? 'transition-none' : 'transition-all duration-300'
+      } ${
         isMinimized ? 'z-[60] md:z-[70] floating-notepad-minimized' : 'z-[999999]'
       } ${
         darkMode
           ? 'bg-gray-800 border-gray-600'
           : 'bg-white border-gray-300'
-      } ${!isMinimized ? 'floating-notepad-expanded' : ''}`}
+      } ${!isMinimized ? 'floating-notepad-expanded' : ''} ${
+        isDragging ? 'shadow-3xl scale-[1.02]' : ''
+      } ${
+        isResizing ? 'shadow-3xl' : ''
+      }`}
       style={
         isMinimized
           ? {
