@@ -520,7 +520,7 @@ const AudioPlayer = ({
             }`}
             title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
           >
-            <RotateCcw className="w-3 h-3" />
+            <span className="text-xs font-bold text-black">Loop</span>
           </button>
           
           {/* Progress bar - flexible width */}
@@ -823,7 +823,7 @@ const AudioPlayer = ({
           <div className="flex items-center">
             <button
               onClick={toggleLoopMarkers}
-              className={`flex items-center justify-center w-8 h-8 rounded transition-colors ${
+              className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
                 showLoopMarkers
                   ? darkMode
                     ? 'bg-blue-600 text-white'
@@ -834,7 +834,7 @@ const AudioPlayer = ({
               }`}
               title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
             >
-              <RotateCcw className="w-4 h-4" />
+              <span className="text-xs font-bold text-black">Loop</span>
             </button>
           </div>
           
