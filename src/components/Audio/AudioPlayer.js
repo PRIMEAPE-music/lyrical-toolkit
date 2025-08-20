@@ -479,7 +479,7 @@ const AudioPlayer = ({
                   onMouseDown={(e) => handleMarkerDragStart('start', e)}
                 >
                   <div
-                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs font-bold"
+                    className="w-4 h-4 rounded border-2 flex items-center justify-center text-xs font-bold"
                     style={{
                       backgroundColor: '#22c55e',
                       borderColor: darkMode ? '#1f2937' : '#ffffff',
@@ -521,7 +521,7 @@ const AudioPlayer = ({
                   onMouseDown={(e) => handleMarkerDragStart('end', e)}
                 >
                   <div
-                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs font-bold"
+                    className="w-4 h-4 rounded border-2 flex items-center justify-center text-xs font-bold"
                     style={{
                       backgroundColor: '#22c55e',
                       borderColor: darkMode ? '#1f2937' : '#ffffff',
