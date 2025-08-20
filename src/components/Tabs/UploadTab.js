@@ -140,7 +140,7 @@ const UploadTab = ({
               className={`px-3 py-1 rounded text-sm transition-colors ${
                 darkMode 
                   ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                  : 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-red-600 hover:bg-red-700 text-black'
               }`}
             >
               <Trash2 className="w-4 h-4 inline mr-1" />
