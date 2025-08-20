@@ -852,7 +852,7 @@ const FloatingNotepad = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
+            gap: '2px',
             flexShrink: 0
           }}>
             <button
