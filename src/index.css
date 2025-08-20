@@ -756,6 +756,43 @@ input:focus {
     cursor: default !important;
   }
   
+  /* Fullscreen mode for mobile notepad */
+  .floating-notepad-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    z-index: 999999 !important;
+  }
+  
+  .floating-notepad-fullscreen .flex-1 {
+    height: calc(100vh - 49px) !important;
+  }
+  
+  .floating-notepad-fullscreen textarea {
+    height: 100% !important;
+    padding: 1rem !important;
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Better mobile fullscreen experience */
+  .floating-notepad-fullscreen .notepad-header-buttons button {
+    padding: 8px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+  
+  .floating-notepad-fullscreen .notepad-header-buttons svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  
   /* Hide resize handles on mobile */
   .floating-notepad-expanded .resize-handle {
     display: none !important;

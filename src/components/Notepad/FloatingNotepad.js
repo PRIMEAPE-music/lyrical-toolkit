@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Edit3, Minimize2, Maximize2, Download, Upload, RotateCcw, Plus } from 'lucide-react';
+import { Edit3, Minimize2, Maximize2, Download, Upload, RotateCcw, Plus, Expand, Shrink } from 'lucide-react';
 import AudioPlayer from '../Audio/AudioPlayer';
 
 const FloatingNotepad = ({ 
@@ -35,6 +35,7 @@ const FloatingNotepad = ({
   const resizeDataRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [tempPosition, setTempPosition] = useState(position);
   const [tempDimensions, setTempDimensions] = useState(dimensions);
   
@@ -43,6 +44,12 @@ const FloatingNotepad = ({
   
   // Mobile detection
   const isMobile = window.innerWidth <= 768;
+  
+  // Toggle fullscreen on mobile
+  const toggleFullscreen = () => {
+    if (!isMobile) return;
+    setIsFullscreen(!isFullscreen);
+  };
 
   useEffect(() => {
     setTempPosition(position);
@@ -368,6 +375,8 @@ const FloatingNotepad = ({
         isDragging ? 'shadow-3xl scale-[1.02]' : ''
       } ${
         isResizing ? 'shadow-3xl' : ''
+      } ${
+        isMobile && isFullscreen && !isMinimized ? 'floating-notepad-fullscreen' : ''
       }`}
       style={
         isMinimized
@@ -383,18 +392,31 @@ const FloatingNotepad = ({
               resize: 'none',
               overflow: 'hidden'
             }
-          : {
-            // Expanded: Floating window
-            bottom: `${tempPosition.bottom}px`,
-            right: `${tempPosition.right}px`,
-            width: `${tempDimensions.width}px`,
-            height: `${tempDimensions.height}px`,
-            borderRadius: '8px',
-            resize: 'none', // Disable default resize, we'll use custom handles
-            overflow: 'hidden',
-            minWidth: '200px',
-            minHeight: '200px'
-          }
+          : isMobile && isFullscreen
+            ? {
+                // Mobile fullscreen
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                width: '100vw',
+                height: '100vh',
+                borderRadius: '0',
+                resize: 'none',
+                overflow: 'hidden'
+              }
+            : {
+                // Expanded: Floating window
+                bottom: `${tempPosition.bottom}px`,
+                right: `${tempPosition.right}px`,
+                width: `${tempDimensions.width}px`,
+                height: `${tempDimensions.height}px`,
+                borderRadius: '8px',
+                resize: 'none', // Disable default resize, we'll use custom handles
+                overflow: 'hidden',
+                minWidth: '200px',
+                minHeight: '200px'
+              }
       }
     >
       {/* Header - Contains title and buttons */}
@@ -517,6 +539,19 @@ const FloatingNotepad = ({
             </>
           )}
           
+          {/* Fullscreen toggle button - only on mobile */}
+          {isMobile && !isMinimized && (
+            <button
+              onClick={toggleFullscreen}
+              className={`p-1 rounded hover:bg-opacity-20 hover:bg-gray-500 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+            </button>
+          )}
+          
           <button
             onClick={toggleMinimized}
             className={`p-1 rounded hover:bg-opacity-20 hover:bg-gray-500 ${
@@ -554,8 +589,8 @@ const FloatingNotepad = ({
         <div 
           className="flex-1 w-full relative overflow-hidden"
           style={{ 
-            height: currentSongAudio ? 'calc(100% - 49px - 60px)' : 'calc(100% - 49px)',
-            minHeight: '150px',
+            height: isMobile && isFullscreen ? (currentSongAudio ? 'calc(100vh - 49px - 60px)' : 'calc(100vh - 49px)') : (currentSongAudio ? 'calc(100% - 49px - 60px)' : 'calc(100% - 49px)'),
+            minHeight: isMobile && isFullscreen ? '200px' : '150px',
             width: '100%'
           }}
         >
