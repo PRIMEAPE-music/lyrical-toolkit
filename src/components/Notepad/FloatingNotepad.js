@@ -838,14 +838,10 @@ const FloatingNotepad = ({
               style={{
                 padding: '4px',
                 borderRadius: '4px',
-                border: 'none',
+                border: '1px solid #d1d5db',
                 cursor: content.trim() ? 'pointer' : 'not-allowed',
-                backgroundColor: content.trim() 
-                  ? (notepadState.currentEditingSongId 
-                      ? (darkMode ? '#1e40af' : '#2563eb')
-                      : (darkMode ? '#166534' : '#16a34a'))
-                  : (darkMode ? '#4b5563' : '#d1d5db'),
-                color: content.trim() ? '#ffffff' : (darkMode ? '#9ca3af' : '#6b7280'),
+                backgroundColor: content.trim() ? '#ffffff' : '#f3f4f6',
+                color: content.trim() ? '#000000' : '#9ca3af',
                 width: '24px',
                 height: '24px',
                 display: 'flex',
@@ -857,29 +853,6 @@ const FloatingNotepad = ({
               <Upload className="w-3 h-3" />
             </button>
 
-            <button
-              onClick={onExportTxt}
-              disabled={!content.trim()}
-              style={{
-                padding: '4px',
-                borderRadius: '4px',
-                border: 'none',
-                cursor: content.trim() ? 'pointer' : 'not-allowed',
-                backgroundColor: content.trim() 
-                  ? (darkMode ? '#1e40af' : '#2563eb')
-                  : (darkMode ? '#4b5563' : '#d1d5db'),
-                color: content.trim() ? '#ffffff' : (darkMode ? '#9ca3af' : '#6b7280'),
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Export as TXT"
-            >
-              <Download className="w-3 h-3" />
-            </button>
-
             {notepadState.currentEditingSongId && (
               <>
                 <button
@@ -887,10 +860,10 @@ const FloatingNotepad = ({
                   style={{
                     padding: '4px',
                     borderRadius: '4px',
-                    border: 'none',
+                    border: '1px solid #d1d5db',
                     cursor: 'pointer',
-                    backgroundColor: darkMode ? '#7c3aed' : '#9333ea',
-                    color: '#ffffff',
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
                     width: '24px',
                     height: '24px',
                     display: 'flex',
@@ -908,12 +881,10 @@ const FloatingNotepad = ({
                   style={{
                     padding: '4px',
                     borderRadius: '4px',
-                    border: 'none',
+                    border: '1px solid #d1d5db',
                     cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
-                    backgroundColor: hasUnsavedChanges 
-                      ? (darkMode ? '#ea580c' : '#f97316')
-                      : (darkMode ? '#4b5563' : '#d1d5db'),
-                    color: hasUnsavedChanges ? '#ffffff' : (darkMode ? '#9ca3af' : '#6b7280'),
+                    backgroundColor: hasUnsavedChanges ? '#ffffff' : '#f3f4f6',
+                    color: hasUnsavedChanges ? '#000000' : '#9ca3af',
                     width: '24px',
                     height: '24px',
                     display: 'flex',
@@ -933,9 +904,9 @@ const FloatingNotepad = ({
               style={{
                 padding: '4px',
                 borderRadius: '4px',
-                backgroundColor: darkMode ? '#4b5563' : '#e5e7eb',
-                color: darkMode ? '#d1d5db' : '#374151',
-                border: 'none',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                border: '1px solid #d1d5db',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
