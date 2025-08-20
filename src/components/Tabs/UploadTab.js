@@ -208,7 +208,7 @@ const UploadTab = ({
                     <button
                       onClick={() => onSongSelect(song)}
                       className={`text-xs md:text-sm px-2 md:px-3 py-1 rounded transition-colors ${
-                        darkMode ? 'bg-gray-700 hover:bg-gray-600 text-black' : 'bg-gray-200 hover:bg-gray-300 text-black'
+                        darkMode ? 'bg-white hover:bg-gray-100 text-black' : 'bg-gray-200 hover:bg-gray-300 text-black'
                       }`}
                     >
                       View
@@ -231,7 +231,7 @@ const UploadTab = ({
                       onClick={() => onDeleteSong(song.id)}
                       className={`text-xs md:text-sm px-2 md:px-3 py-1 rounded transition-colors ${
                         darkMode 
-                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                          ? 'bg-white hover:bg-gray-100 text-black' 
                           : 'bg-gray-200 hover:bg-gray-300 text-red-600'
                       }`}
                       title="Delete song"
