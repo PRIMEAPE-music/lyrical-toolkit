@@ -10,6 +10,8 @@ import {
   RotateCcw,
   MoreHorizontal
 } from 'lucide-react';
+import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 import audioStorageService from '../../services/audioStorageService';
 
 const AudioPlayer = ({ 
@@ -42,8 +44,14 @@ const AudioPlayer = ({
   const [loopStart, setLoopStart] = useState(null);
   const [loopEnd, setLoopEnd] = useState(null);
   const [showLoopMarkers, setShowLoopMarkers] = useState(false);
-  const [draggingMarker, setDraggingMarker] = useState(null); // 'start' or 'end' or null
+  // draggingMarker removed - now handled by WaveSurfer regions
   const [markerTooltip, setMarkerTooltip] = useState(null); // { type: 'start'|'end', time: number, x: number }
+  
+  // WaveSurfer state
+  const [waveSurfer, setWaveSurfer] = useState(null);
+  const [regionsPlugin, setRegionsPlugin] = useState(null);
+  const [waveformLoading, setWaveformLoading] = useState(false);
+  const [currentRegion, setCurrentRegion] = useState(null);
   
   // Debug re-renders
   useEffect(() => {
@@ -59,79 +67,105 @@ const AudioPlayer = ({
   });
   
   const audioRef = useRef(null);
-  const progressRef = useRef(null);
+  const waveformRef = useRef(null);
+  const waveformRefVertical = useRef(null);
   const dropdownRef = useRef(null);
   const volumeSliderRef = useRef(null);
-  const startMarkerRef = useRef(null);
-  const endMarkerRef = useRef(null);
   const menuButtonRef = useRef(null);
 
-  // Initialize audio element
+  // Initialize WaveSurfer
   useEffect(() => {
     if (!audioUrl) return;
 
-    const audio = audioRef.current;
-    if (!audio) return;
+    const initializeWaveSurfer = () => {
+      const containerRef = compact ? waveformRef : waveformRefVertical;
+      if (!containerRef.current) return;
 
-    const handleLoadStart = () => setIsLoading(true);
-    const handleCanPlay = () => setIsLoading(false);
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
-      setIsLoading(false);
-    };
-    const handleTimeUpdate = () => {
-      const currentTime = audio.currentTime;
+      setWaveformLoading(true);
       
-      // A-B Loop logic with tolerance for timing precision
-      const LOOP_TOLERANCE = 0.1; // 100ms tolerance for loop detection
-      
-      if (showLoopMarkers && loopStart !== null && loopEnd !== null) {
-        // Debug logging to troubleshoot loop detection
-        if (currentTime >= (loopEnd - LOOP_TOLERANCE)) {
-          console.log('🔄 Loop triggered:', {
-            currentTime: currentTime.toFixed(3),
-            loopStart: loopStart.toFixed(3),
-            loopEnd: loopEnd.toFixed(3),
-            tolerance: LOOP_TOLERANCE,
-            showLoopMarkers
-          });
-          
-          // Use fastSeek if available for smoother seeking, fallback to currentTime
-          if (audio.fastSeek) {
-            audio.fastSeek(loopStart);
-          } else {
-            audio.currentTime = loopStart;
-          }
-          setCurrentTime(loopStart);
-          return; // Early return to prevent setting currentTime below
+      // Create regions plugin
+      const regions = RegionsPlugin.create();
+      setRegionsPlugin(regions);
+
+      // Create WaveSurfer instance
+      const ws = WaveSurfer.create({
+        container: containerRef.current,
+        waveColor: darkMode ? '#6b7280' : '#d1d5db',
+        progressColor: '#3b82f6',
+        cursorColor: '#3b82f6',
+        barWidth: 2,
+        barRadius: 1,
+        responsive: true,
+        height: compact ? 16 : 8,
+        normalize: true,
+        plugins: [regions],
+        mediaControls: false,
+        interact: true
+      });
+
+      // Event listeners
+      ws.on('ready', () => {
+        setDuration(ws.getDuration());
+        setIsLoading(false);
+        setWaveformLoading(false);
+      });
+
+      ws.on('loading', (percent) => {
+        if (percent < 100) {
+          setWaveformLoading(true);
+        } else {
+          setWaveformLoading(false);
         }
-      }
+      });
+
+      ws.on('audioprocess', (time) => {
+        setCurrentTime(time);
+        
+        // A-B Loop logic
+        const LOOP_TOLERANCE = 0.1;
+        if (showLoopMarkers && loopStart !== null && loopEnd !== null) {
+          if (time >= (loopEnd - LOOP_TOLERANCE)) {
+            ws.seekTo(loopStart / ws.getDuration());
+            return;
+          }
+        }
+      });
+
+      ws.on('play', () => setIsPlaying(true));
+      ws.on('pause', () => setIsPlaying(false));
+      ws.on('finish', () => setIsPlaying(false));
       
-      setCurrentTime(currentTime);
-    };
-    const handleEnded = () => setIsPlaying(false);
-    const handleError = (e) => {
-      setError('Failed to load audio file');
-      setIsLoading(false);
-      console.error('Audio load error:', e);
+      ws.on('error', (error) => {
+        setError('Failed to load audio file');
+        setIsLoading(false);
+        setWaveformLoading(false);
+        console.error('WaveSurfer error:', error);
+      });
+
+      ws.load(audioUrl);
+      setWaveSurfer(ws);
     };
 
-    audio.addEventListener('loadstart', handleLoadStart);
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('error', handleError);
+    initializeWaveSurfer();
 
     return () => {
-      audio.removeEventListener('loadstart', handleLoadStart);
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('error', handleError);
+      if (waveSurfer) {
+        waveSurfer.destroy();
+        setWaveSurfer(null);
+      }
     };
-  }, [audioUrl, showLoopMarkers, loopStart, loopEnd]);
+  }, [audioUrl, compact, darkMode, showLoopMarkers, loopStart, loopEnd, waveSurfer]);
+
+  // Update WaveSurfer colors when theme changes
+  useEffect(() => {
+    if (waveSurfer) {
+      waveSurfer.setOptions({
+        waveColor: darkMode ? '#6b7280' : '#d1d5db',
+        progressColor: '#3b82f6',
+        cursorColor: '#3b82f6'
+      });
+    }
+  }, [darkMode, waveSurfer]);
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -164,45 +198,30 @@ const AudioPlayer = ({
 
   // Play/pause toggle
   const togglePlayPause = useCallback(async () => {
-    if (!audioRef.current || isLoading) return;
+    if (!waveSurfer || isLoading || waveformLoading) return;
 
     try {
       if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
+        waveSurfer.pause();
       } else {
-        await audioRef.current.play();
-        setIsPlaying(true);
+        waveSurfer.play();
       }
     } catch (error) {
       console.error('Play/pause error:', error);
       setError('Failed to play audio');
     }
-  }, [isPlaying, isLoading]);
+  }, [waveSurfer, isPlaying, isLoading, waveformLoading]);
 
-  // Seek to position
-  const handleSeek = useCallback((e) => {
-    // console.log('🎯 handleSeek called - event:', e);
-    if (!audioRef.current || !progressRef.current) return;
-
-    const rect = progressRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = x / rect.width;
-    const newTime = percentage * duration;
-    
-    // console.log('🎯 Seeking to:', newTime, 'duration:', duration, 'percentage:', percentage);
-    audioRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
-  }, [duration]);
+  // WaveSurfer handles seeking automatically through click events
 
   // Volume control
   const handleVolumeChange = useCallback((newVolume) => {
-    if (!audioRef.current) return;
+    if (!waveSurfer) return;
     
-    audioRef.current.volume = newVolume;
+    waveSurfer.setVolume(newVolume);
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
-  }, []);
+  }, [waveSurfer]);
 
   // Volume button toggle (mute/unmute or show/hide volume slider)
   const toggleVolume = useCallback(() => {
@@ -211,31 +230,30 @@ const AudioPlayer = ({
       setShowVolumeSlider(!showVolumeSlider);
     } else {
       // In normal mode, toggle mute
-      // console.log('🔊 Normal mode - toggling mute');
-      if (!audioRef.current) return;
+      if (!waveSurfer) return;
       
       if (isMuted) {
-        audioRef.current.volume = volume || 0.5;
+        waveSurfer.setVolume(volume || 0.5);
         setIsMuted(false);
       } else {
-        audioRef.current.volume = 0;
+        waveSurfer.setVolume(0);
         setIsMuted(true);
       }
     }
-  }, [hideMenu, compact, showVolumeSlider, isMuted, volume]);
+  }, [waveSurfer, hideMenu, compact, showVolumeSlider, isMuted, volume]);
 
   // Mute toggle (for backwards compatibility)
   const toggleMute = useCallback(() => {
-    if (!audioRef.current) return;
+    if (!waveSurfer) return;
     
     if (isMuted) {
-      audioRef.current.volume = volume || 0.5;
+      waveSurfer.setVolume(volume || 0.5);
       setIsMuted(false);
     } else {
-      audioRef.current.volume = 0;
+      waveSurfer.setVolume(0);
       setIsMuted(true);
     }
-  }, [isMuted, volume]);
+  }, [waveSurfer, isMuted, volume]);
 
   // Download handler
   const handleDownload = useCallback(async () => {
@@ -248,13 +266,20 @@ const AudioPlayer = ({
     }
   }, [onDownload]);
 
-  // A-B Loop functionality - simplified with single toggle
+  // A-B Loop functionality with WaveSurfer regions
   const toggleLoopMarkers = useCallback(() => {
+    if (!waveSurfer || !regionsPlugin) return;
+    
     if (showLoopMarkers) {
       // Hide markers and disable loop functionality
       setShowLoopMarkers(false);
-      setDraggingMarker(null);
       setMarkerTooltip(null);
+      if (currentRegion) {
+        currentRegion.remove();
+        setCurrentRegion(null);
+      }
+      setLoopStart(null);
+      setLoopEnd(null);
     } else {
       // Show markers and set default positions
       setShowLoopMarkers(true);
@@ -263,54 +288,27 @@ const AudioPlayer = ({
         const threeQuarterDuration = duration * 0.75;
         setLoopStart(quarterDuration);
         setLoopEnd(threeQuarterDuration);
+        
+        // Create region
+        const region = regionsPlugin.addRegion({
+          start: quarterDuration,
+          end: threeQuarterDuration,
+          color: darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)',
+          drag: true,
+          resize: true
+        });
+        setCurrentRegion(region);
+        
+        // Handle region updates
+        region.on('update-end', () => {
+          setLoopStart(region.start);
+          setLoopEnd(region.end);
+        });
       }
     }
-  }, [showLoopMarkers, duration]);
+  }, [waveSurfer, regionsPlugin, showLoopMarkers, duration, darkMode, currentRegion]);
 
-  const calculateMarkerPosition = useCallback((time) => {
-    if (!duration) return 0;
-    return (time / duration) * 100;
-  }, [duration]);
-
-  const calculateTimeFromPosition = useCallback((clientX) => {
-    if (!progressRef.current || !duration) return 0;
-    const rect = progressRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
-    return percentage * duration;
-  }, [duration]);
-
-  const handleMarkerDragStart = useCallback((markerType, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDraggingMarker(markerType);
-    
-    const handleMouseMove = (e) => {
-      const newTime = calculateTimeFromPosition(e.clientX);
-      
-      if (markerType === 'start') {
-        const maxTime = loopEnd !== null ? loopEnd - 0.1 : duration;
-        const clampedTime = Math.max(0, Math.min(newTime, maxTime));
-        setLoopStart(clampedTime);
-        setMarkerTooltip({ type: 'start', time: clampedTime, x: e.clientX });
-      } else {
-        const minTime = loopStart !== null ? loopStart + 0.1 : 0;
-        const clampedTime = Math.max(minTime, Math.min(newTime, duration));
-        setLoopEnd(clampedTime);
-        setMarkerTooltip({ type: 'end', time: clampedTime, x: e.clientX });
-      }
-    };
-    
-    const handleMouseUp = () => {
-      setDraggingMarker(null);
-      setMarkerTooltip(null);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [loopStart, loopEnd, duration, calculateTimeFromPosition]);
+  // Old marker functions removed - now handled by WaveSurfer regions
 
   // Format time display
   const formatTime = (seconds) => {
@@ -384,7 +382,7 @@ const AudioPlayer = ({
           {/* Play/pause button */}
           <button
             onClick={togglePlayPause}
-            disabled={isLoading}
+            disabled={isLoading || waveformLoading}
             className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors flex-shrink-0 ${
               isLoading 
                 ? darkMode 
@@ -395,7 +393,7 @@ const AudioPlayer = ({
                   : 'bg-blue-500 hover:bg-blue-600 text-white'
             }`}
           >
-            {isLoading ? (
+            {(isLoading || waveformLoading) ? (
               <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : isPlaying ? (
               <Pause className="w-4 h-4" />
@@ -421,135 +419,34 @@ const AudioPlayer = ({
             <span className="text-xs font-bold">Loop</span>
           </button>
           
-          {/* Progress bar - flexible width */}
+          {/* WaveSurfer container - flexible width */}
           <div 
-            className="mx-2" 
+            className="mx-2 relative" 
             style={{ 
               flex: 1, 
               minWidth: '100px'
             }}
           >
-            <div
-              ref={progressRef}
-              className={`relative rounded-full cursor-pointer border`}
+            {/* Loading state for waveform */}
+            {waveformLoading && (
+              <div 
+                className={`absolute inset-0 flex items-center justify-center rounded-full border z-10 ${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-white'}`}
+                style={{ height: '16px' }}
+              >
+                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            
+            {/* WaveSurfer container for compact mode */}
+            <div 
+              ref={waveformRef}
+              className="rounded-full overflow-hidden"
               style={{
                 height: '16px',
-                backgroundColor: darkMode ? '#6b7280' : '#d1d5db',
-                borderColor: darkMode ? '#9ca3af' : '#6b7280',
                 width: '100%',
-                zIndex: 1
+                opacity: waveformLoading ? 0.3 : 1
               }}
-              onClick={handleSeek}
-            >
-              {/* Loop range overlay */}
-              {showLoopMarkers && loopStart !== null && loopEnd !== null && (
-                <div
-                  className="absolute top-0 h-full rounded-full"
-                  style={{
-                    left: `${calculateMarkerPosition(loopStart)}%`,
-                    width: `${calculateMarkerPosition(loopEnd) - calculateMarkerPosition(loopStart)}%`,
-                    backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)',
-                    borderLeft: '2px solid #22c55e',
-                    borderRight: '2px solid #22c55e',
-                  }}
-                />
-              )}
-              
-              {/* Current progress bar */}
-              <div 
-                className="absolute left-0 top-0 bg-blue-500 rounded-full transition-all duration-100"
-                style={{ 
-                  width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                  height: '100%',
-                  backgroundColor: '#3b82f6', // Force blue color
-                  minWidth: currentTime > 0 ? '2px' : '0px' // Ensure visibility when playing
-                }}
-              />
-              
-              {/* Loop start marker (A) */}
-              {showLoopMarkers && loopStart !== null && (
-                <div
-                  ref={startMarkerRef}
-                  className="absolute top-0 cursor-grab active:cursor-grabbing"
-                  style={{
-                    left: `${calculateMarkerPosition(loopStart)}%`,
-                    marginLeft: '-1px',
-                    zIndex: 10,
-                    height: '100%'
-                  }}
-                  onMouseDown={(e) => handleMarkerDragStart('start', e)}
-                >
-                  <div
-                    className="w-0.5 h-full flex items-start justify-center text-xs font-bold"
-                    style={{
-                      backgroundColor: '#22c55e',
-                      color: '#ffffff'
-                    }}
-                  >
-                    <span className="absolute -top-5 text-xs bg-green-500 px-1 rounded text-white font-bold">A</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Precision line for A marker */}
-              {showLoopMarkers && loopStart !== null && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: `${calculateMarkerPosition(loopStart)}%`,
-                    top: '100%',
-                    width: '2px',
-                    height: '8px',
-                    backgroundColor: '#22c55e',
-                    opacity: 0.8,
-                    marginLeft: '-1px',
-                    zIndex: 15
-                  }}
-                />
-              )}
-              
-              {/* Loop end marker (B) */}
-              {showLoopMarkers && loopEnd !== null && (
-                <div
-                  ref={endMarkerRef}
-                  className="absolute top-0 cursor-grab active:cursor-grabbing"
-                  style={{
-                    left: `${calculateMarkerPosition(loopEnd)}%`,
-                    marginLeft: '-1px',
-                    zIndex: 10,
-                    height: '100%'
-                  }}
-                  onMouseDown={(e) => handleMarkerDragStart('end', e)}
-                >
-                  <div
-                    className="w-0.5 h-full flex items-start justify-center text-xs font-bold"
-                    style={{
-                      backgroundColor: '#22c55e',
-                      color: '#ffffff'
-                    }}
-                  >
-                    <span className="absolute -top-5 text-xs bg-green-500 px-1 rounded text-white font-bold">B</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Precision line for B marker */}
-              {showLoopMarkers && loopEnd !== null && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: `${calculateMarkerPosition(loopEnd)}%`,
-                    top: '100%',
-                    width: '2px',
-                    height: '8px',
-                    backgroundColor: '#22c55e',
-                    opacity: 0.8,
-                    marginLeft: '-1px',
-                    zIndex: 15
-                  }}
-                />
-              )}
-            </div>
+            />
           </div>
           
           {/* Volume button with dropdown toggle */}
@@ -718,95 +615,28 @@ const AudioPlayer = ({
         /* Original vertical layout for non-compact mode */
         <div className="space-y-3">
           
-          {/* Progress bar */}
+          {/* WaveSurfer container */}
           <div className="space-y-1">
-            <div
-              ref={progressRef}
-              className="relative rounded-full cursor-pointer border"
+            {/* Loading state for waveform */}
+            {waveformLoading && (
+              <div 
+                className={`relative flex items-center justify-center rounded-full border ${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-white'}`}
+                style={{ height: '8px', width: '100%' }}
+              >
+                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            
+            {/* WaveSurfer container for vertical mode */}
+            <div 
+              ref={waveformRefVertical}
+              className="rounded-full overflow-hidden"
               style={{
                 height: '8px',
-                backgroundColor: darkMode ? '#6b7280' : '#d1d5db',
-                borderColor: darkMode ? '#9ca3af' : '#6b7280',
-                width: '100%'
+                width: '100%',
+                opacity: waveformLoading ? 0.3 : 1
               }}
-              onClick={handleSeek}
-            >
-              {/* Loop range overlay for vertical layout */}
-              {showLoopMarkers && loopStart !== null && loopEnd !== null && (
-                <div
-                  className="absolute top-0 h-full rounded-full"
-                  style={{
-                    left: `${calculateMarkerPosition(loopStart)}%`,
-                    width: `${calculateMarkerPosition(loopEnd) - calculateMarkerPosition(loopStart)}%`,
-                    backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.2)',
-                    borderLeft: '2px solid #22c55e',
-                    borderRight: '2px solid #22c55e',
-                  }}
-                />
-              )}
-              
-              <div 
-                className="absolute left-0 top-0 bg-blue-500 rounded-full transition-all duration-100"
-                style={{ 
-                  width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                  height: '100%',
-                  backgroundColor: '#3b82f6',
-                  minWidth: currentTime > 0 ? '2px' : '0px'
-                }}
-              />
-              
-              {/* Loop start marker (A) for vertical layout */}
-              {showLoopMarkers && loopStart !== null && (
-                <div
-                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
-                  style={{
-                    left: `${calculateMarkerPosition(loopStart)}%`,
-                    marginLeft: '-6px',
-                    zIndex: 10
-                  }}
-                  onMouseDown={(e) => handleMarkerDragStart('start', e)}
-                >
-                  <div
-                    className="w-3 h-3 rounded-full border-2 flex items-center justify-center"
-                    style={{
-                      backgroundColor: '#22c55e',
-                      borderColor: darkMode ? '#1f2937' : '#ffffff',
-                      fontSize: '8px',
-                      color: '#ffffff',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    A
-                  </div>
-                </div>
-              )}
-              
-              {/* Loop end marker (B) for vertical layout */}
-              {showLoopMarkers && loopEnd !== null && (
-                <div
-                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
-                  style={{
-                    left: `${calculateMarkerPosition(loopEnd)}%`,
-                    marginLeft: '-6px',
-                    zIndex: 10
-                  }}
-                  onMouseDown={(e) => handleMarkerDragStart('end', e)}
-                >
-                  <div
-                    className="w-3 h-3 rounded-full border-2 flex items-center justify-center"
-                    style={{
-                      backgroundColor: '#22c55e',
-                      borderColor: darkMode ? '#1f2937' : '#ffffff',
-                      fontSize: '8px',
-                      color: '#ffffff',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    B
-                  </div>
-                </div>
-              )}
-            </div>
+            />
             
             {/* Time display */}
             <div className={`flex justify-between text-xs ${
@@ -823,7 +653,7 @@ const AudioPlayer = ({
               {/* Play/pause button */}
               <button
                 onClick={togglePlayPause}
-                disabled={isLoading}
+                disabled={isLoading || waveformLoading}
                 className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
                   isLoading 
                     ? darkMode 
@@ -834,7 +664,7 @@ const AudioPlayer = ({
                       : 'bg-blue-500 hover:bg-blue-600 text-white'
                 }`}
               >
-                {isLoading ? (
+                {(isLoading || waveformLoading) ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 ) : isPlaying ? (
                   <Pause className="w-5 h-5" />
