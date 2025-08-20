@@ -598,17 +598,20 @@ const FloatingNotepad = ({
             }}
           />
           
-          {/* Fullscreen toggle button - floating in bottom right corner, hidden on desktop via CSS */}
+          {/* DEBUG: Fullscreen toggle button - ALWAYS VISIBLE with bright colors */}
           <button
             onClick={toggleFullscreen}
-            className={`absolute bottom-2 right-2 w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center mobile-fullscreen-btn ${
-              darkMode 
-                ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
-                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
-            } hover:scale-110 z-20`}
+            className="absolute bottom-2 right-2 w-12 h-12 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: '#ff0000',
+              border: '3px solid #00ff00',
+              color: '#ffffff',
+              zIndex: 99999,
+              display: 'flex !important'
+            }}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
           >
-            {isFullscreen ? <Shrink className="w-5 h-5" /> : <Expand className="w-5 h-5" />}
+            {isFullscreen ? <Shrink className="w-6 h-6" /> : <Expand className="w-6 h-6" />}
           </button>
           
           {/* Character count - positioned in bottom left corner on mobile, bottom right on desktop */}
