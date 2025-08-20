@@ -778,13 +778,28 @@ const FloatingNotepad = ({
     )}
 
     {isFullscreen && (
-      <div className={`fixed inset-0 z-[999999] flex flex-col ${
-        darkMode ? 'bg-gray-800' : 'bg-white'
-      }`}>
+      <div 
+        className={`fixed inset-0 z-[999999] flex flex-col ${
+          darkMode ? 'bg-gray-800' : 'bg-white'
+        }`}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 999999
+        }}
+      >
         {/* Header - Same as regular notepad but not draggable */}
-        <div className={`flex items-center justify-between p-2 border-b ${
-          darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-        }`}>
+        <div 
+          className={`flex items-center justify-between p-2 border-b flex-shrink-0 ${
+            darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+          }`}
+          style={{ minHeight: '49px' }}
+        >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Edit3 className={`w-4 h-4 flex-shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             <input
@@ -877,9 +892,12 @@ const FloatingNotepad = ({
 
         {/* Audio Player Bar - Same as regular notepad if audio exists */}
         {currentSongAudio && (
-          <div className={`flex-shrink-0 border-b w-full ${
-            darkMode ? 'border-gray-600' : 'border-gray-200'
-          }`}>
+          <div 
+            className={`flex-shrink-0 border-b w-full ${
+              darkMode ? 'border-gray-600' : 'border-gray-200'
+            }`}
+            style={{ minHeight: '60px' }}
+          >
             <AudioPlayer
               audioUrl={currentSongAudio.url}
               audioFilename={currentSongAudio.filename}
@@ -897,7 +915,10 @@ const FloatingNotepad = ({
         )}
 
         {/* Fullscreen Textarea - Takes up remaining space */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" style={{ 
+          minHeight: '200px',
+          backgroundColor: darkMode ? '#1f2937' : '#f9fafb'  // Temporary debug background
+        }}>
           <textarea
             value={content}
             onChange={handleContentChange}
@@ -910,7 +931,10 @@ const FloatingNotepad = ({
             style={{
               fontSize: '16px',
               lineHeight: '1.6',
-              fontFamily: 'system-ui, -apple-system, sans-serif'
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              height: '100%',
+              width: '100%',
+              minHeight: '200px'
             }}
           />
           
