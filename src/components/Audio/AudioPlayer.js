@@ -898,7 +898,7 @@ const AudioPlayer = ({
               
               {/* Menu button - moved to after volume control */}
               {showControls && (onDownload || onRemove || onReplace) && (
-                <div className="relative ml-2 z-[9999]">
+                <div className="relative ml-2 z-[99999]">
                   <button
                     ref={menuButtonRef}
                     onClick={(e) => {
@@ -928,7 +928,7 @@ const AudioPlayer = ({
                   })() && (
                     <div 
                       ref={dropdownRef}
-                      className={`fixed py-1 min-w-[120px] rounded-lg border shadow-lg z-[9999] ${
+                      className={`fixed py-1 min-w-[120px] rounded-lg border shadow-lg z-[99999] ${
                         darkMode 
                           ? 'border-gray-600 bg-gray-800' 
                           : 'border-gray-200 bg-white'

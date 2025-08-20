@@ -67,7 +67,7 @@ const ExportDropdown = ({ song, onExportTxt, onExportPdf, darkMode }) => {
 
       {isOpen && (
         <div 
-          className={`absolute right-0 w-32 rounded-lg shadow-lg border z-50 ${
+          className={`absolute right-0 w-32 rounded-lg shadow-lg border z-40 ${
             dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
           } ${
             darkMode 
