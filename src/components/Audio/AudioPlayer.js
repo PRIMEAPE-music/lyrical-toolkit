@@ -77,73 +77,89 @@ const AudioPlayer = ({
   useEffect(() => {
     if (!audioUrl) return;
 
-    const initializeWaveSurfer = () => {
+    const initializeWaveSurfer = async () => {
       const containerRef = compact ? waveformRef : waveformRefVertical;
       if (!containerRef.current) return;
 
+      // Clean up existing instance
+      if (waveSurfer) {
+        waveSurfer.destroy();
+        setWaveSurfer(null);
+      }
+
       setWaveformLoading(true);
+      setError(null);
       
-      // Create regions plugin
-      const regions = RegionsPlugin.create();
-      setRegionsPlugin(regions);
+      try {
+        // Create regions plugin
+        const regions = RegionsPlugin.create();
+        setRegionsPlugin(regions);
 
-      // Create WaveSurfer instance
-      const ws = WaveSurfer.create({
-        container: containerRef.current,
-        waveColor: darkMode ? '#6b7280' : '#d1d5db',
-        progressColor: '#3b82f6',
-        cursorColor: '#3b82f6',
-        barWidth: 2,
-        barRadius: 1,
-        responsive: true,
-        height: compact ? 16 : 8,
-        normalize: true,
-        plugins: [regions],
-        mediaControls: false,
-        interact: true
-      });
+        // Create WaveSurfer instance
+        const ws = WaveSurfer.create({
+          container: containerRef.current,
+          waveColor: darkMode ? '#6b7280' : '#d1d5db',
+          progressColor: '#3b82f6',
+          cursorColor: '#3b82f6',
+          barWidth: 2,
+          barRadius: 1,
+          responsive: true,
+          height: compact ? 16 : 8,
+          normalize: true,
+          plugins: [regions],
+          mediaControls: false,
+          interact: true
+        });
 
-      // Event listeners
-      ws.on('ready', () => {
-        setDuration(ws.getDuration());
-        setIsLoading(false);
-        setWaveformLoading(false);
-      });
-
-      ws.on('loading', (percent) => {
-        if (percent < 100) {
-          setWaveformLoading(true);
-        } else {
+        // Event listeners
+        ws.on('ready', () => {
+          setDuration(ws.getDuration());
+          setIsLoading(false);
           setWaveformLoading(false);
-        }
-      });
+          console.log('WaveSurfer ready, duration:', ws.getDuration());
+        });
 
-      ws.on('audioprocess', (time) => {
-        setCurrentTime(time);
-        
-        // A-B Loop logic
-        const LOOP_TOLERANCE = 0.1;
-        if (showLoopMarkers && loopStart !== null && loopEnd !== null) {
-          if (time >= (loopEnd - LOOP_TOLERANCE)) {
-            ws.seekTo(loopStart / ws.getDuration());
-            return;
+        ws.on('loading', (percent) => {
+          console.log('Loading progress:', percent);
+          setWaveformLoading(percent < 100);
+        });
+
+        // Use timeupdate instead of deprecated audioprocess
+        ws.on('timeupdate', (time) => {
+          setCurrentTime(time);
+          
+          // A-B Loop logic
+          const LOOP_TOLERANCE = 0.1;
+          if (showLoopMarkers && loopStart !== null && loopEnd !== null) {
+            if (time >= (loopEnd - LOOP_TOLERANCE)) {
+              ws.seekTo(loopStart / ws.getDuration());
+              return;
+            }
           }
-        }
-      });
+        });
 
-      ws.on('play', () => setIsPlaying(true));
-      ws.on('pause', () => setIsPlaying(false));
-      ws.on('finish', () => setIsPlaying(false));
-      
-      ws.on('error', (error) => {
-        setError('Failed to load audio file');
+        ws.on('play', () => setIsPlaying(true));
+        ws.on('pause', () => setIsPlaying(false));
+        ws.on('finish', () => setIsPlaying(false));
+        
+        ws.on('error', (error) => {
+          setError('Failed to load audio file');
+          setIsLoading(false);
+          setWaveformLoading(false);
+          console.error('WaveSurfer error:', error);
+        });
+
+        // Load the audio
+        console.log('Loading audio URL:', audioUrl);
+        await ws.load(audioUrl);
+        setWaveSurfer(ws);
+        
+      } catch (error) {
+        console.error('Failed to initialize WaveSurfer:', error);
+        setError('Failed to initialize audio player');
         setIsLoading(false);
         setWaveformLoading(false);
-        console.error('WaveSurfer error:', error);
-      });
-
-      ws.load(audioUrl);
-      setWaveSurfer(ws);
+      }
     };
 
     initializeWaveSurfer();
@@ -151,19 +167,22 @@ const AudioPlayer = ({
     return () => {
       if (waveSurfer) {
         waveSurfer.destroy();
-        setWaveSurfer(null);
       }
     };
-  }, [audioUrl, compact, darkMode, showLoopMarkers, loopStart, loopEnd, waveSurfer]);
+  }, [audioUrl, compact, darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update WaveSurfer colors when theme changes
   useEffect(() => {
     if (waveSurfer) {
-      waveSurfer.setOptions({
-        waveColor: darkMode ? '#6b7280' : '#d1d5db',
-        progressColor: '#3b82f6',
-        cursorColor: '#3b82f6'
-      });
+      try {
+        waveSurfer.setOptions({
+          waveColor: darkMode ? '#6b7280' : '#d1d5db',
+          progressColor: '#3b82f6',
+          cursorColor: '#3b82f6'
+        });
+      } catch (error) {
+        console.error('Failed to update WaveSurfer colors:', error);
+      }
     }
   }, [darkMode, waveSurfer]);
 
