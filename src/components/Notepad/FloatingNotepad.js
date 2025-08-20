@@ -42,24 +42,20 @@ const FloatingNotepad = ({
   // Store the current transform for immediate DOM updates
   const currentTransformRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
   
-  // Mobile detection with responsive updates
+  // Mobile detection - simplified
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
   useEffect(() => {
     const handleResize = () => {
-      const newIsMobile = window.innerWidth <= 768;
-      console.log('Window resized, width:', window.innerWidth, 'isMobile:', newIsMobile);
-      setIsMobile(newIsMobile);
+      setIsMobile(window.innerWidth <= 768);
     };
     
-    console.log('Initial window width:', window.innerWidth, 'isMobile:', isMobile);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
   
-  // Toggle fullscreen on mobile
+  // Toggle fullscreen
   const toggleFullscreen = () => {
-    if (!isMobile) return;
     setIsFullscreen(!isFullscreen);
   };
 
@@ -602,26 +598,21 @@ const FloatingNotepad = ({
             }}
           />
           
-          {/* Fullscreen toggle button - floating in bottom right corner on mobile */}
-          {(() => {
-            console.log('Notepad render - isMobile:', isMobile, 'isMinimized:', isMinimized, 'shouldShowButton:', isMobile && !isMinimized);
-            return isMobile;
-          })() && (
-            <button
-              onClick={toggleFullscreen}
-              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center ${
-                darkMode 
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
-                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
-              } hover:scale-110 z-20`}
-              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
-              {isFullscreen ? <Shrink className="w-5 h-5" /> : <Expand className="w-5 h-5" />}
-            </button>
-          )}
+          {/* Fullscreen toggle button - floating in bottom right corner, hidden on desktop via CSS */}
+          <button
+            onClick={toggleFullscreen}
+            className={`absolute bottom-2 right-2 w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center mobile-fullscreen-btn ${
+              darkMode 
+                ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
+                : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+            } hover:scale-110 z-20`}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? <Shrink className="w-5 h-5" /> : <Expand className="w-5 h-5" />}
+          </button>
           
-          {/* Character count - positioned in bottom left corner when fullscreen button is present */}
-          <div className={`absolute bottom-2 ${isMobile ? 'left-2' : 'right-2'} text-xs pointer-events-none ${
+          {/* Character count - positioned in bottom left corner on mobile, bottom right on desktop */}
+          <div className={`absolute bottom-2 text-xs pointer-events-none mobile-char-count ${
             darkMode ? 'text-gray-500' : 'text-gray-400'
           }`}>
             {content.length} chars
@@ -775,7 +766,7 @@ const FloatingNotepad = ({
       )}
     </div>
 
-    {isMobile && isFullscreen && !isMinimized && (
+    {isFullscreen && !isMinimized && (
       <div className={`fixed inset-0 z-[999999] flex flex-col ${
         darkMode ? 'bg-gray-800' : 'bg-white'
       }`}>

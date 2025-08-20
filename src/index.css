@@ -772,6 +772,30 @@ input:focus {
     width: 18px !important;
     height: 18px !important;
   }
+
+  /* Mobile fullscreen button - show on mobile, hide on desktop */
+  .mobile-fullscreen-btn {
+    display: flex !important;
+  }
+  
+  /* Character count positioning - left on mobile, right on desktop */
+  .mobile-char-count {
+    left: 8px;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+  /* Hide fullscreen button on desktop */
+  .mobile-fullscreen-btn {
+    display: none !important;
+  }
+  
+  /* Character count on right for desktop */
+  .mobile-char-count {
+    right: 8px;
+    left: auto;
+  }
 }
 
 /* Floating notepad specific textarea overrides */
