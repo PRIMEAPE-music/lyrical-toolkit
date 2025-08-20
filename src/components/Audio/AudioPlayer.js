@@ -926,7 +926,7 @@ const AudioPlayer = ({
                   })() && (
                     <div 
                       ref={dropdownRef}
-                      className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-[60] ${
+                      className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-[9999] ${
                         darkMode 
                           ? 'border-gray-600 bg-gray-800' 
                           : 'border-gray-200 bg-white'
