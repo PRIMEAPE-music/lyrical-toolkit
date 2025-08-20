@@ -569,7 +569,7 @@ const FloatingNotepad = ({
       {/* Content - Full-size textarea when not minimized */}
       {!isMinimized && (
         <div 
-          className="flex-1 w-full relative overflow-hidden"
+          className="flex-1 w-full relative overflow-visible"
           style={{ 
             height: isMobile && isFullscreen ? (currentSongAudio ? 'calc(100vh - 49px - 60px)' : 'calc(100vh - 49px)') : (currentSongAudio ? 'calc(100% - 49px - 60px)' : 'calc(100% - 49px)'),
             minHeight: isMobile && isFullscreen ? '200px' : '150px',
