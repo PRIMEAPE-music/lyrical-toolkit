@@ -236,7 +236,7 @@ const FloatingNotepad = ({
                 }`}
                 title={notepadState.currentEditingSongId ? "Save Changes" : "Add to Songs"}
               >
-                <Upload className={`w-3 h-3 ${!darkMode && content.trim() ? 'text-black' : ''}`} />
+                <Upload className={`w-3 h-3 ${darkMode ? '' : 'text-black'}`} />
               </button>
 
               {/* 2. Export Song Button - Hide on mobile when editing */}
@@ -256,7 +256,7 @@ const FloatingNotepad = ({
                 }`}
                 title="Export as TXT"
               >
-                <Download className={`w-3 h-3 ${!darkMode && content.trim() ? 'text-black' : ''}`} />
+                <Download className={`w-3 h-3 ${darkMode ? '' : 'text-black'}`} />
               </button>
 
               {/* 3. Empty Notepad Button - Only show when editing */}
@@ -270,7 +270,7 @@ const FloatingNotepad = ({
                   }`}
                   title="Empty Notepad"
                 >
-                  <Plus className={`w-3 h-3 ${!darkMode ? 'text-black' : ''}`} />
+                  <Plus className={`w-3 h-3 ${darkMode ? '' : 'text-black'}`} />
                 </button>
               )}
 
@@ -290,7 +290,7 @@ const FloatingNotepad = ({
                   }`}
                   title="Revert to Original"
                 >
-                  <RotateCcw className={`w-3 h-3 ${!darkMode && hasUnsavedChanges ? 'text-black' : ''}`} />
+                  <RotateCcw className={`w-3 h-3 ${darkMode ? '' : 'text-black'}`} />
                 </button>
               )}
             </>
