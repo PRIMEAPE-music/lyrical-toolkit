@@ -114,7 +114,7 @@ const AudioPlayer = ({
           barGap: 1,
           barRadius: 1,
           responsive: true,
-          height: compact ? 16 : 8,
+          height: compact ? 16 : 24,
           normalize: true,
           plugins: [regions],
           mediaControls: false,
@@ -676,7 +676,7 @@ const AudioPlayer = ({
             {waveformLoading && (
               <div 
                 className={`relative flex items-center justify-center rounded-full border ${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-white'}`}
-                style={{ height: '8px', width: '100%' }}
+                style={{ height: '24px', width: '100%' }}
               >
                 <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
               </div>
@@ -687,7 +687,7 @@ const AudioPlayer = ({
               ref={waveformRefVertical}
               className="waveform-container"
               style={{
-                height: '8px',
+                height: '24px',
                 width: '100%',
                 opacity: waveformLoading ? 0.3 : 1,
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
