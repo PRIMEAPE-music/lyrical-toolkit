@@ -470,23 +470,23 @@ const AudioPlayer = ({
               {showLoopMarkers && loopStart !== null && (
                 <div
                   ref={startMarkerRef}
-                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
+                  className="absolute top-0 cursor-grab active:cursor-grabbing"
                   style={{
                     left: `${calculateMarkerPosition(loopStart)}%`,
-                    marginLeft: '-8px',
-                    zIndex: 10
+                    marginLeft: '-1px',
+                    zIndex: 10,
+                    height: '100%'
                   }}
                   onMouseDown={(e) => handleMarkerDragStart('start', e)}
                 >
                   <div
-                    className="w-4 h-4 rounded border-2 flex items-center justify-center text-xs font-bold"
+                    className="w-0.5 h-full flex items-start justify-center text-xs font-bold"
                     style={{
                       backgroundColor: '#22c55e',
-                      borderColor: darkMode ? '#1f2937' : '#ffffff',
                       color: '#ffffff'
                     }}
                   >
-                    A
+                    <span className="absolute -top-4 text-xs bg-green-500 px-1 rounded">A</span>
                   </div>
                 </div>
               )}
@@ -512,23 +512,23 @@ const AudioPlayer = ({
               {showLoopMarkers && loopEnd !== null && (
                 <div
                   ref={endMarkerRef}
-                  className="absolute top-1/2 transform -translate-y-1/2 cursor-grab active:cursor-grabbing"
+                  className="absolute top-0 cursor-grab active:cursor-grabbing"
                   style={{
                     left: `${calculateMarkerPosition(loopEnd)}%`,
-                    marginLeft: '-8px',
-                    zIndex: 10
+                    marginLeft: '-1px',
+                    zIndex: 10,
+                    height: '100%'
                   }}
                   onMouseDown={(e) => handleMarkerDragStart('end', e)}
                 >
                   <div
-                    className="w-4 h-4 rounded border-2 flex items-center justify-center text-xs font-bold"
+                    className="w-0.5 h-full flex items-start justify-center text-xs font-bold"
                     style={{
                       backgroundColor: '#22c55e',
-                      borderColor: darkMode ? '#1f2937' : '#ffffff',
                       color: '#ffffff'
                     }}
                   >
-                    B
+                    <span className="absolute -top-4 text-xs bg-green-500 px-1 rounded">B</span>
                   </div>
                 </div>
               )}
