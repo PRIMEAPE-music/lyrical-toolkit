@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Play, 
   Pause, 
@@ -925,7 +926,7 @@ const AudioPlayer = ({
                       console.log(`📋 [${componentId.current}] Rendering menu dropdown`);
                     }
                     return showMenu;
-                  })() && (
+                  })() && createPortal(
                     <div 
                       ref={dropdownRef}
                       className={`fixed py-1 min-w-[120px] rounded-lg border shadow-lg z-[99999] ${
@@ -1003,7 +1004,8 @@ const AudioPlayer = ({
                           Remove
                         </button>
                       )}
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
