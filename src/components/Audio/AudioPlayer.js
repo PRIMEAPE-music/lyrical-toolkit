@@ -512,15 +512,15 @@ const AudioPlayer = ({
             className={`flex items-center justify-center w-6 h-6 rounded transition-colors flex-shrink-0 ${
               showLoopMarkers
                 ? darkMode
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-blue-500 text-white'
+                  ? 'bg-gray-700 text-white'
+                  : 'bg-gray-100 text-gray-700'
                 : darkMode
-                  ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  ? 'text-black hover:text-white hover:bg-gray-700'
+                  : 'text-black hover:text-gray-700 hover:bg-gray-100'
             }`}
             title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
           >
-            <span className="text-xs font-bold text-black">Loop</span>
+            <span className="text-xs font-bold">Loop</span>
           </button>
           
           {/* Progress bar - flexible width */}
@@ -819,24 +819,6 @@ const AudioPlayer = ({
       ) : (
         /* Original vertical layout for non-compact mode */
         <div className="space-y-3">
-          {/* A-B Loop toggle button for vertical layout */}
-          <div className="flex items-center">
-            <button
-              onClick={toggleLoopMarkers}
-              className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
-                showLoopMarkers
-                  ? darkMode
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-blue-500 text-white'
-                  : darkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
-              title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
-            >
-              <span className="text-xs font-bold text-black">Loop</span>
-            </button>
-          </div>
           
           {/* Progress bar */}
           <div className="space-y-1">
@@ -939,28 +921,47 @@ const AudioPlayer = ({
           
           {/* Control buttons */}
           <div className="flex items-center justify-between">
-            {/* Play/pause button */}
-            <button
-              onClick={togglePlayPause}
-              disabled={isLoading}
-              className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
-                isLoading 
-                  ? darkMode 
-                    ? 'bg-gray-700 text-gray-500' 
-                    : 'bg-gray-200 text-gray-400'
-                  : darkMode 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : isPlaying ? (
-                <Pause className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5 ml-0.5" />
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Play/pause button */}
+              <button
+                onClick={togglePlayPause}
+                disabled={isLoading}
+                className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
+                  isLoading 
+                    ? darkMode 
+                      ? 'bg-gray-700 text-gray-500' 
+                      : 'bg-gray-200 text-gray-400'
+                    : darkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                }`}
+              >
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : isPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5 ml-0.5" />
+                )}
+              </button>
+              
+              {/* A-B Loop toggle button for vertical layout */}
+              <button
+                onClick={toggleLoopMarkers}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                  showLoopMarkers
+                    ? darkMode
+                      ? 'bg-gray-700 text-white'
+                      : 'bg-gray-100 text-gray-700'
+                    : darkMode
+                      ? 'text-black hover:text-white hover:bg-gray-700'
+                      : 'text-black hover:text-gray-700 hover:bg-gray-100'
+                }`}
+                title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
+              >
+                <span className="text-xs font-bold">Loop</span>
+              </button>
+            </div>
             
             {/* Volume control */}
             <div className="flex items-center gap-2">
