@@ -56,6 +56,10 @@ const FloatingNotepad = ({
   
   // Toggle fullscreen
   const toggleFullscreen = () => {
+    if (!isFullscreen && isMinimized) {
+      // When entering fullscreen, ensure notepad is not minimized
+      toggleMinimized();
+    }
     setIsFullscreen(!isFullscreen);
   };
 
@@ -602,11 +606,16 @@ const FloatingNotepad = ({
           {/* Fullscreen toggle button - bottom right corner, mobile only via CSS */}
           <button
             onClick={toggleFullscreen}
-            className={`absolute bottom-2 right-2 w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center mobile-fullscreen-btn ${
+            className={`absolute w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center mobile-fullscreen-btn ${
               darkMode 
                 ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600' 
                 : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
             } hover:scale-110 z-20`}
+            style={{
+              bottom: '8px',
+              right: '8px',
+              left: 'auto'
+            }}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
           >
             {isFullscreen ? <Shrink className="w-5 h-5" /> : <Expand className="w-5 h-5" />}
@@ -768,7 +777,7 @@ const FloatingNotepad = ({
     </div>
     )}
 
-    {isFullscreen && !isMinimized && (
+    {isFullscreen && (
       <div className={`fixed inset-0 z-[999999] flex flex-col ${
         darkMode ? 'bg-gray-800' : 'bg-white'
       }`}>
