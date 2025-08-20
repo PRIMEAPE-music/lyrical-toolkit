@@ -63,6 +63,7 @@ const AudioPlayer = ({
   const volumeSliderRef = useRef(null);
   const startMarkerRef = useRef(null);
   const endMarkerRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
   // Initialize audio element
   useEffect(() => {
@@ -897,8 +898,9 @@ const AudioPlayer = ({
               
               {/* Menu button - moved to after volume control */}
               {showControls && (onDownload || onRemove || onReplace) && (
-                <div className="relative ml-2">
+                <div className="relative ml-2 z-[9999]">
                   <button
+                    ref={menuButtonRef}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -926,11 +928,15 @@ const AudioPlayer = ({
                   })() && (
                     <div 
                       ref={dropdownRef}
-                      className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-[9999] ${
+                      className={`fixed py-1 min-w-[120px] rounded-lg border shadow-lg z-[9999] ${
                         darkMode 
                           ? 'border-gray-600 bg-gray-800' 
                           : 'border-gray-200 bg-white'
                       }`}
+                      style={{
+                        top: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().bottom + 4}px` : 'auto',
+                        left: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().right - 120}px` : 'auto'
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         console.log(`📋 [${componentId.current}] Click inside dropdown menu`);
