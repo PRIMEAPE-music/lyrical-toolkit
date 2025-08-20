@@ -252,7 +252,7 @@ const FloatingNotepad = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
       className={`fixed shadow-2xl border transition-all duration-300 ${
-        isMinimized ? 'z-30 md:z-50 floating-notepad-minimized' : 'z-40'
+        isMinimized ? 'z-[60] md:z-[70] floating-notepad-minimized' : 'z-[999999]'
       } ${
         darkMode
           ? 'bg-gray-800 border-gray-600'

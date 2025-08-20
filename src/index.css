@@ -938,6 +938,15 @@ input:focus {
   zoom: 1.0;
 }
 
+/* Ensure notepad always appears above all other content including audio players */
+.floating-notepad-expanded {
+  z-index: 999999 !important;
+}
+
+.floating-notepad-minimized {
+  z-index: 999999 !important;
+}
+
 /* Ensure notepad sticks to bottom on mobile */
 @media (max-width: 768px) {
   .floating-notepad-minimized {
@@ -945,7 +954,7 @@ input:focus {
     bottom: 0 !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    z-index: 1000 !important;
+    z-index: 999999 !important;
   }
 }
 
