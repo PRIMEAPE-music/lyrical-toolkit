@@ -840,7 +840,7 @@ const FloatingNotepad = ({
               value={title + (hasUnsavedChanges ? '*' : '')}
               onChange={(e) => updateTitle(e.target.value.replace('*', ''))}
               placeholder="Title..."
-              className={`flex-1 px-2 py-1 text-sm border rounded ${
+              className={`flex-1 px-1 md:px-2 py-0.5 md:py-1 text-xs md:text-sm border rounded min-w-0 max-w-[100px] md:max-w-none ${
                 darkMode 
                   ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -854,19 +854,19 @@ const FloatingNotepad = ({
             alignItems: 'center',
             gap: '2px',
             flexShrink: 0
-          }}>
+          }} className="notepad-header-buttons">
             <button
               onClick={notepadState.currentEditingSongId ? onSaveChanges : onUploadToSongs}
               disabled={!content.trim()}
               style={{
-                padding: '6px',
+                padding: '4px',
                 borderRadius: '4px',
                 border: '1px solid #d1d5db',
                 cursor: content.trim() ? 'pointer' : 'not-allowed',
                 backgroundColor: content.trim() ? '#ffffff' : '#f3f4f6',
                 color: content.trim() ? '#000000' : '#9ca3af',
-                width: '32px',
-                height: '32px',
+                width: '24px',
+                height: '24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -881,14 +881,14 @@ const FloatingNotepad = ({
                 <button
                   onClick={onStartNewContent}
                   style={{
-                    padding: '6px',
+                    padding: '4px',
                     borderRadius: '4px',
                     border: '1px solid #d1d5db',
                     cursor: 'pointer',
                     backgroundColor: '#ffffff',
                     color: '#000000',
-                    width: '32px',
-                    height: '32px',
+                    width: '24px',
+                    height: '24px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -902,14 +902,14 @@ const FloatingNotepad = ({
                   onClick={onRevertChanges}
                   disabled={!hasUnsavedChanges}
                   style={{
-                    padding: '6px',
+                    padding: '4px',
                     borderRadius: '4px',
                     border: '1px solid #d1d5db',
                     cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
                     backgroundColor: hasUnsavedChanges ? '#ffffff' : '#f3f4f6',
                     color: hasUnsavedChanges ? '#000000' : '#9ca3af',
-                    width: '32px',
-                    height: '32px',
+                    width: '24px',
+                    height: '24px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -925,7 +925,7 @@ const FloatingNotepad = ({
             <button
               onClick={toggleFullscreen}
               style={{
-                padding: '6px',
+                padding: '4px',
                 borderRadius: '4px',
                 backgroundColor: '#ffffff',
                 color: '#000000',
@@ -934,8 +934,8 @@ const FloatingNotepad = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '32px',
-                height: '32px'
+                width: '24px',
+                height: '24px'
               }}
               title="Exit Fullscreen"
             >
