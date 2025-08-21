@@ -82,9 +82,7 @@ const AudioPlayer = ({
       // Wait for next tick to ensure container is mounted
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // TESTING: Always use waveformRef to see if ref selection is the issue
-      const containerRef = waveformRef;
-      console.log('🧪 TESTING: Always using waveformRef, compact mode:', compact);
+      const containerRef = compact ? waveformRef : waveformRefVertical;
       
       // Enhanced debugging for desktop vs mobile issue
       console.log('🎵 WaveSurfer Debug Info:', {
@@ -137,7 +135,7 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Try different backend for vertical mode
+        // Use EXACTLY the same options for both modes, only height differs
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -152,16 +150,11 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: compact ? 'WebAudio' : 'MediaElement', // Try different backend for vertical
+          backend: 'WebAudio', // Same backend for both
           fillParent: true
         };
         
-        // For vertical mode, try additional options
-        if (!compact) {
-          wsOptions.forceDecode = false;
-          wsOptions.splitChannels = false;
-          console.log('🖥️ Using MediaElement backend for vertical mode');
-        }
+        console.log('🖥️ Using IDENTICAL options for both modes, only height differs:', compact ? '16px' : '24px');
         
         console.log('🖥️ Using identical config for both modes, compact:', compact, 'height:', wsOptions.height);
         
@@ -172,13 +165,21 @@ const AudioPlayer = ({
         console.log('🔍 WaveSurfer instance details:', {
           hasRenderer: !!ws.renderer,
           rendererType: ws.renderer ? ws.renderer.constructor.name : null,
+          rendererOptions: ws.renderer ? ws.renderer.options : null,
           backend: ws.options ? ws.options.backend : 'unknown',
           hasRedraw: typeof ws.redraw === 'function',
           hasSetOptions: typeof ws.setOptions === 'function',
           hasGetWrapper: typeof ws.getWrapper === 'function',
           waveSurferVersion: WaveSurfer.VERSION || 'unknown',
           compact: compact,
-          container: containerRef.current.tagName
+          container: containerRef.current.tagName,
+          containerDimensions: {
+            offsetWidth: containerRef.current.offsetWidth,
+            offsetHeight: containerRef.current.offsetHeight,
+            clientWidth: containerRef.current.clientWidth,
+            clientHeight: containerRef.current.clientHeight
+          },
+          wsContainerStyle: containerRef.current ? getComputedStyle(containerRef.current) : null
         });
 
         // Event listeners
@@ -799,9 +800,9 @@ const AudioPlayer = ({
               </div>
             )}
             
-            {/* WaveSurfer container for vertical mode - TESTING: use same ref as compact */}
+            {/* WaveSurfer container for vertical mode */}
             <div 
-              ref={waveformRef}
+              ref={waveformRefVertical}
               className="waveform-container"
               style={{
                 height: '24px',
@@ -809,8 +810,8 @@ const AudioPlayer = ({
                 opacity: waveformLoading ? 0.3 : 1,
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
-                borderRadius: '8px', // Same as compact mode
-                overflow: 'hidden' // Same as compact mode
+                borderRadius: '8px',
+                overflow: 'hidden'
               }}
             />
             
