@@ -131,17 +131,11 @@ const AudioPlayer = ({
       setError(null);
       
       try {
-        // Create regions plugin only for compact mode
-        let regions = null;
-        if (compact) {
-          regions = RegionsPlugin.create();
-          setRegionsPlugin(regions);
-        } else {
-          // Clear regions plugin for vertical mode
-          setRegionsPlugin(null);
-        }
+        // Create regions plugin for both modes
+        const regions = RegionsPlugin.create();
+        setRegionsPlugin(regions);
 
-        // Completely different approach for vertical mode - no plugins at all
+        // Use identical config for both modes
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -153,16 +147,12 @@ const AudioPlayer = ({
           responsive: true,
           height: compact ? 16 : 24,
           normalize: true,
+          plugins: [regions],
           mediaControls: false,
           interact: true,
           backend: 'WebAudio',
           fillParent: true
         };
-        
-        // Add plugins only for compact mode
-        if (compact && regions) {
-          wsOptions.plugins = [regions];
-        }
         
         console.log('🖥️ Using identical config for both modes, compact:', compact, 'height:', wsOptions.height);
         
@@ -213,37 +203,17 @@ const AudioPlayer = ({
                 containerHTML: containerRef.current.innerHTML.substring(0, 300)
               });
               
-              // If no canvas/svg found, try recreating with minimal options
+              // Log the issue but don't try to recreate to avoid breaking functionality
               if (!canvas && !svg && allChildren.length === 1) {
-                console.log('⚠️ No waveform elements found, trying minimal options...');
-                try {
-                  // Clear the container
-                  containerRef.current.innerHTML = '';
-                  
-                  // Use minimal options - no plugins, no fancy features
-                  const retryOptions = {
-                    container: containerRef.current,
-                    waveColor: darkMode ? '#9ca3af' : '#6b7280',
-                    progressColor: '#3b82f6',
-                    height: 16,
-                    responsive: false,
-                    width: containerRef.current.offsetWidth,
-                    barWidth: 2,
-                    normalize: true,
-                    mediaControls: false,
-                    interact: true,
-                    backend: 'WebAudio'
-                    // NO plugins, NO fillParent, minimal options
-                  };
-                  
-                  console.log('🔄 Recreating with minimal options:', retryOptions);
-                  ws.destroy();
-                  const newWs = WaveSurfer.create(retryOptions);
-                  newWs.load(audioUrl);
-                  setWaveSurfer(newWs);
-                } catch (error) {
-                  console.error('Failed to recreate WaveSurfer:', error);
-                }
+                console.log('⚠️ No waveform canvas/svg found - waveform may not be visible but functionality preserved');
+                console.log('📋 Container details:', {
+                  firstChild: allChildren[0] ? {
+                    tagName: allChildren[0].tagName,
+                    className: allChildren[0].className,
+                    innerHTML: allChildren[0].innerHTML,
+                    style: allChildren[0].style.cssText
+                  } : null
+                });
               }
             }, 500);
           }
@@ -797,27 +767,18 @@ const AudioPlayer = ({
               </div>
             )}
             
-            {/* WaveSurfer container for vertical mode */}
+            {/* WaveSurfer container for vertical mode - using simpler styling like compact mode */}
             <div 
               ref={waveformRefVertical}
               className="waveform-container"
               style={{
                 height: '24px',
                 width: '100%',
-                minWidth: '300px',
                 opacity: waveformLoading ? 0.3 : 1,
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
-                borderRadius: '4px',
-                overflow: 'visible',
-                display: 'block',
-                position: 'relative',
-                boxSizing: 'border-box',
-                // Force proper layering and rendering
-                zIndex: 1,
-                isolation: 'isolate',
-                transform: 'translateZ(0)', // Force hardware acceleration
-                willChange: 'auto'
+                borderRadius: '8px', // Same as compact mode
+                overflow: 'hidden' // Same as compact mode
               }}
             />
             
