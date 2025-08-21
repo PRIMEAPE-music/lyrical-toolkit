@@ -131,14 +131,17 @@ const AudioPlayer = ({
       setError(null);
       
       try {
-        // Test without regions plugin for vertical mode
+        // Create regions plugin only for compact mode
         let regions = null;
         if (compact) {
           regions = RegionsPlugin.create();
           setRegionsPlugin(regions);
+        } else {
+          // Clear regions plugin for vertical mode
+          setRegionsPlugin(null);
         }
 
-        // Use identical config for both compact and vertical modes, only change height
+        // Completely different approach for vertical mode - no plugins at all
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -150,12 +153,16 @@ const AudioPlayer = ({
           responsive: true,
           height: compact ? 16 : 24,
           normalize: true,
-          plugins: compact ? [regions] : [], // No plugins for vertical mode test
           mediaControls: false,
           interact: true,
           backend: 'WebAudio',
           fillParent: true
         };
+        
+        // Add plugins only for compact mode
+        if (compact && regions) {
+          wsOptions.plugins = [regions];
+        }
         
         console.log('🖥️ Using identical config for both modes, compact:', compact, 'height:', wsOptions.height);
         
@@ -206,33 +213,30 @@ const AudioPlayer = ({
                 containerHTML: containerRef.current.innerHTML.substring(0, 300)
               });
               
-              // If no canvas/svg found, try recreating with compact mode settings
+              // If no canvas/svg found, try recreating with minimal options
               if (!canvas && !svg && allChildren.length === 1) {
-                console.log('⚠️ No waveform elements found, trying compact mode settings...');
+                console.log('⚠️ No waveform elements found, trying minimal options...');
                 try {
                   // Clear the container
                   containerRef.current.innerHTML = '';
                   
-                  // Use exact same options as compact mode but with height 24
+                  // Use minimal options - no plugins, no fancy features
                   const retryOptions = {
                     container: containerRef.current,
                     waveColor: darkMode ? '#9ca3af' : '#6b7280',
                     progressColor: '#3b82f6',
-                    cursorColor: '#3b82f6',
-                    barWidth: 3,
-                    barGap: 1,
-                    barRadius: 1,
-                    responsive: true,
-                    height: 16, // Try with compact height first
+                    height: 16,
+                    responsive: false,
+                    width: containerRef.current.offsetWidth,
+                    barWidth: 2,
                     normalize: true,
-                    plugins: [regions],
                     mediaControls: false,
                     interact: true,
-                    backend: 'WebAudio',
-                    fillParent: true
+                    backend: 'WebAudio'
+                    // NO plugins, NO fillParent, minimal options
                   };
                   
-                  console.log('🔄 Recreating with compact mode options:', retryOptions);
+                  console.log('🔄 Recreating with minimal options:', retryOptions);
                   ws.destroy();
                   const newWs = WaveSurfer.create(retryOptions);
                   newWs.load(audioUrl);
