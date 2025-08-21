@@ -614,7 +614,11 @@ const FloatingNotepad = ({
             value={content}
             onChange={handleContentChange}
             placeholder="Start writing your lyrics..."
-            className="w-full h-full resize-none border-none outline-none text-sm p-3 block"
+            className={`w-full h-full resize-none border-none outline-none text-sm p-3 block ${
+              darkMode 
+                ? 'bg-gray-800 text-gray-300 placeholder-gray-500' 
+                : 'bg-white text-gray-900 placeholder-gray-400'
+            }`}
             style={{ 
               width: '100%', 
               height: '100%',
@@ -624,9 +628,7 @@ const FloatingNotepad = ({
               outline: 'none',
               boxSizing: 'border-box',
               display: 'block',
-              textAlign: 'left',
-              backgroundColor: darkMode ? '#374151' : '#f9fafb',
-              color: darkMode ? '#d1d5db' : '#111827'
+              textAlign: 'left'
             }}
           />
           
@@ -840,7 +842,7 @@ const FloatingNotepad = ({
               value={title + (hasUnsavedChanges ? '*' : '')}
               onChange={(e) => updateTitle(e.target.value.replace('*', ''))}
               placeholder="Title..."
-              className={`flex-1 px-1 md:px-2 py-0.5 md:py-1 text-xs md:text-sm border rounded min-w-0 max-w-[100px] md:max-w-none ${
+              className={`flex-1 px-2 py-1 text-sm border rounded ${
                 darkMode 
                   ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -852,9 +854,9 @@ const FloatingNotepad = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '2px',
+            gap: '4px',
             flexShrink: 0
-          }} className="notepad-header-buttons">
+          }}>
             <button
               onClick={notepadState.currentEditingSongId ? onSaveChanges : onUploadToSongs}
               disabled={!content.trim()}

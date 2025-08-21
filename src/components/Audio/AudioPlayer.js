@@ -41,8 +41,8 @@ const AudioPlayer = ({
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   
   // A-B Loop functionality state
-  const [, setLoopStart] = useState(null);
-  const [, setLoopEnd] = useState(null);
+  const [loopStart, setLoopStart] = useState(null);
+  const [loopEnd, setLoopEnd] = useState(null);
   const [showLoopMarkers, setShowLoopMarkers] = useState(false);
   // draggingMarker removed - now handled by WaveSurfer regions
   const [markerTooltip, setMarkerTooltip] = useState(null); // { type: 'start'|'end', time: number, x: number }
@@ -79,27 +79,16 @@ const AudioPlayer = ({
     if (!audioUrl) return;
 
     const initializeWaveSurfer = async () => {
-      // Wait for container to be mounted and have proper dimensions
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait for next tick to ensure container is mounted
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       const containerRef = compact ? waveformRef : waveformRefVertical;
       if (!containerRef.current) {
-        console.error('WaveSurfer container not found, compact:', compact, 'containerRef:', containerRef);
-        console.error('waveformRef.current:', !!waveformRef.current, 'waveformRefVertical.current:', !!waveformRefVertical.current);
+        console.error('WaveSurfer container not found, compact:', compact);
         return;
       }
       
-      console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current, 'compact:', compact);
-      
-      const rect = containerRef.current.getBoundingClientRect();
-      console.log('📊 Container dimensions:', rect);
-      
-      // Check if container has valid dimensions
-      if (rect.width === 0 || rect.height === 0) {
-        console.error('❌ Container has invalid dimensions, retrying in 300ms...');
-        setTimeout(() => initializeWaveSurfer(), 300);
-        return;
-      }
+      console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current);
 
       // Clean up existing instance
       if (waveSurfer) {
@@ -442,20 +431,15 @@ const AudioPlayer = ({
           <button
             onClick={togglePlayPause}
             disabled={isLoading || waveformLoading}
-            style={{
-              padding: compact ? '6px' : '4px',
-              borderRadius: '4px',
-              border: '1px solid #d1d5db',
-              cursor: (isLoading || waveformLoading) ? 'not-allowed' : 'pointer',
-              backgroundColor: (isLoading || waveformLoading) ? '#f3f4f6' : '#ffffff',
-              color: (isLoading || waveformLoading) ? '#9ca3af' : '#000000',
-              width: compact ? '32px' : '24px',
-              height: compact ? '32px' : '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
+            className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors flex-shrink-0 ${
+              isLoading 
+                ? darkMode 
+                  ? 'bg-gray-700 text-gray-500' 
+                  : 'bg-gray-200 text-gray-400'
+                : darkMode 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
           >
             {(isLoading || waveformLoading) ? (
               <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -469,20 +453,15 @@ const AudioPlayer = ({
           {/* A-B Loop toggle button */}
           <button
             onClick={toggleLoopMarkers}
-            style={{
-              padding: compact ? '6px' : '4px',
-              borderRadius: '4px',
-              border: '1px solid #d1d5db',
-              cursor: 'pointer',
-              backgroundColor: showLoopMarkers ? (darkMode ? '#374151' : '#f3f4f6') : '#ffffff',
-              color: '#000000',
-              width: compact ? '32px' : '24px',
-              height: compact ? '32px' : '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
+            className={`flex items-center justify-center w-6 h-6 rounded transition-colors flex-shrink-0 ${
+              showLoopMarkers
+                ? darkMode
+                  ? 'bg-gray-700 text-white'
+                  : 'bg-gray-100 text-gray-700'
+                : darkMode
+                  ? 'text-black hover:text-white hover:bg-gray-700'
+                  : 'text-black hover:text-gray-700 hover:bg-gray-100'
+            }`}
             title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
           >
             <span className="text-xs font-bold">Loop</span>
@@ -526,20 +505,11 @@ const AudioPlayer = ({
           <div className="relative flex-shrink-0">
             <button
               onClick={toggleVolume}
-              style={{
-                padding: compact ? '6px' : '4px',
-                borderRadius: '4px',
-                border: '1px solid #d1d5db',
-                cursor: 'pointer',
-                backgroundColor: '#ffffff',
-                color: '#000000',
-                width: compact ? '32px' : '24px',
-                height: compact ? '32px' : '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
+              className={`p-1 rounded transition-colors ${
+                darkMode 
+                  ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
             >
               {isMuted ? (
                 <VolumeX className="w-4 h-4" />
@@ -720,8 +690,7 @@ const AudioPlayer = ({
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
                 borderRadius: '4px',
-                overflow: 'hidden',
-                position: 'relative'
+                overflow: 'hidden'
               }}
             />
             
@@ -741,14 +710,14 @@ const AudioPlayer = ({
               <button
                 onClick={togglePlayPause}
                 disabled={isLoading || waveformLoading}
-                className={`p-2 rounded border transition-colors ${
-                  darkMode 
-                    ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' 
-                    : 'border-gray-300 bg-white hover:bg-gray-50'
-                } ${
-                  (isLoading || waveformLoading) 
-                    ? 'cursor-not-allowed opacity-50' 
-                    : 'cursor-pointer'
+                className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
+                  isLoading 
+                    ? darkMode 
+                      ? 'bg-gray-700 text-gray-500' 
+                      : 'bg-gray-200 text-gray-400'
+                    : darkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
                 }`}
               >
                 {(isLoading || waveformLoading) ? (
@@ -763,11 +732,15 @@ const AudioPlayer = ({
               {/* A-B Loop toggle button for vertical layout */}
               <button
                 onClick={toggleLoopMarkers}
-                className={`p-2 rounded border transition-colors ${
-                  showLoopMarkers 
-                    ? (darkMode ? 'border-gray-600 bg-gray-200 text-black' : 'border-gray-400 bg-gray-100')
-                    : (darkMode ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' : 'border-gray-300 bg-white hover:bg-gray-50')
-                } cursor-pointer`}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                  showLoopMarkers
+                    ? darkMode
+                      ? 'bg-gray-700 text-white'
+                      : 'bg-gray-100 text-gray-700'
+                    : darkMode
+                      ? 'text-black hover:text-white hover:bg-gray-700'
+                      : 'text-black hover:text-gray-700 hover:bg-gray-100'
+                }`}
                 title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
               >
                 <span className="text-xs font-bold">Loop</span>
@@ -778,11 +751,11 @@ const AudioPlayer = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleMute}
-                className={`p-2 rounded border transition-colors ${
+                className={`p-1 rounded transition-colors ${
                   darkMode 
-                    ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' 
-                    : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
-                } cursor-pointer`}
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
               >
                 {isMuted ? (
                   <VolumeX className="w-4 h-4" />
@@ -825,11 +798,11 @@ const AudioPlayer = ({
                         console.log(`🔘 [${componentId.current}] After setState timeout, showMenu should be:`, !showMenu);
                       }, 0);
                     }}
-                    className={`p-2 rounded border transition-colors ${
+                    className={`p-1 rounded hover:bg-opacity-75 ${
                       darkMode 
-                        ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' 
-                        : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
-                    } cursor-pointer`}
+                        ? 'text-gray-400 hover:bg-gray-700' 
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
