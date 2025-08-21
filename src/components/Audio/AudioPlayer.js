@@ -131,11 +131,14 @@ const AudioPlayer = ({
       setError(null);
       
       try {
-        // Create regions plugin
-        const regions = RegionsPlugin.create();
-        setRegionsPlugin(regions);
+        // Test without regions plugin for vertical mode
+        let regions = null;
+        if (compact) {
+          regions = RegionsPlugin.create();
+          setRegionsPlugin(regions);
+        }
 
-        // Create WaveSurfer instance with proper options for vertical mode
+        // Use identical config for both compact and vertical modes, only change height
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -143,21 +146,18 @@ const AudioPlayer = ({
           cursorColor: '#3b82f6',
           barWidth: 3,
           barGap: 1,
+          barRadius: 1,
           responsive: true,
           height: compact ? 16 : 24,
           normalize: true,
-          plugins: [regions],
+          plugins: compact ? [regions] : [], // No plugins for vertical mode test
           mediaControls: false,
           interact: true,
           backend: 'WebAudio',
           fillParent: true
         };
         
-        // For vertical mode, ensure proper sizing
-        if (!compact) {
-          wsOptions.width = containerRef.current.offsetWidth;
-          console.log('🖥️ Desktop vertical mode - setting width:', wsOptions.width);
-        }
+        console.log('🖥️ Using identical config for both modes, compact:', compact, 'height:', wsOptions.height);
         
         console.log('🎵 Creating WaveSurfer with options:', wsOptions);
         const ws = WaveSurfer.create(wsOptions);
@@ -206,28 +206,33 @@ const AudioPlayer = ({
                 containerHTML: containerRef.current.innerHTML.substring(0, 300)
               });
               
-              // If no canvas/svg found, try to force a recreation
+              // If no canvas/svg found, try recreating with compact mode settings
               if (!canvas && !svg && allChildren.length === 1) {
-                console.log('⚠️ No waveform elements found, attempting to recreate WaveSurfer...');
+                console.log('⚠️ No waveform elements found, trying compact mode settings...');
                 try {
                   // Clear the container
                   containerRef.current.innerHTML = '';
                   
-                  // Recreate with different options
+                  // Use exact same options as compact mode but with height 24
                   const retryOptions = {
                     container: containerRef.current,
                     waveColor: darkMode ? '#9ca3af' : '#6b7280',
                     progressColor: '#3b82f6',
-                    height: 24,
-                    responsive: false, // Try without responsive
-                    width: containerRef.current.offsetWidth,
-                    barWidth: 2,
+                    cursorColor: '#3b82f6',
+                    barWidth: 3,
                     barGap: 1,
+                    barRadius: 1,
+                    responsive: true,
+                    height: 16, // Try with compact height first
                     normalize: true,
-                    backend: 'WebAudio'
+                    plugins: [regions],
+                    mediaControls: false,
+                    interact: true,
+                    backend: 'WebAudio',
+                    fillParent: true
                   };
                   
-                  console.log('🔄 Recreating WaveSurfer with options:', retryOptions);
+                  console.log('🔄 Recreating with compact mode options:', retryOptions);
                   ws.destroy();
                   const newWs = WaveSurfer.create(retryOptions);
                   newWs.load(audioUrl);
