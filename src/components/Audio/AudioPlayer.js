@@ -82,7 +82,9 @@ const AudioPlayer = ({
       // Wait for next tick to ensure container is mounted
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      const containerRef = compact ? waveformRef : waveformRefVertical;
+      // TESTING: Always use waveformRef to see if ref selection is the issue
+      const containerRef = waveformRef;
+      console.log('🧪 TESTING: Always using waveformRef, compact mode:', compact);
       
       // Enhanced debugging for desktop vs mobile issue
       console.log('🎵 WaveSurfer Debug Info:', {
@@ -797,9 +799,9 @@ const AudioPlayer = ({
               </div>
             )}
             
-            {/* WaveSurfer container for vertical mode - using simpler styling like compact mode */}
+            {/* WaveSurfer container for vertical mode - TESTING: use same ref as compact */}
             <div 
-              ref={waveformRefVertical}
+              ref={waveformRef}
               className="waveform-container"
               style={{
                 height: '24px',
