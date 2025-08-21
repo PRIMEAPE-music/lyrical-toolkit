@@ -743,7 +743,7 @@ const AudioPlayer = ({
                 disabled={isLoading || waveformLoading}
                 className={`p-2 rounded border transition-colors ${
                   darkMode 
-                    ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' 
+                    ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' 
                     : 'border-gray-300 bg-white hover:bg-gray-50'
                 } ${
                   (isLoading || waveformLoading) 
@@ -765,8 +765,8 @@ const AudioPlayer = ({
                 onClick={toggleLoopMarkers}
                 className={`p-2 rounded border transition-colors ${
                   showLoopMarkers 
-                    ? (darkMode ? 'border-gray-600 bg-gray-600' : 'border-gray-400 bg-gray-100')
-                    : (darkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 bg-white hover:bg-gray-50')
+                    ? (darkMode ? 'border-gray-600 bg-gray-200 text-black' : 'border-gray-400 bg-gray-100')
+                    : (darkMode ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' : 'border-gray-300 bg-white hover:bg-gray-50')
                 } cursor-pointer`}
                 title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
               >
@@ -780,7 +780,7 @@ const AudioPlayer = ({
                 onClick={toggleMute}
                 className={`p-2 rounded border transition-colors ${
                   darkMode 
-                    ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                    ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' 
                     : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
                 } cursor-pointer`}
               >
@@ -827,7 +827,7 @@ const AudioPlayer = ({
                     }}
                     className={`p-2 rounded border transition-colors ${
                       darkMode 
-                        ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        ? 'border-gray-600 bg-white hover:bg-gray-100 text-black' 
                         : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
                     } cursor-pointer`}
                   >
