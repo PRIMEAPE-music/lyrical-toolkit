@@ -741,19 +741,15 @@ const AudioPlayer = ({
               <button
                 onClick={togglePlayPause}
                 disabled={isLoading || waveformLoading}
-                style={{
-                  padding: '4px',
-                  borderRadius: '4px',
-                  border: '1px solid #d1d5db',
-                  cursor: (isLoading || waveformLoading) ? 'not-allowed' : 'pointer',
-                  backgroundColor: (isLoading || waveformLoading) ? '#f3f4f6' : '#ffffff',
-                  color: (isLoading || waveformLoading) ? '#9ca3af' : '#000000',
-                  width: '24px',
-                  height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className={`p-2 rounded border transition-colors ${
+                  darkMode 
+                    ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' 
+                    : 'border-gray-300 bg-white hover:bg-gray-50'
+                } ${
+                  (isLoading || waveformLoading) 
+                    ? 'cursor-not-allowed opacity-50' 
+                    : 'cursor-pointer'
+                }`}
               >
                 {(isLoading || waveformLoading) ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -767,19 +763,11 @@ const AudioPlayer = ({
               {/* A-B Loop toggle button for vertical layout */}
               <button
                 onClick={toggleLoopMarkers}
-                style={{
-                  padding: '4px',
-                  borderRadius: '4px',
-                  border: '1px solid #d1d5db',
-                  cursor: 'pointer',
-                  backgroundColor: showLoopMarkers ? (darkMode ? '#374151' : '#f3f4f6') : '#ffffff',
-                  color: '#000000',
-                  width: '24px',
-                  height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className={`p-2 rounded border transition-colors ${
+                  showLoopMarkers 
+                    ? (darkMode ? 'border-gray-600 bg-gray-600' : 'border-gray-400 bg-gray-100')
+                    : (darkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 bg-white hover:bg-gray-50')
+                } cursor-pointer`}
                 title={showLoopMarkers ? "Hide A-B loop markers" : "Show A-B loop markers"}
               >
                 <span className="text-xs font-bold">Loop</span>
@@ -790,19 +778,11 @@ const AudioPlayer = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleMute}
-                style={{
-                  padding: '4px',
-                  borderRadius: '4px',
-                  border: '1px solid #d1d5db',
-                  cursor: 'pointer',
-                  backgroundColor: '#ffffff',
-                  color: '#000000',
-                  width: '24px',
-                  height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className={`p-2 rounded border transition-colors ${
+                  darkMode 
+                    ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                    : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
+                } cursor-pointer`}
               >
                 {isMuted ? (
                   <VolumeX className="w-4 h-4" />
@@ -845,19 +825,11 @@ const AudioPlayer = ({
                         console.log(`🔘 [${componentId.current}] After setState timeout, showMenu should be:`, !showMenu);
                       }, 0);
                     }}
-                    style={{
-                      padding: '4px',
-                      borderRadius: '4px',
-                      border: '1px solid #d1d5db',
-                      cursor: 'pointer',
-                      backgroundColor: '#ffffff',
-                      color: '#000000',
-                      width: '24px',
-                      height: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className={`p-2 rounded border transition-colors ${
+                      darkMode 
+                        ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
+                    } cursor-pointer`}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
