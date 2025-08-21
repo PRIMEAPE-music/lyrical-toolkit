@@ -83,9 +83,16 @@ const AudioPlayer = ({
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const containerRef = compact ? waveformRef : waveformRefVertical;
+      console.log('🎵 Container selection:', { compact, hasWaveformRef: !!waveformRef.current, hasWaveformRefVertical: !!waveformRefVertical.current, selectedContainer: !!containerRef.current });
+      
       if (!containerRef.current) {
-        console.error('WaveSurfer container not found, compact:', compact);
-        return;
+        console.error('WaveSurfer container not found, compact:', compact, 'Retrying in 200ms...');
+        // Retry once more with longer timeout for vertical mode
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (!containerRef.current) {
+          console.error('WaveSurfer container still not found after retry');
+          return;
+        }
       }
       
       console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current);
@@ -120,7 +127,9 @@ const AudioPlayer = ({
           mediaControls: false,
           interact: true,
           backend: 'WebAudio',
-          fillParent: true
+          fillParent: true,
+          // Force dimensions for vertical mode to ensure it renders
+          ...(compact ? {} : { width: containerRef.current.offsetWidth || 400 })
         });
 
         // Event listeners
@@ -686,11 +695,14 @@ const AudioPlayer = ({
               style={{
                 height: '24px',
                 width: '100%',
+                minWidth: '200px',
                 opacity: waveformLoading ? 0.3 : 1,
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
                 borderRadius: '4px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                display: 'block',
+                position: 'relative'
               }}
             />
             
