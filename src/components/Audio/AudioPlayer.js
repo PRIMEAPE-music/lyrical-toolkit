@@ -104,8 +104,8 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance
-        const ws = WaveSurfer.create({
+        // Create WaveSurfer instance with desktop-specific options
+        const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
           progressColor: '#3b82f6',
@@ -119,9 +119,22 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: 'WebAudio',
           fillParent: true
-        });
+        };
+        
+        // Try different backend for desktop vertical mode
+        if (!compact) {
+          // Desktop vertical mode - try MediaElement backend
+          wsOptions.backend = 'MediaElement';
+          wsOptions.forceDecodeWithWebAudio = false;
+          console.log('🖥️ Using MediaElement backend for desktop vertical mode');
+        } else {
+          // Compact mode - use WebAudio
+          wsOptions.backend = 'WebAudio';
+          console.log('📱 Using WebAudio backend for compact mode');
+        }
+        
+        const ws = WaveSurfer.create(wsOptions);
 
         // Event listeners
         ws.on('ready', () => {
@@ -131,6 +144,37 @@ const AudioPlayer = ({
           setWaveformLoading(false);
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
+          
+          // Debug: Check for canvas/svg elements
+          const canvasElements = containerRef.current.querySelectorAll('canvas, svg');
+          console.log('🎨 Canvas/SVG elements found:', canvasElements.length, canvasElements);
+          
+          // Debug: Check computed styles
+          const computedStyle = window.getComputedStyle(containerRef.current);
+          console.log('🎯 Container computed style:', {
+            display: computedStyle.display,
+            visibility: computedStyle.visibility,
+            opacity: computedStyle.opacity,
+            zIndex: computedStyle.zIndex,
+            position: computedStyle.position,
+            overflow: computedStyle.overflow
+          });
+          
+          // Force redraw attempt
+          setTimeout(() => {
+            if (containerRef.current) {
+              const rect = containerRef.current.getBoundingClientRect();
+              console.log('🔄 Post-ready container dimensions:', rect);
+              if (rect.width > 0 && rect.height > 0) {
+                // Container has dimensions but maybe waveform didn't render
+                const elements = containerRef.current.querySelectorAll('canvas, svg');
+                console.log('🎨 Elements after timeout:', elements.length);
+                if (elements.length === 0) {
+                  console.log('❌ No canvas/svg elements found - possible rendering issue');
+                }
+              }
+            }
+          }, 500);
         });
 
         ws.on('loading', (percent) => {
@@ -690,7 +734,13 @@ const AudioPlayer = ({
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
                 borderRadius: '4px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                // Force visibility and positioning
+                visibility: 'visible',
+                display: 'block',
+                position: 'relative',
+                zIndex: 1,
+                minWidth: '200px'
               }}
             />
             
