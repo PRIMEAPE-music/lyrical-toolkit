@@ -135,7 +135,7 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance with simplified options
+        // Create WaveSurfer instance with explicit renderer for vertical mode
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -150,19 +150,28 @@ const AudioPlayer = ({
           mediaControls: false,
           interact: true,
           backend: 'WebAudio'
-          // Removed fillParent and manual width setting to let WaveSurfer handle sizing
         };
+        
+        // For vertical mode, try forcing canvas renderer
+        if (!compact) {
+          wsOptions.renderer = 'canvas';
+          console.log('🖥️ Forcing canvas renderer for desktop vertical mode');
+        }
         
         console.log('🎵 Creating WaveSurfer with options:', wsOptions);
         const ws = WaveSurfer.create(wsOptions);
         
-        // Debug: Check available methods on WaveSurfer instance
-        console.log('🔍 Available WaveSurfer methods:', {
+        // Debug: Check WaveSurfer configuration and renderer
+        console.log('🔍 WaveSurfer instance details:', {
           hasRenderer: !!ws.renderer,
+          rendererType: ws.renderer ? ws.renderer.constructor.name : null,
+          backend: ws.options ? ws.options.backend : 'unknown',
           hasRedraw: typeof ws.redraw === 'function',
           hasSetOptions: typeof ws.setOptions === 'function',
           hasGetWrapper: typeof ws.getWrapper === 'function',
-          allMethods: Object.getOwnPropertyNames(ws).filter(prop => typeof ws[prop] === 'function')
+          waveSurferVersion: WaveSurfer.VERSION || 'unknown',
+          compact: compact,
+          container: containerRef.current.tagName
         });
 
         // Event listeners
@@ -194,6 +203,14 @@ const AudioPlayer = ({
                   height: canvas.height
                 } : null,
                 allChildTags: allChildren.map(child => child.tagName),
+                firstChildDetails: allChildren[0] ? {
+                  tagName: allChildren[0].tagName,
+                  className: allChildren[0].className,
+                  style: allChildren[0].style.cssText,
+                  innerHTML: allChildren[0].innerHTML.substring(0, 100),
+                  childElementCount: allChildren[0].childElementCount
+                } : null,
+                containerHTML: containerRef.current.innerHTML.substring(0, 300),
                 containerComputedStyle: {
                   display: getComputedStyle(containerRef.current).display,
                   visibility: getComputedStyle(containerRef.current).visibility,
