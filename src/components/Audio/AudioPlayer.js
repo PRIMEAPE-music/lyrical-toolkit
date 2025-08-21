@@ -135,7 +135,7 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance with explicit renderer for vertical mode
+        // Create WaveSurfer instance with proper options for vertical mode
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -149,13 +149,14 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: 'WebAudio'
+          backend: 'WebAudio',
+          fillParent: true
         };
         
-        // For vertical mode, try forcing canvas renderer
+        // For vertical mode, ensure proper sizing
         if (!compact) {
-          wsOptions.renderer = 'canvas';
-          console.log('🖥️ Forcing canvas renderer for desktop vertical mode');
+          wsOptions.width = containerRef.current.offsetWidth;
+          console.log('🖥️ Desktop vertical mode - setting width:', wsOptions.width);
         }
         
         console.log('🎵 Creating WaveSurfer with options:', wsOptions);
@@ -183,7 +184,7 @@ const AudioPlayer = ({
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
           
-          // Check if waveform is actually rendered in the DOM
+          // Check if waveform is actually rendered in the DOM and retry if needed
           if (!compact) {
             setTimeout(() => {
               const canvas = containerRef.current.querySelector('canvas');
@@ -194,14 +195,6 @@ const AudioPlayer = ({
                 containerHasChildren: containerRef.current.children.length,
                 hasCanvas: !!canvas,
                 hasSvg: !!svg,
-                canvasStyles: canvas ? {
-                  display: getComputedStyle(canvas).display,
-                  visibility: getComputedStyle(canvas).visibility,
-                  opacity: getComputedStyle(canvas).opacity,
-                  zIndex: getComputedStyle(canvas).zIndex,
-                  width: canvas.width,
-                  height: canvas.height
-                } : null,
                 allChildTags: allChildren.map(child => child.tagName),
                 firstChildDetails: allChildren[0] ? {
                   tagName: allChildren[0].tagName,
@@ -210,14 +203,39 @@ const AudioPlayer = ({
                   innerHTML: allChildren[0].innerHTML.substring(0, 100),
                   childElementCount: allChildren[0].childElementCount
                 } : null,
-                containerHTML: containerRef.current.innerHTML.substring(0, 300),
-                containerComputedStyle: {
-                  display: getComputedStyle(containerRef.current).display,
-                  visibility: getComputedStyle(containerRef.current).visibility,
-                  opacity: getComputedStyle(containerRef.current).opacity,
-                  zIndex: getComputedStyle(containerRef.current).zIndex
-                }
+                containerHTML: containerRef.current.innerHTML.substring(0, 300)
               });
+              
+              // If no canvas/svg found, try to force a recreation
+              if (!canvas && !svg && allChildren.length === 1) {
+                console.log('⚠️ No waveform elements found, attempting to recreate WaveSurfer...');
+                try {
+                  // Clear the container
+                  containerRef.current.innerHTML = '';
+                  
+                  // Recreate with different options
+                  const retryOptions = {
+                    container: containerRef.current,
+                    waveColor: darkMode ? '#9ca3af' : '#6b7280',
+                    progressColor: '#3b82f6',
+                    height: 24,
+                    responsive: false, // Try without responsive
+                    width: containerRef.current.offsetWidth,
+                    barWidth: 2,
+                    barGap: 1,
+                    normalize: true,
+                    backend: 'WebAudio'
+                  };
+                  
+                  console.log('🔄 Recreating WaveSurfer with options:', retryOptions);
+                  ws.destroy();
+                  const newWs = WaveSurfer.create(retryOptions);
+                  newWs.load(audioUrl);
+                  setWaveSurfer(newWs);
+                } catch (error) {
+                  console.error('Failed to recreate WaveSurfer:', error);
+                }
+              }
             }, 500);
           }
         });
