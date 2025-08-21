@@ -83,40 +83,9 @@ const AudioPlayer = ({
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const containerRef = compact ? waveformRef : waveformRefVertical;
-      
-      // Enhanced debugging for desktop vs mobile issue
-      console.log('🎵 WaveSurfer Debug Info:', {
-        compact,
-        audioUrl: !!audioUrl,
-        containerFound: !!containerRef.current,
-        containerDimensions: containerRef.current ? {
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-          clientWidth: containerRef.current.clientWidth,
-          clientHeight: containerRef.current.clientHeight,
-          scrollWidth: containerRef.current.scrollWidth,
-          scrollHeight: containerRef.current.scrollHeight
-        } : null,
-        containerStyle: containerRef.current ? getComputedStyle(containerRef.current) : null
-      });
-      
       if (!containerRef.current) {
         console.error('WaveSurfer container not found, compact:', compact);
         return;
-      }
-      
-      // Check if container has valid dimensions
-      if (containerRef.current.offsetWidth === 0 || containerRef.current.offsetHeight === 0) {
-        console.warn('⚠️ Container has zero dimensions, retrying in 200ms...', {
-          offsetWidth: containerRef.current.offsetWidth,
-          offsetHeight: containerRef.current.offsetHeight
-        });
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        if (containerRef.current.offsetWidth === 0 || containerRef.current.offsetHeight === 0) {
-          console.error('❌ Container still has zero dimensions after retry');
-          return;
-        }
       }
       
       console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current);
@@ -131,12 +100,12 @@ const AudioPlayer = ({
       setError(null);
       
       try {
-        // Create regions plugin for both modes
+        // Create regions plugin
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Use EXACTLY the same options for both modes, only height differs
-        const wsOptions = {
+        // Create WaveSurfer instance
+        const ws = WaveSurfer.create({
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
           progressColor: '#3b82f6',
@@ -150,36 +119,8 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: 'WebAudio', // Same backend for both
+          backend: 'WebAudio',
           fillParent: true
-        };
-        
-        console.log('🖥️ Using IDENTICAL options for both modes, only height differs:', compact ? '16px' : '24px');
-        
-        console.log('🖥️ Using identical config for both modes, compact:', compact, 'height:', wsOptions.height);
-        
-        console.log('🎵 Creating WaveSurfer with options:', wsOptions);
-        const ws = WaveSurfer.create(wsOptions);
-        
-        // Debug: Check WaveSurfer configuration and renderer
-        console.log('🔍 WaveSurfer instance details:', {
-          hasRenderer: !!ws.renderer,
-          rendererType: ws.renderer ? ws.renderer.constructor.name : null,
-          rendererOptions: ws.renderer ? ws.renderer.options : null,
-          backend: ws.options ? ws.options.backend : 'unknown',
-          hasRedraw: typeof ws.redraw === 'function',
-          hasSetOptions: typeof ws.setOptions === 'function',
-          hasGetWrapper: typeof ws.getWrapper === 'function',
-          waveSurferVersion: WaveSurfer.VERSION || 'unknown',
-          compact: compact,
-          container: containerRef.current.tagName,
-          containerDimensions: {
-            offsetWidth: containerRef.current.offsetWidth,
-            offsetHeight: containerRef.current.offsetHeight,
-            clientWidth: containerRef.current.clientWidth,
-            clientHeight: containerRef.current.clientHeight
-          },
-          wsContainerStyle: containerRef.current ? getComputedStyle(containerRef.current) : null
         });
 
         // Event listeners
@@ -191,65 +132,6 @@ const AudioPlayer = ({
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
           
-          // Check if waveform is actually rendered in the DOM and retry if needed
-          if (!compact) {
-            setTimeout(() => {
-              const canvas = containerRef.current.querySelector('canvas');
-              const svg = containerRef.current.querySelector('svg');
-              const allChildren = Array.from(containerRef.current.children);
-              
-              console.log('🔍 Desktop vertical mode waveform DOM check:', {
-                containerHasChildren: containerRef.current.children.length,
-                hasCanvas: !!canvas,
-                hasSvg: !!svg,
-                allChildTags: allChildren.map(child => child.tagName),
-                firstChildDetails: allChildren[0] ? {
-                  tagName: allChildren[0].tagName,
-                  className: allChildren[0].className,
-                  style: allChildren[0].style.cssText,
-                  innerHTML: allChildren[0].innerHTML.substring(0, 100),
-                  childElementCount: allChildren[0].childElementCount
-                } : null,
-                containerHTML: containerRef.current.innerHTML.substring(0, 300)
-              });
-              
-              // Log the issue but don't try to recreate to avoid breaking functionality
-              if (!canvas && !svg && allChildren.length === 1) {
-                console.log('⚠️ No waveform canvas/svg found - waveform may not be visible but functionality preserved');
-                console.log('📋 Container details:', {
-                  firstChild: allChildren[0] ? {
-                    tagName: allChildren[0].tagName,
-                    className: allChildren[0].className,
-                    innerHTML: allChildren[0].innerHTML,
-                    style: allChildren[0].style.cssText,
-                    offsetWidth: allChildren[0].offsetWidth,
-                    offsetHeight: allChildren[0].offsetHeight
-                  } : null
-                });
-                
-                // Try one more approach - manually trigger a redraw
-                setTimeout(() => {
-                  if (ws && typeof ws.drawBuffer === 'function') {
-                    console.log('🔄 Attempting manual drawBuffer call');
-                    try {
-                      ws.drawBuffer();
-                    } catch (e) {
-                      console.log('drawBuffer failed:', e.message);
-                    }
-                  }
-                  
-                  // Check if the backend is actually working
-                  if (ws && ws.backend) {
-                    console.log('🔍 Backend status:', {
-                      buffer: !!ws.backend.buffer,
-                      peaks: ws.backend.peaks ? ws.backend.peaks.length : 0,
-                      duration: ws.backend.duration
-                    });
-                  }
-                }, 1000);
-              }
-            }, 500);
-          }
         });
 
         ws.on('loading', (percent) => {
@@ -810,7 +692,7 @@ const AudioPlayer = ({
                 opacity: waveformLoading ? 0.3 : 1,
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
-                borderRadius: '8px',
+                borderRadius: '4px',
                 overflow: 'hidden'
               }}
             />

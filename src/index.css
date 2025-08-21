@@ -1031,28 +1031,6 @@ input:focus {
   z-index: 50;
 }
 
-/* Ensure WaveSurfer canvas elements are visible on desktop */
-.waveform-container canvas,
-.waveform-container svg {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  position: relative !important;
-  z-index: 2 !important;
-}
-
-/* Force proper rendering for desktop audio players */
-@media (min-width: 769px) {
-  .audio-player .waveform-container {
-    transform: translateZ(0);
-    will-change: auto;
-  }
-  
-  .audio-player .waveform-container canvas,
-  .audio-player .waveform-container svg {
-    transform: translateZ(0) !important;
-  }
-}
 
 /* Add this to your index.css file */
 .upload-tab-large {
