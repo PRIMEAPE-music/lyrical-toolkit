@@ -104,8 +104,9 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance
-        const ws = WaveSurfer.create({
+        // Create WaveSurfer instance with Firefox-specific settings
+        const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+        const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
           progressColor: '#3b82f6',
@@ -119,9 +120,19 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: 'WebAudio',
           fillParent: true
-        });
+        };
+
+        // Firefox-specific backend selection
+        if (isFirefox && !compact) {
+          wsOptions.backend = 'MediaElement';
+          console.log('🦊 Firefox detected - using MediaElement backend for vertical mode');
+        } else {
+          wsOptions.backend = 'WebAudio';
+          console.log('🌐 Using WebAudio backend');
+        }
+
+        const ws = WaveSurfer.create(wsOptions);
 
         // Event listeners
         ws.on('ready', () => {
@@ -131,6 +142,30 @@ const AudioPlayer = ({
           setWaveformLoading(false);
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
+          
+          // Debug: Check what's actually in the container
+          console.log('📦 Container innerHTML:', containerRef.current.innerHTML);
+          console.log('🎨 Canvas elements:', containerRef.current.querySelectorAll('canvas'));
+          console.log('🖼️ SVG elements:', containerRef.current.querySelectorAll('svg'));
+          console.log('👥 All child elements:', containerRef.current.children);
+          
+          // Firefox-specific fix attempt
+          const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+          if (isFirefox && !compact) {
+            console.log('🦊 Firefox detected in vertical mode - attempting redraw');
+            setTimeout(() => {
+              try {
+                // Force a resize/redraw
+                if (ws && typeof ws.drawBuffer === 'function') {
+                  ws.drawBuffer();
+                } else if (ws && typeof ws.renderer === 'object' && ws.renderer.render) {
+                  ws.renderer.render();
+                }
+              } catch (e) {
+                console.log('Redraw attempt failed:', e);
+              }
+            }, 100);
+          }
         });
 
         ws.on('loading', (percent) => {
