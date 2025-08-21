@@ -467,67 +467,56 @@ const FloatingNotepad = ({
               <button
                 onClick={notepadState.currentEditingSongId ? onSaveChanges : onUploadToSongs}
                 disabled={!content.trim()}
-                style={{
-                  padding: '4px',
-                  borderRadius: '4px',
-                  border: '1px solid #d1d5db',
-                  cursor: content.trim() ? 'pointer' : 'not-allowed',
-                  backgroundColor: content.trim() ? '#ffffff' : '#f3f4f6',
-                  color: content.trim() ? '#000000' : '#9ca3af',
-                  width: '24px',
-                  height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className={`p-1 rounded text-xs transition-colors ${
+                  content.trim()
+                    ? notepadState.currentEditingSongId
+                      ? darkMode 
+                        ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : darkMode 
+                        ? 'bg-green-800 hover:bg-green-700 text-green-200' 
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    : darkMode
+                      ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
                 title={notepadState.currentEditingSongId ? "Save Changes" : "Add to Songs"}
               >
-                <Upload className="w-3 h-3" />
+                <Upload className="w-3 h-3" style={darkMode ? {} : { color: '#000000' }} />
               </button>
 
               {/* 2. Export Song Button - Hide on mobile when editing */}
               <button
                 onClick={onExportTxt}
                 disabled={!content.trim()}
-                style={{
-                  padding: '4px',
-                  borderRadius: '4px',
-                  border: '1px solid #d1d5db',
-                  cursor: content.trim() ? 'pointer' : 'not-allowed',
-                  backgroundColor: content.trim() ? '#ffffff' : '#f3f4f6',
-                  color: content.trim() ? '#000000' : '#9ca3af',
-                  width: '24px',
-                  height: '24px',
-                  display: notepadState.currentEditingSongId ? 'none' : 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                className="hidden md:flex"
+                className={`p-1 rounded text-xs transition-colors ${
+                  notepadState.currentEditingSongId ? 'hidden md:block' : ''
+                } ${
+                  content.trim()
+                    ? darkMode 
+                      ? 'bg-blue-800 hover:bg-blue-700 text-blue-200' 
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : darkMode
+                      ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
                 title="Export as TXT"
               >
-                <Download className="w-3 h-3" />
+                <Download className="w-3 h-3" style={darkMode ? {} : { color: '#000000' }} />
               </button>
 
               {/* 3. Empty Notepad Button - Only show when editing */}
               {notepadState.currentEditingSongId && (
                 <button
                   onClick={onStartNewContent}
-                  style={{
-                    padding: '4px',
-                    borderRadius: '4px',
-                    border: '1px solid #d1d5db',
-                    cursor: 'pointer',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
-                    width: '24px',
-                    height: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  className={`p-1 rounded text-xs transition-colors ${
+                    darkMode 
+                      ? 'bg-purple-800 hover:bg-purple-700 text-purple-200' 
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }`}
                   title="Empty Notepad"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3" style={darkMode ? {} : { color: '#000000' }} />
                 </button>
               )}
 
@@ -536,22 +525,18 @@ const FloatingNotepad = ({
                 <button
                   onClick={onRevertChanges}
                   disabled={!hasUnsavedChanges}
-                  style={{
-                    padding: '4px',
-                    borderRadius: '4px',
-                    border: '1px solid #d1d5db',
-                    cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
-                    backgroundColor: hasUnsavedChanges ? '#ffffff' : '#f3f4f6',
-                    color: hasUnsavedChanges ? '#000000' : '#9ca3af',
-                    width: '24px',
-                    height: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  className={`p-1 rounded text-xs transition-colors ${
+                    hasUnsavedChanges
+                      ? darkMode 
+                        ? 'bg-orange-800 hover:bg-orange-700 text-orange-200' 
+                        : 'bg-orange-600 hover:bg-orange-700 text-white'
+                      : darkMode
+                        ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
                   title="Revert to Original"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="w-3 h-3" style={darkMode ? {} : { color: '#000000' }} />
                 </button>
               )}
             </>
@@ -560,21 +545,11 @@ const FloatingNotepad = ({
           
           <button
             onClick={toggleMinimized}
-            style={{
-              padding: '4px',
-              borderRadius: '4px',
-              border: '1px solid #d1d5db',
-              cursor: 'pointer',
-              backgroundColor: '#ffffff',
-              color: '#000000',
-              width: '24px',
-              height: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            className={`p-1 rounded hover:bg-opacity-20 hover:bg-gray-500 ${
+              darkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}
           >
-            {isMinimized ? <Maximize2 className="w-3 h-3" /> : <Minimize2 className="w-3 h-3" />}
+            {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
           </button>
         </div>
       </div>
@@ -987,8 +962,8 @@ const FloatingNotepad = ({
               minHeight: '300px',
               border: 'none',
               outline: 'none',
-              padding: '12px',
-              fontSize: '14px',
+              padding: '16px',
+              fontSize: '18px',
               backgroundColor: darkMode ? '#374151' : '#f9fafb',
               color: darkMode ? '#d1d5db' : '#111827',
               resize: 'none'
