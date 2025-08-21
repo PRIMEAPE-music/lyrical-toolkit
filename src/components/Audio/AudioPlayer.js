@@ -41,8 +41,8 @@ const AudioPlayer = ({
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   
   // A-B Loop functionality state
-  const [loopStart, setLoopStart] = useState(null);
-  const [loopEnd, setLoopEnd] = useState(null);
+  const [, setLoopStart] = useState(null);
+  const [, setLoopEnd] = useState(null);
   const [showLoopMarkers, setShowLoopMarkers] = useState(false);
   // draggingMarker removed - now handled by WaveSurfer regions
   const [markerTooltip, setMarkerTooltip] = useState(null); // { type: 'start'|'end', time: number, x: number }
@@ -79,16 +79,27 @@ const AudioPlayer = ({
     if (!audioUrl) return;
 
     const initializeWaveSurfer = async () => {
-      // Wait for next tick to ensure container is mounted
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for container to be mounted and have proper dimensions
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       const containerRef = compact ? waveformRef : waveformRefVertical;
       if (!containerRef.current) {
-        console.error('WaveSurfer container not found, compact:', compact);
+        console.error('WaveSurfer container not found, compact:', compact, 'containerRef:', containerRef);
+        console.error('waveformRef.current:', !!waveformRef.current, 'waveformRefVertical.current:', !!waveformRefVertical.current);
         return;
       }
       
-      console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current);
+      console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current, 'compact:', compact);
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      console.log('📊 Container dimensions:', rect);
+      
+      // Check if container has valid dimensions
+      if (rect.width === 0 || rect.height === 0) {
+        console.error('❌ Container has invalid dimensions, retrying in 300ms...');
+        setTimeout(() => initializeWaveSurfer(), 300);
+        return;
+      }
 
       // Clean up existing instance
       if (waveSurfer) {
@@ -709,7 +720,8 @@ const AudioPlayer = ({
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
                 borderRadius: '4px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                position: 'relative'
               }}
             />
             
@@ -833,11 +845,19 @@ const AudioPlayer = ({
                         console.log(`🔘 [${componentId.current}] After setState timeout, showMenu should be:`, !showMenu);
                       }, 0);
                     }}
-                    className={`p-1 rounded hover:bg-opacity-75 ${
-                      darkMode 
-                        ? 'text-gray-400 hover:bg-gray-700' 
-                        : 'text-gray-500 hover:bg-gray-100'
-                    }`}
+                    style={{
+                      padding: '4px',
+                      borderRadius: '4px',
+                      border: '1px solid #d1d5db',
+                      cursor: 'pointer',
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                      width: '24px',
+                      height: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
