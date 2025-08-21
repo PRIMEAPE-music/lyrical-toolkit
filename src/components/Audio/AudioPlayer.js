@@ -135,7 +135,7 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Use identical config for both modes
+        // Try different backend for vertical mode
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -150,9 +150,16 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: 'WebAudio',
+          backend: compact ? 'WebAudio' : 'MediaElement', // Try different backend for vertical
           fillParent: true
         };
+        
+        // For vertical mode, try additional options
+        if (!compact) {
+          wsOptions.forceDecode = false;
+          wsOptions.splitChannels = false;
+          console.log('🖥️ Using MediaElement backend for vertical mode');
+        }
         
         console.log('🖥️ Using identical config for both modes, compact:', compact, 'height:', wsOptions.height);
         
@@ -211,9 +218,32 @@ const AudioPlayer = ({
                     tagName: allChildren[0].tagName,
                     className: allChildren[0].className,
                     innerHTML: allChildren[0].innerHTML,
-                    style: allChildren[0].style.cssText
+                    style: allChildren[0].style.cssText,
+                    offsetWidth: allChildren[0].offsetWidth,
+                    offsetHeight: allChildren[0].offsetHeight
                   } : null
                 });
+                
+                // Try one more approach - manually trigger a redraw
+                setTimeout(() => {
+                  if (ws && typeof ws.drawBuffer === 'function') {
+                    console.log('🔄 Attempting manual drawBuffer call');
+                    try {
+                      ws.drawBuffer();
+                    } catch (e) {
+                      console.log('drawBuffer failed:', e.message);
+                    }
+                  }
+                  
+                  // Check if the backend is actually working
+                  if (ws && ws.backend) {
+                    console.log('🔍 Backend status:', {
+                      buffer: !!ws.backend.buffer,
+                      peaks: ws.backend.peaks ? ws.backend.peaks.length : 0,
+                      duration: ws.backend.duration
+                    });
+                  }
+                }, 1000);
               }
             }, 500);
           }
