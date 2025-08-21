@@ -152,19 +152,58 @@ const AudioPlayer = ({
           // Firefox-specific fix attempt
           const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
           if (isFirefox && !compact) {
-            console.log('🦊 Firefox detected in vertical mode - attempting redraw');
-            setTimeout(() => {
-              try {
-                // Force a resize/redraw
-                if (ws && typeof ws.drawBuffer === 'function') {
-                  ws.drawBuffer();
-                } else if (ws && typeof ws.renderer === 'object' && ws.renderer.render) {
-                  ws.renderer.render();
+            console.log('🦊 Firefox detected in vertical mode - attempting fix');
+            
+            // Check if canvas/SVG was created, if not, force recreation
+            const canvasElements = containerRef.current.querySelectorAll('canvas, svg');
+            if (canvasElements.length === 0) {
+              console.log('🔧 No canvas/SVG found - destroying and recreating WaveSurfer');
+              
+              setTimeout(() => {
+                try {
+                  // Destroy current instance
+                  ws.destroy();
+                  
+                  // Create new instance with MediaElement backend
+                  const newWs = WaveSurfer.create({
+                    container: containerRef.current,
+                    waveColor: darkMode ? '#9ca3af' : '#6b7280',
+                    progressColor: '#3b82f6',
+                    cursorColor: '#3b82f6',
+                    barWidth: 3,
+                    barGap: 1,
+                    barRadius: 1,
+                    responsive: true,
+                    height: 24,
+                    normalize: true,
+                    plugins: [regions],
+                    mediaControls: false,
+                    interact: true,
+                    backend: 'MediaElement', // Force MediaElement for Firefox
+                    fillParent: true
+                  });
+                  
+                  // Re-setup event listeners
+                  newWs.on('ready', () => {
+                    console.log('🔄 Firefox fix - WaveSurfer recreated successfully');
+                    const newCanvasElements = containerRef.current.querySelectorAll('canvas, svg');
+                    console.log('🎨 New canvas/SVG elements:', newCanvasElements.length);
+                  });
+                  
+                  newWs.on('play', () => setIsPlaying(true));
+                  newWs.on('pause', () => setIsPlaying(false));
+                  newWs.on('finish', () => setIsPlaying(false));
+                  newWs.on('timeupdate', (time) => setCurrentTime(time));
+                  
+                  // Load audio
+                  newWs.load(audioUrl);
+                  setWaveSurfer(newWs);
+                  
+                } catch (error) {
+                  console.error('Firefox fix failed:', error);
                 }
-              } catch (e) {
-                console.log('Redraw attempt failed:', e);
-              }
-            }, 100);
+              }, 200);
+            }
           }
         });
 
