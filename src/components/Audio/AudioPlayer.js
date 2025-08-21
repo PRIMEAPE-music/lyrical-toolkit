@@ -162,6 +162,15 @@ const AudioPlayer = ({
         
         console.log('🎵 Creating WaveSurfer with options:', wsOptions);
         const ws = WaveSurfer.create(wsOptions);
+        
+        // Debug: Check available methods on WaveSurfer instance
+        console.log('🔍 Available WaveSurfer methods:', {
+          hasRenderer: !!ws.renderer,
+          hasRedraw: typeof ws.redraw === 'function',
+          hasSetOptions: typeof ws.setOptions === 'function',
+          hasGetWrapper: typeof ws.getWrapper === 'function',
+          allMethods: Object.getOwnPropertyNames(ws).filter(prop => typeof ws[prop] === 'function')
+        });
 
         // Event listeners
         ws.on('ready', () => {
@@ -177,11 +186,15 @@ const AudioPlayer = ({
             setTimeout(() => {
               try {
                 console.log('🔄 Force redraw for desktop vertical mode');
-                ws.drawBuffer();
-                // Additional fallback - ensure container is visible
-                if (containerRef.current && containerRef.current.offsetWidth > 0) {
-                  ws.drawer.setWidth(containerRef.current.offsetWidth);
-                  ws.drawBuffer();
+                // Use the correct WaveSurfer v7 API
+                if (ws.renderer && typeof ws.renderer.render === 'function') {
+                  ws.renderer.render();
+                } else if (typeof ws.redraw === 'function') {
+                  ws.redraw();
+                } else {
+                  console.log('🔄 Redraw methods not available, trying alternative approach');
+                  // Force a resize event which should trigger a redraw
+                  ws.setOptions({});
                 }
               } catch (error) {
                 console.warn('Error during force redraw:', error);
@@ -244,9 +257,16 @@ const AudioPlayer = ({
         if (waveSurfer && waveformRefVertical.current) {
           console.log('🔄 Resizing WaveSurfer for desktop vertical mode');
           try {
-            waveSurfer.drawer.containerWidth = waveformRefVertical.current.offsetWidth;
-            waveSurfer.drawer.setWidth(waveformRefVertical.current.offsetWidth);
-            waveSurfer.drawBuffer();
+            // Use the correct WaveSurfer v7 API for resizing
+            if (typeof waveSurfer.setOptions === 'function') {
+              waveSurfer.setOptions({
+                width: waveformRefVertical.current.offsetWidth
+              });
+            } else if (waveSurfer.renderer && typeof waveSurfer.renderer.render === 'function') {
+              waveSurfer.renderer.render();
+            } else if (typeof waveSurfer.redraw === 'function') {
+              waveSurfer.redraw();
+            }
           } catch (error) {
             console.warn('Error during WaveSurfer resize:', error);
           }
