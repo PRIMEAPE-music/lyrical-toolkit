@@ -177,11 +177,29 @@ const AudioPlayer = ({
           // Check if waveform is actually rendered in the DOM
           if (!compact) {
             setTimeout(() => {
-              const waveformElement = containerRef.current.querySelector('canvas, svg, div[style*="background"]');
-              console.log('🔍 Desktop vertical mode waveform check:', {
+              const canvas = containerRef.current.querySelector('canvas');
+              const svg = containerRef.current.querySelector('svg');
+              const allChildren = Array.from(containerRef.current.children);
+              
+              console.log('🔍 Desktop vertical mode waveform DOM check:', {
                 containerHasChildren: containerRef.current.children.length,
-                hasWaveformElement: !!waveformElement,
-                containerHTML: containerRef.current.innerHTML.substring(0, 200)
+                hasCanvas: !!canvas,
+                hasSvg: !!svg,
+                canvasStyles: canvas ? {
+                  display: getComputedStyle(canvas).display,
+                  visibility: getComputedStyle(canvas).visibility,
+                  opacity: getComputedStyle(canvas).opacity,
+                  zIndex: getComputedStyle(canvas).zIndex,
+                  width: canvas.width,
+                  height: canvas.height
+                } : null,
+                allChildTags: allChildren.map(child => child.tagName),
+                containerComputedStyle: {
+                  display: getComputedStyle(containerRef.current).display,
+                  visibility: getComputedStyle(containerRef.current).visibility,
+                  opacity: getComputedStyle(containerRef.current).opacity,
+                  zIndex: getComputedStyle(containerRef.current).zIndex
+                }
               });
             }, 500);
           }
@@ -747,11 +765,15 @@ const AudioPlayer = ({
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
                 borderRadius: '4px',
-                overflow: 'visible', // Changed from 'hidden' to 'visible'
+                overflow: 'visible',
                 display: 'block',
                 position: 'relative',
-                // Ensure the container is visible and properly sized
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                // Force proper layering and rendering
+                zIndex: 1,
+                isolation: 'isolate',
+                transform: 'translateZ(0)', // Force hardware acceleration
+                willChange: 'auto'
               }}
             />
             
