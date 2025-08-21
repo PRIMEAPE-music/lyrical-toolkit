@@ -383,7 +383,76 @@ button:hover * {
   color: inherit !important;
 }
 
-/* Audio Player Overrides Removed - Let React handle styling */
+/* Audio Player Black Text Override - Buttons Only */
+
+/* Volume control button icons - make black */
+.audio-player button[class*="text-gray"] svg {
+  color: #000000 !important;
+}
+
+.dark .audio-player button[class*="text-gray"] svg {
+  color: #000000 !important;
+}
+
+/* Menu button (three dots) - make black */
+.audio-player button svg {
+  color: #000000 !important;
+}
+
+.dark .audio-player button svg {
+  color: #000000 !important;
+}
+
+/* Play/Pause button - ensure icons are black */
+.audio-player button[class*="bg-blue"] svg {
+  color: #000000 !important;
+}
+
+.dark .audio-player button[class*="bg-blue"] svg {
+  color: #000000 !important;
+}
+
+/* Menu dropdown items - make black */
+.audio-player .audio-menu-button {
+  color: #000000 !important;
+}
+
+.dark .audio-player .audio-menu-button {
+  color: #000000 !important;
+}
+
+.audio-player .audio-menu-button svg {
+  color: #000000 !important;
+}
+
+.dark .audio-player .audio-menu-button svg {
+  color: #000000 !important;
+}
+
+/* Keep audio filename, metadata, and TIME DISPLAY WHITE */
+.audio-player h4,
+.audio-player p.text-xs,
+.audio-player .text-xs span {
+  color: white !important;
+}
+
+.dark .audio-player h4,
+.dark .audio-player p.text-xs,
+.dark .audio-player .text-xs span {
+  color: white !important;
+}
+
+/* Light mode: Make audio filename and duration black for better readability */
+.audio-player h4,
+.audio-player p.text-xs {
+  color: #6b7280 !important;
+}
+
+/* Dark mode: Keep audio filename and duration white (override the above rule) */
+.dark .audio-player h4,
+.dark .audio-player p.text-xs {
+  color: white !important;
+}
 
 input:focus {
   outline: none;
@@ -961,7 +1030,6 @@ input:focus {
 .z-50 {
   z-index: 50;
 }
-
 
 /* Add this to your index.css file */
 .upload-tab-large {

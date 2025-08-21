@@ -131,7 +131,6 @@ const AudioPlayer = ({
           setWaveformLoading(false);
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
-          
         });
 
         ws.on('loading', (percent) => {
@@ -176,8 +175,6 @@ const AudioPlayer = ({
       }
     };
   }, [audioUrl, compact, darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Removed problematic resize handler to avoid WaveSurfer errors
 
   // Update WaveSurfer colors when theme changes
   useEffect(() => {
