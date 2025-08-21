@@ -83,9 +83,40 @@ const AudioPlayer = ({
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const containerRef = compact ? waveformRef : waveformRefVertical;
+      
+      // Enhanced debugging for desktop vs mobile issue
+      console.log('🎵 WaveSurfer Debug Info:', {
+        compact,
+        audioUrl: !!audioUrl,
+        containerFound: !!containerRef.current,
+        containerDimensions: containerRef.current ? {
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+          clientWidth: containerRef.current.clientWidth,
+          clientHeight: containerRef.current.clientHeight,
+          scrollWidth: containerRef.current.scrollWidth,
+          scrollHeight: containerRef.current.scrollHeight
+        } : null,
+        containerStyle: containerRef.current ? getComputedStyle(containerRef.current) : null
+      });
+      
       if (!containerRef.current) {
         console.error('WaveSurfer container not found, compact:', compact);
         return;
+      }
+      
+      // Check if container has valid dimensions
+      if (containerRef.current.offsetWidth === 0 || containerRef.current.offsetHeight === 0) {
+        console.warn('⚠️ Container has zero dimensions, retrying in 200ms...', {
+          offsetWidth: containerRef.current.offsetWidth,
+          offsetHeight: containerRef.current.offsetHeight
+        });
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        if (containerRef.current.offsetWidth === 0 || containerRef.current.offsetHeight === 0) {
+          console.error('❌ Container still has zero dimensions after retry');
+          return;
+        }
       }
       
       console.log('🎵 Initializing WaveSurfer, container found:', !!containerRef.current);
@@ -104,8 +135,8 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance
-        const ws = WaveSurfer.create({
+        // Create WaveSurfer instance with desktop-specific fixes
+        const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
           progressColor: '#3b82f6',
@@ -121,7 +152,16 @@ const AudioPlayer = ({
           interact: true,
           backend: 'WebAudio',
           fillParent: true
-        });
+        };
+        
+        // For vertical mode on desktop, ensure proper dimensions
+        if (!compact && containerRef.current.offsetWidth > 0) {
+          wsOptions.width = containerRef.current.offsetWidth;
+          console.log('🖥️ Desktop vertical mode - setting explicit width:', wsOptions.width);
+        }
+        
+        console.log('🎵 Creating WaveSurfer with options:', wsOptions);
+        const ws = WaveSurfer.create(wsOptions);
 
         // Event listeners
         ws.on('ready', () => {
@@ -131,6 +171,23 @@ const AudioPlayer = ({
           setWaveformLoading(false);
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
+          
+          // Force redraw for desktop vertical mode after a short delay
+          if (!compact) {
+            setTimeout(() => {
+              try {
+                console.log('🔄 Force redraw for desktop vertical mode');
+                ws.drawBuffer();
+                // Additional fallback - ensure container is visible
+                if (containerRef.current && containerRef.current.offsetWidth > 0) {
+                  ws.drawer.setWidth(containerRef.current.offsetWidth);
+                  ws.drawBuffer();
+                }
+              } catch (error) {
+                console.warn('Error during force redraw:', error);
+              }
+            }, 250);
+          }
         });
 
         ws.on('loading', (percent) => {
@@ -175,6 +232,34 @@ const AudioPlayer = ({
       }
     };
   }, [audioUrl, compact, darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Add window resize handler to fix desktop waveform rendering issues
+  useEffect(() => {
+    if (!waveSurfer || compact) return; // Only for vertical mode
+    
+    const handleResize = () => {
+      // Debounced resize to avoid too many calls
+      clearTimeout(window.waveSurferResizeTimeout);
+      window.waveSurferResizeTimeout = setTimeout(() => {
+        if (waveSurfer && waveformRefVertical.current) {
+          console.log('🔄 Resizing WaveSurfer for desktop vertical mode');
+          try {
+            waveSurfer.drawer.containerWidth = waveformRefVertical.current.offsetWidth;
+            waveSurfer.drawer.setWidth(waveformRefVertical.current.offsetWidth);
+            waveSurfer.drawBuffer();
+          } catch (error) {
+            console.warn('Error during WaveSurfer resize:', error);
+          }
+        }
+      }, 100);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(window.waveSurferResizeTimeout);
+    };
+  }, [waveSurfer, compact]);
 
   // Update WaveSurfer colors when theme changes
   useEffect(() => {
@@ -686,11 +771,14 @@ const AudioPlayer = ({
               style={{
                 height: '24px',
                 width: '100%',
+                minWidth: '300px', // Ensure minimum width on desktop
                 opacity: waveformLoading ? 0.3 : 1,
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
                 borderRadius: '4px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                display: 'block',
+                position: 'relative'
               }}
             />
             
