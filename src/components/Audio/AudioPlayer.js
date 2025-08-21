@@ -135,7 +135,7 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance with desktop-specific fixes
+        // Create WaveSurfer instance with simplified options
         const wsOptions = {
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
@@ -143,22 +143,15 @@ const AudioPlayer = ({
           cursorColor: '#3b82f6',
           barWidth: 3,
           barGap: 1,
-          barRadius: 1,
           responsive: true,
           height: compact ? 16 : 24,
           normalize: true,
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: 'WebAudio',
-          fillParent: true
+          backend: 'WebAudio'
+          // Removed fillParent and manual width setting to let WaveSurfer handle sizing
         };
-        
-        // For vertical mode on desktop, ensure proper dimensions
-        if (!compact && containerRef.current.offsetWidth > 0) {
-          wsOptions.width = containerRef.current.offsetWidth;
-          console.log('🖥️ Desktop vertical mode - setting explicit width:', wsOptions.width);
-        }
         
         console.log('🎵 Creating WaveSurfer with options:', wsOptions);
         const ws = WaveSurfer.create(wsOptions);
@@ -181,25 +174,16 @@ const AudioPlayer = ({
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
           
-          // Force redraw for desktop vertical mode after a short delay
+          // Check if waveform is actually rendered in the DOM
           if (!compact) {
             setTimeout(() => {
-              try {
-                console.log('🔄 Force redraw for desktop vertical mode');
-                // Use the correct WaveSurfer v7 API
-                if (ws.renderer && typeof ws.renderer.render === 'function') {
-                  ws.renderer.render();
-                } else if (typeof ws.redraw === 'function') {
-                  ws.redraw();
-                } else {
-                  console.log('🔄 Redraw methods not available, trying alternative approach');
-                  // Force a resize event which should trigger a redraw
-                  ws.setOptions({});
-                }
-              } catch (error) {
-                console.warn('Error during force redraw:', error);
-              }
-            }, 250);
+              const waveformElement = containerRef.current.querySelector('canvas, svg, div[style*="background"]');
+              console.log('🔍 Desktop vertical mode waveform check:', {
+                containerHasChildren: containerRef.current.children.length,
+                hasWaveformElement: !!waveformElement,
+                containerHTML: containerRef.current.innerHTML.substring(0, 200)
+              });
+            }, 500);
           }
         });
 
@@ -246,40 +230,7 @@ const AudioPlayer = ({
     };
   }, [audioUrl, compact, darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Add window resize handler to fix desktop waveform rendering issues
-  useEffect(() => {
-    if (!waveSurfer || compact) return; // Only for vertical mode
-    
-    const handleResize = () => {
-      // Debounced resize to avoid too many calls
-      clearTimeout(window.waveSurferResizeTimeout);
-      window.waveSurferResizeTimeout = setTimeout(() => {
-        if (waveSurfer && waveformRefVertical.current) {
-          console.log('🔄 Resizing WaveSurfer for desktop vertical mode');
-          try {
-            // Use the correct WaveSurfer v7 API for resizing
-            if (typeof waveSurfer.setOptions === 'function') {
-              waveSurfer.setOptions({
-                width: waveformRefVertical.current.offsetWidth
-              });
-            } else if (waveSurfer.renderer && typeof waveSurfer.renderer.render === 'function') {
-              waveSurfer.renderer.render();
-            } else if (typeof waveSurfer.redraw === 'function') {
-              waveSurfer.redraw();
-            }
-          } catch (error) {
-            console.warn('Error during WaveSurfer resize:', error);
-          }
-        }
-      }, 100);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(window.waveSurferResizeTimeout);
-    };
-  }, [waveSurfer, compact]);
+  // Removed problematic resize handler to avoid WaveSurfer errors
 
   // Update WaveSurfer colors when theme changes
   useEffect(() => {
@@ -791,14 +742,16 @@ const AudioPlayer = ({
               style={{
                 height: '24px',
                 width: '100%',
-                minWidth: '300px', // Ensure minimum width on desktop
+                minWidth: '300px',
                 opacity: waveformLoading ? 0.3 : 1,
                 backgroundColor: darkMode ? '#374151' : '#f3f4f6',
                 border: '1px solid ' + (darkMode ? '#6b7280' : '#d1d5db'),
                 borderRadius: '4px',
-                overflow: 'hidden',
+                overflow: 'visible', // Changed from 'hidden' to 'visible'
                 display: 'block',
-                position: 'relative'
+                position: 'relative',
+                // Ensure the container is visible and properly sized
+                boxSizing: 'border-box'
               }}
             />
             
