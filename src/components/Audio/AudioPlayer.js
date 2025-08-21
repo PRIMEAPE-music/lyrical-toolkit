@@ -104,9 +104,8 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance with Firefox-specific settings
-        const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
-        const wsOptions = {
+        // Create WaveSurfer instance
+        const ws = WaveSurfer.create({
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
           progressColor: '#3b82f6',
@@ -120,19 +119,9 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
+          backend: 'WebAudio',
           fillParent: true
-        };
-
-        // Firefox-specific backend selection
-        if (isFirefox && !compact) {
-          wsOptions.backend = 'MediaElement';
-          console.log('🦊 Firefox detected - using MediaElement backend for vertical mode');
-        } else {
-          wsOptions.backend = 'WebAudio';
-          console.log('🌐 Using WebAudio backend');
-        }
-
-        const ws = WaveSurfer.create(wsOptions);
+        });
 
         // Event listeners
         ws.on('ready', () => {
@@ -142,69 +131,6 @@ const AudioPlayer = ({
           setWaveformLoading(false);
           console.log('✅ WaveSurfer ready, duration:', duration);
           console.log('📊 Container dimensions:', containerRef.current.getBoundingClientRect());
-          
-          // Debug: Check what's actually in the container
-          console.log('📦 Container innerHTML:', containerRef.current.innerHTML);
-          console.log('🎨 Canvas elements:', containerRef.current.querySelectorAll('canvas'));
-          console.log('🖼️ SVG elements:', containerRef.current.querySelectorAll('svg'));
-          console.log('👥 All child elements:', containerRef.current.children);
-          
-          // Firefox-specific fix attempt
-          const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
-          if (isFirefox && !compact) {
-            console.log('🦊 Firefox detected in vertical mode - attempting fix');
-            
-            // Check if canvas/SVG was created, if not, force recreation
-            const canvasElements = containerRef.current.querySelectorAll('canvas, svg');
-            if (canvasElements.length === 0) {
-              console.log('🔧 No canvas/SVG found - destroying and recreating WaveSurfer');
-              
-              setTimeout(() => {
-                try {
-                  // Destroy current instance
-                  ws.destroy();
-                  
-                  // Create new instance with MediaElement backend
-                  const newWs = WaveSurfer.create({
-                    container: containerRef.current,
-                    waveColor: darkMode ? '#9ca3af' : '#6b7280',
-                    progressColor: '#3b82f6',
-                    cursorColor: '#3b82f6',
-                    barWidth: 3,
-                    barGap: 1,
-                    barRadius: 1,
-                    responsive: true,
-                    height: 24,
-                    normalize: true,
-                    plugins: [regions],
-                    mediaControls: false,
-                    interact: true,
-                    backend: 'MediaElement', // Force MediaElement for Firefox
-                    fillParent: true
-                  });
-                  
-                  // Re-setup event listeners
-                  newWs.on('ready', () => {
-                    console.log('🔄 Firefox fix - WaveSurfer recreated successfully');
-                    const newCanvasElements = containerRef.current.querySelectorAll('canvas, svg');
-                    console.log('🎨 New canvas/SVG elements:', newCanvasElements.length);
-                  });
-                  
-                  newWs.on('play', () => setIsPlaying(true));
-                  newWs.on('pause', () => setIsPlaying(false));
-                  newWs.on('finish', () => setIsPlaying(false));
-                  newWs.on('timeupdate', (time) => setCurrentTime(time));
-                  
-                  // Load audio
-                  newWs.load(audioUrl);
-                  setWaveSurfer(newWs);
-                  
-                } catch (error) {
-                  console.error('Firefox fix failed:', error);
-                }
-              }, 200);
-            }
-          }
         });
 
         ws.on('loading', (percent) => {
