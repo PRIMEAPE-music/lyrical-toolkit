@@ -771,7 +771,7 @@ const AudioPlayer = ({
                 step="0.1"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className={`w-16 h-2 rounded-lg appearance-none cursor-pointer ${
+                className={`w-32 h-2 rounded-lg appearance-none cursor-pointer ${
                   darkMode ? 'bg-gray-700' : 'bg-gray-200'
                 }`}
                 style={{
