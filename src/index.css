@@ -1077,10 +1077,9 @@ input:focus {
   }
 }
 
-/* Cross-browser volume slider - minimal styling to fix thumb issues only */
+/* Cross-browser volume slider - only target Webkit browsers to avoid breaking Firefox */
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -1095,26 +1094,7 @@ input:focus {
   box-shadow: 0 2px 6px 0 rgba(59, 130, 246, 0.3);
 }
 
-.volume-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #3b82f6;
-  border: 2px solid #ffffff;
-  cursor: pointer;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.volume-slider::-moz-range-thumb:hover {
-  background: #2563eb;
-  box-shadow: 0 2px 6px 0 rgba(59, 130, 246, 0.3);
-}
-
-/* Dark mode thumb border adjustment */
+/* Dark mode adjustment for Webkit only */
 .dark .volume-slider::-webkit-slider-thumb {
-  border: 2px solid #374151;
-}
-
-.dark .volume-slider::-moz-range-thumb {
   border: 2px solid #374151;
 }
