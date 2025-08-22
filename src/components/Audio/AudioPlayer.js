@@ -533,10 +533,10 @@ const AudioPlayer = ({
                   type="range"
                   min="0"
                   max="1"
-                  step="0.1"
+                  step="0.01"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className={`w-16 h-2 rounded-lg appearance-none cursor-pointer ${
+                  className={`volume-slider w-16 h-2 rounded-lg appearance-none cursor-pointer ${
                     darkMode ? 'bg-gray-700' : 'bg-gray-200'
                   }`}
                   style={{
@@ -768,10 +768,10 @@ const AudioPlayer = ({
                 type="range"
                 min="0"
                 max="1"
-                step="0.1"
+                step="0.01"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className={`w-16 h-2 rounded-lg appearance-none cursor-pointer ${
+                className={`volume-slider w-16 h-2 rounded-lg appearance-none cursor-pointer ${
                   darkMode ? 'bg-gray-700' : 'bg-gray-200'
                 }`}
                 style={{
