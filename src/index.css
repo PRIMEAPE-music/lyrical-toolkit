@@ -1077,3 +1077,63 @@ input:focus {
   }
 }
 
+/* Add this CSS to your src/index.css file to fix the revert button issue in Chrome/Edge */
+
+/* Enhanced notepad button overrides - more specific for Chrome/Edge compatibility */
+.floating-notepad-expanded button:hover {
+  background-color: inherit !important;
+  color: inherit !important;
+}
+
+/* Specifically target disabled buttons in notepad to prevent global hover overrides */
+.floating-notepad-expanded button:disabled {
+  background-color: inherit !important;
+  color: inherit !important;
+  cursor: not-allowed !important;
+}
+
+.floating-notepad-expanded button:disabled:hover {
+  background-color: inherit !important;
+  color: inherit !important;
+  cursor: not-allowed !important;
+}
+
+/* Ensure disabled button children (SVG icons) don't change color on hover */
+.floating-notepad-expanded button:disabled:hover * {
+  color: inherit !important;
+}
+
+/* Additional browser-specific fixes for Webkit (Chrome/Edge) */
+.floating-notepad-expanded button:disabled:hover svg {
+  color: inherit !important;
+}
+
+/* Dark mode disabled button overrides - ensure gray background is maintained */
+.dark .floating-notepad-expanded button:disabled {
+  background-color: #4b5563 !important; /* bg-gray-600 */
+  color: #6b7280 !important; /* text-gray-500 */
+}
+
+.dark .floating-notepad-expanded button:disabled:hover {
+  background-color: #4b5563 !important; /* bg-gray-600 */
+  color: #6b7280 !important; /* text-gray-500 */
+}
+
+.dark .floating-notepad-expanded button:disabled:hover svg {
+  color: #6b7280 !important; /* text-gray-500 */
+}
+
+/* Light mode disabled button overrides - ensure gray background is maintained */
+.floating-notepad-expanded button:disabled {
+  background-color: #e5e7eb !important; /* bg-gray-200 */
+  color: #9ca3af !important; /* text-gray-400 */
+}
+
+.floating-notepad-expanded button:disabled:hover {
+  background-color: #e5e7eb !important; /* bg-gray-200 */
+  color: #9ca3af !important; /* text-gray-400 */
+}
+
+.floating-notepad-expanded button:disabled:hover svg {
+  color: #9ca3af !important; /* text-gray-400 */
+}
