@@ -1137,3 +1137,15 @@ input:focus {
 .floating-notepad-expanded button:disabled:hover svg {
   color: #9ca3af !important; /* text-gray-400 */
 }
+
+/* Fix range inputs - remove padding that interferes with thumb positioning */
+input[type="range"] {
+  padding: 0 !important;
+  border: none !important;
+}
+
+input[type="range"].appearance-none {
+  padding: 0 !important;
+  border: none !important;
+  box-sizing: border-box;
+}
