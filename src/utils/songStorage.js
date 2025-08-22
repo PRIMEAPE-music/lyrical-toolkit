@@ -110,7 +110,12 @@ export const loadExampleSong = async () => {
       wordCount: content.split(/\s+/).filter(word => word.trim()).length,
       lineCount: content.split('\n').filter(line => line.trim()).length,
       dateAdded: new Date().toISOString(),
-      isExample: true
+      isExample: true,
+      // Audio metadata
+      audioFileUrl: '/HUMAN.mp3',
+      audioFileName: 'HUMAN.mp3',
+      audioFileSize: 3411864, // Actual file size: 3.4MB
+      audioDuration: 245 // Approximate 4:05 duration - will be updated when actual duration is known
     };
   } catch (error) {
     console.error('Failed to load example song:', error);
