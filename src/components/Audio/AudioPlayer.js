@@ -104,9 +104,8 @@ const AudioPlayer = ({
         const regions = RegionsPlugin.create();
         setRegionsPlugin(regions);
 
-        // Create WaveSurfer instance with Edge compatibility
-        const isEdge = /Edge|Edg/.test(navigator.userAgent);
-        const config = {
+        // Create WaveSurfer instance
+        const ws = WaveSurfer.create({
           container: containerRef.current,
           waveColor: darkMode ? '#9ca3af' : '#6b7280',
           progressColor: '#3b82f6',
@@ -120,12 +119,9 @@ const AudioPlayer = ({
           plugins: [regions],
           mediaControls: false,
           interact: true,
-          backend: isEdge ? 'MediaElement' : 'WebAudio', // Use MediaElement for Edge
+          backend: 'WebAudio',
           fillParent: true
-        };
-        
-        console.log('🎵 WaveSurfer config:', { backend: config.backend, isEdge, userAgent: navigator.userAgent });
-        const ws = WaveSurfer.create(config);
+        });
 
         // Event listeners
         ws.on('ready', () => {
@@ -537,10 +533,10 @@ const AudioPlayer = ({
                   type="range"
                   min="0"
                   max="1"
-                  step="0.01"
+                  step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className={`volume-slider w-16 h-2 rounded-lg appearance-none cursor-pointer ${
+                  className={`w-16 h-2 rounded-lg appearance-none cursor-pointer ${
                     darkMode ? 'bg-gray-700' : 'bg-gray-200'
                   }`}
                   style={{
@@ -772,10 +768,10 @@ const AudioPlayer = ({
                 type="range"
                 min="0"
                 max="1"
-                step="0.01"
+                step="0.1"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className={`volume-slider w-16 h-2 rounded-lg appearance-none cursor-pointer ${
+                className={`w-16 h-2 rounded-lg appearance-none cursor-pointer ${
                   darkMode ? 'bg-gray-700' : 'bg-gray-200'
                 }`}
                 style={{
