@@ -1149,3 +1149,25 @@ input[type="range"].appearance-none {
   border: none !important;
   box-sizing: border-box;
 }
+/* Dark mode notepad border */
+.dark .floating-notepad-expanded,
+.dark .floating-notepad-minimized {
+  border: 1px solid white !important;
+}
+
+/* Light mode notepad border */
+.floating-notepad-expanded,
+.floating-notepad-minimized {
+  border: 1px solid #6b7280 !important; /* gray-500 */
+}
+
+/* Make the volume button smaller in the notepad's audio player */
+.floating-notepad-expanded .audio-player .relative.flex-shrink-0 button {
+  padding: 5px !important; /* Reduce from p-1 (4px) to 2px */
+}
+
+/* Make the volume icon inside smaller */
+.floating-notepad-expanded .audio-player .relative.flex-shrink-0 button svg {
+  width: 1rem !important; /* w-3.5 (14px instead of 16px) */
+  height: 1rem !important; /* h-3.5 (14px instead of 16px) */
+}

@@ -39,6 +39,7 @@ const AudioPlayer = ({
   const [error, setError] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [menuPosition, setMenuPosition] = useState('bottom');
   
   // A-B Loop functionality state
   const [loopStart, setLoopStart] = useState(null);
@@ -238,6 +239,27 @@ const AudioPlayer = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showVolumeSlider]);
+
+  // Calculate menu position when menu opens
+  useEffect(() => {
+    if (showMenu && menuButtonRef.current) {
+      const buttonRect = menuButtonRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const menuHeight = 120; // Approximate height of menu dropdown
+      
+      // Account for notepad height on mobile
+      const isMobile = window.innerWidth <= 768;
+      const notepadHeight = isMobile ? 50 : 0;
+      const availableHeight = viewportHeight - notepadHeight;
+      
+      // If there's not enough space below, show above
+      if (buttonRect.bottom + menuHeight > availableHeight) {
+        setMenuPosition('top');
+      } else {
+        setMenuPosition('bottom');
+      }
+    }
+  }, [showMenu]);
 
   // Play/pause toggle
   const togglePlayPause = useCallback(async () => {
@@ -582,7 +604,7 @@ const AudioPlayer = ({
               })() && (
                 <div 
                   ref={dropdownRef}
-                  className={`absolute right-0 top-full mt-1 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
+                  className={`absolute ${menuPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 py-1 min-w-[120px] rounded-lg border shadow-lg z-20 ${
                     darkMode 
                       ? 'border-gray-600 bg-gray-800' 
                       : 'border-gray-200 bg-white'
@@ -821,10 +843,16 @@ const AudioPlayer = ({
                           : 'border-gray-200 bg-white'
                       }`}
                       style={{
-                        top: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().bottom + 4}px` : 'auto',
+                        // Smart positioning based on available space
+                        ...(menuPosition === 'top' ? {
+                          bottom: menuButtonRef.current ? `${window.innerHeight - menuButtonRef.current.getBoundingClientRect().top + 4}px` : 'auto',
+                        } : {
+                          top: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().bottom + 4}px` : 'auto',
+                        }),
                         left: menuButtonRef.current ? `${menuButtonRef.current.getBoundingClientRect().right - 120}px` : 'auto',
-                        zIndex: '999999 !important',
-                        position: 'fixed'
+                        zIndex: 999999,
+                        position: 'fixed',
+                        isolation: 'isolate',
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -842,8 +870,8 @@ const AudioPlayer = ({
                           }}
                           className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 audio-menu-button ${
                             darkMode 
-                              ? 'hover:bg-gray-700' 
-                              : 'hover:bg-gray-100'
+                              ? 'hover:bg-gray-700'     // ← Just the background hover
+                              : 'hover:bg-gray-100'     // ← Just the background hover
                           }`}
                           style={{ color: '#000000' }}
                         >
@@ -863,8 +891,8 @@ const AudioPlayer = ({
                           }}
                           className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-75 audio-menu-button ${
                             darkMode 
-                              ? 'hover:bg-gray-700' 
-                              : 'hover:bg-gray-100'
+                              ? 'hover:bg-gray-700'     // ← Removed text-gray-300
+                              : 'hover:bg-gray-100'     // ← Removed text-gray-700
                           }`}
                           style={{ color: '#000000' }}
                         >

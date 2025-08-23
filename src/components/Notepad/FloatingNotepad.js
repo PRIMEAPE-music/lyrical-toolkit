@@ -387,8 +387,8 @@ const FloatingNotepad = ({
         isMinimized ? 'z-[60] md:z-[70] floating-notepad-minimized' : 'z-[999999]'
       } ${
         darkMode
-          ? 'bg-gray-800 border-gray-600'
-          : 'bg-white border-gray-300'
+          ? 'bg-gray-800 border-white border-2'
+          : 'bg-white border-gray-500 border-2'
       } ${!isMinimized ? 'floating-notepad-expanded' : ''} ${
         isDragging ? 'shadow-3xl scale-[1.02]' : ''
       } ${
@@ -406,7 +406,8 @@ const FloatingNotepad = ({
               borderRadius: '8px 8px 0 0',
               borderBottom: 'none',
               resize: 'none',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              border: darkMode ? '2px solid white !important' : '2px solid #6b7280 !important'
             }
           : {
               // Expanded: Floating window
@@ -418,7 +419,8 @@ const FloatingNotepad = ({
               resize: 'none', // Disable default resize, we'll use custom handles
               overflow: 'hidden',
               minWidth: '200px',
-              minHeight: '200px'
+              minHeight: '200px',
+              border: darkMode ? '2px solid white !important' : '2px solid #6b7280 !important'
             }
       }
     >
@@ -637,9 +639,9 @@ const FloatingNotepad = ({
       {/* Resize handles - Only show when expanded and on desktop */}
       {!isMinimized && !isMobile && (
         <>
-          {/* Corner handles - Small and clearly visible */}
+          {/* Corner handles - Invisible but functional */}
           <div 
-            className="absolute w-3 h-3 cursor-nw-resize resize-handle"
+            className="absolute w-6 h-6 cursor-nw-resize resize-handle"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -649,9 +651,10 @@ const FloatingNotepad = ({
               top: '-3px', 
               left: '-3px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              border: '2px solid #3b82f6',
-              borderRadius: '2px'
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '2px',
+              cursor: 'nw-resize' // Explicitly set cursor in style
             }}
             title="Resize from top-left corner"
           />
@@ -666,9 +669,10 @@ const FloatingNotepad = ({
               top: '-3px', 
               right: '-3px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              border: '2px solid #3b82f6',
-              borderRadius: '2px'
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '2px',
+              cursor: 'ne-resize' // Explicitly set cursor in style
             }}
             title="Resize from top-right corner"
           />
@@ -683,9 +687,10 @@ const FloatingNotepad = ({
               bottom: '-3px', 
               left: '-3px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              border: '2px solid #3b82f6',
-              borderRadius: '2px'
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '2px',
+              cursor: 'sw-resize' // Explicitly set cursor in style
             }}
             title="Resize from bottom-left corner"
           />
@@ -700,14 +705,15 @@ const FloatingNotepad = ({
               bottom: '-3px', 
               right: '-3px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              border: '2px solid #3b82f6',
-              borderRadius: '2px'
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '2px',
+              cursor: 'se-resize' // Explicitly set cursor in style
             }}
             title="Resize from bottom-right corner"
           />
           
-          {/* Edge handles - Thick and clearly visible */}
+          {/* Edge handles - Also made invisible */}
           <div 
             className="absolute h-3 cursor-n-resize resize-handle"
             onMouseDown={(e) => {
@@ -720,8 +726,9 @@ const FloatingNotepad = ({
               left: '6px', 
               right: '6px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(34, 197, 94, 0.7)',
-              border: '1px solid #22c55e'
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'n-resize' // Explicitly set cursor in style
             }}
             title="Resize from top edge"
           />
@@ -737,8 +744,9 @@ const FloatingNotepad = ({
               left: '6px', 
               right: '6px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(34, 197, 94, 0.7)',
-              border: '1px solid #22c55e'
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 's-resize' // Explicitly set cursor in style
             }}
             title="Resize from bottom edge"
           />
@@ -754,8 +762,9 @@ const FloatingNotepad = ({
               bottom: '6px', 
               left: '-2px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(34, 197, 94, 0.7)',
-              border: '1px solid #22c55e'
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'w-resize' // Explicitly set cursor in style
             }}
             title="Resize from left edge"
           />
@@ -771,8 +780,9 @@ const FloatingNotepad = ({
               bottom: '6px', 
               right: '-2px', 
               zIndex: 1000,
-              backgroundColor: 'rgba(34, 197, 94, 0.7)',
-              border: '1px solid #22c55e'
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'e-resize' // Explicitly set cursor in style
             }}
             title="Resize from right edge"
           />
