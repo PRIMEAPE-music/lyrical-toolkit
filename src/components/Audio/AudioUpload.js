@@ -195,10 +195,12 @@ const AudioUpload = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept={audioStorageService.AUDIO_CONFIG.ALLOWED_TYPES.join(',')}
+        accept="audio/*,.mp3,.wav,.m4a,.mp4"  // More specific accept
+        capture=""  // Empty capture attribute prevents recording mode
         onChange={handleFileInputChange}
         className="hidden"
         disabled={disabled || isUploading}
+        multiple={false}  // Explicitly disable multiple for clarity
       />
       
       {/* Upload area */}
