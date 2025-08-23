@@ -1240,7 +1240,7 @@ input[type="range"].appearance-none {
 
   /* 9. Volume slider - reasonable size */
   .audio-player .space-y-3 input[type="range"].w-32 {
-    width: 4rem !important;
+    width: 3rem !important;
     flex-shrink: 1 !important;
   }
 
@@ -1383,7 +1383,7 @@ input[type="range"].appearance-none {
 
   /* Make the volume slider more compact */
   .audio-player input[type="range"] {
-    width: 3rem !important; /* Smaller volume slider */
+    width: 2rem !important; /* Smaller volume slider */
     flex-shrink: 1 !important;
   }
 
