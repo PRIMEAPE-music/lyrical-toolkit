@@ -1171,3 +1171,200 @@ input[type="range"].appearance-none {
   width: 1rem !important; /* w-3.5 (14px instead of 16px) */
   height: 1rem !important; /* h-3.5 (14px instead of 16px) */
 }
+
+/* Add these targeted mobile fixes to your src/index.css file */
+
+/* Mobile Upload Tab Fixes - Based on actual component structure */
+@media (max-width: 768px) {
+  
+  /* 1. Song card containers in UploadTab */
+  .mobile-content .space-y-3 > div,
+  .mobile-content .grid > div {
+    width: 100% !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+    overflow: hidden !important;
+  }
+
+  /* 2. Song card main layout - stack vertically on mobile */
+  .mobile-content .space-y-3 > div > .flex.items-center.justify-between {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem !important;
+  }
+
+  /* 3. Song header buttons - reduce by 20% and allow wrapping */
+  .mobile-content .space-y-3 > div .flex.items-center.gap-1,
+  .mobile-content .space-y-3 > div .flex.items-center.gap-2 {
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+  }
+
+  /* 4. Individual song control buttons - 20% smaller */
+  .mobile-content .space-y-3 > div .flex button {
+    font-size: 0.75rem !important; /* Reduced from text-xs md:text-sm */
+    padding: 0.3rem 0.5rem !important; /* Reduced from px-2 md:px-3 py-1 */
+    min-width: 2rem !important; /* 20% smaller */
+    min-height: 1.8rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 5. Audio Player - prevent expansion */
+  .audio-player {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  /* 6. Audio Player in non-compact mode - the problematic play button */
+  .audio-player .space-y-3 {
+    width: 100% !important;
+  }
+
+  /* 7. Audio Player control buttons row - single line layout */
+  .audio-player .flex.items-center.justify-between {
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+    gap: 0.25rem !important;
+    align-items: center !important;
+  }
+
+  /* 8. Reasonable button sizes */
+  .audio-player .space-y-3 button.w-10.h-10 {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .audio-player .space-y-3 button.w-6.h-6 {
+    padding: 0.25rem 0.5rem !important;
+    height: 2rem !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 9. Volume slider - reasonable size */
+  .audio-player .space-y-3 input[type="range"].w-32 {
+    width: 4rem !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* 10. Other buttons normal size */
+  .audio-player .space-y-3 button.p-1 {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  .audio-player .space-y-3 .relative button {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  /* 14. Waveform container - prevent overflow */
+  .audio-player .waveform-container {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* 15. Audio filename section - allow truncation */
+  .audio-player .flex.items-center.justify-between .flex-1.min-w-0 h4 {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* 16. Compact mode audio player fixes */
+  .audio-player .relative.flex.items-center.gap-2.w-full {
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+  }
+
+  /* 17. Compact mode play button - fixed size */
+  .audio-player button.flex.items-center.justify-center.w-8.h-8 {
+    width: 2rem !important;
+    height: 2rem !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    min-width: 2rem !important;
+    max-width: 2rem !important;
+  }
+
+  /* 18. Compact mode waveform container */
+  .audio-player .mx-2.relative {
+    flex: 1 !important;
+    min-width: 100px !important;
+    max-width: 100% !important;
+  }
+
+  /* 19. Time display - compact */
+  .audio-player .text-xs.whitespace-nowrap.flex-shrink-0 {
+    font-size: 0.65rem !important;
+    min-width: 3.5rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 20. Dropdown menus - prevent cutoff */
+  .audio-player .fixed.py-1 {
+    left: auto !important;
+    right: 1rem !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+
+  /* 21. Export dropdown positioning */
+  .export-dropdown-mobile,
+  .z-50.py-1.min-w-\[120px\] {
+    left: auto !important;
+    right: 1rem !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+}
+
+/* Additional fixes for very small screens */
+@media (max-width: 480px) {
+  
+  /* More aggressive space-saving for tiny screens */
+  .mobile-content {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* Song control buttons - even smaller on tiny screens */
+  .mobile-content .space-y-3 > div .flex button {
+    font-size: 0.65rem !important;
+    padding: 0.25rem 0.4rem !important;
+    min-width: 1.5rem !important;
+    min-height: 1.5rem !important;
+  }
+
+  /* Stack audio controls vertically on very small screens */
+  .audio-player .flex.items-center.justify-between {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Volume slider gets more space when stacked */
+  .audio-player input[type="range"].w-32 {
+    width: 8rem !important;
+  }
+}
+
+/* Prevent global hover styles from interfering with layout */
+@media (max-width: 768px) {
+  
+  /* Override any transforms that might cause layout issues */
+  button:hover {
+    transform: none !important;
+  }
+  
+  /* Ensure touch targets remain accessible */
+  .mobile-content button,
+  .audio-player button {
+    touch-action: manipulation !important;
+  }
+}
