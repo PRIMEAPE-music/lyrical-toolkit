@@ -1430,17 +1430,21 @@ input[type="range"].appearance-none {
   }
 }
 
-/* Micro-adjustments for perfect alignment */
+/* Fix audio player controls baseline alignment */
 @media (max-width: 768px) {
   
-  /* Slightly adjust volume slider position */
-  .audio-player input[type="range"] {
-    margin-top: -2px !important;
-    margin-bottom: -2px !important;
+  /* Target the specific container with play, loop, volume, menu */
+  .audio-player .space-y-3 > div:last-child,
+  .audio-player .flex.items-center.justify-between:last-child {
+    display: flex !important;
+    align-items: baseline !important; /* Try baseline instead of center */
+    gap: 0.5rem !important;
   }
 
-  /* Adjust three-dot menu if needed */
-  .audio-player button:last-child {
-    margin-top: -1px !important;
+  /* If baseline doesn't work, try this alternative */
+  .audio-player .space-y-3 > div:last-child > * {
+    vertical-align: top !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 }
