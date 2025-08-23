@@ -1203,48 +1203,6 @@ input[type="range"].appearance-none {
     width: 100% !important;
   }
 
-/* ULTRA COMPACT Mobile Song Buttons - Force Override */
-@media (max-width: 768px) {
-  
-  /* Force override with very specific selectors */
-  .mobile-content .space-y-3 > div .flex.items-center button,
-  .mobile-content .space-y-3 > div .flex.items-center.gap-1 button,
-  .mobile-content .space-y-3 > div .flex.items-center.gap-2 button {
-    font-size: 0.5rem !important; /* Super tiny text */
-    padding: 0.1rem 0.2rem !important; /* Minimal padding */
-    min-width: 0.8rem !important; /* Very small width */
-    max-width: 3rem !important; /* Prevent buttons from getting too wide */
-    min-height: 1rem !important; /* Compact height */
-    height: 1rem !important; /* Fixed height */
-    border-radius: 0.25rem !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  /* Make SVG icons tiny */
-  .mobile-content .space-y-3 > div .flex button svg {
-    width: 0.6rem !important; /* 10px */
-    height: 0.6rem !important; /* 10px */
-  }
-
-  /* Tighter button container spacing */
-  .mobile-content .space-y-3 > div .flex.items-center {
-    gap: 0.1rem !important;
-    flex-wrap: wrap !important;
-  }
-}
-
-/* Nuclear option - target ALL buttons in upload tab */
-@media (max-width: 768px) {
-  .mobile-content button:not(.upload-tab-large) {
-    font-size: 0.5rem !important;
-    padding: 0.1rem 0.2rem !important;
-    min-width: 0.8rem !important;
-    min-height: 1rem !important;
-    height: 1rem !important;
-  }
-}
   /* 5. Audio Player - prevent expansion */
   .audio-player {
     width: 100% !important;
@@ -1402,3 +1360,72 @@ input[type="range"].appearance-none {
   }
 }
 
+/* Force Audio Player Buttons Inline on Mobile */
+@media (max-width: 768px) {
+  
+  /* Force audio player controls to stay horizontal */
+  .audio-player .flex.items-center.justify-between,
+  .audio-player .space-y-3 .flex.items-center.justify-between {
+    flex-direction: row !important; /* Force horizontal layout */
+    flex-wrap: nowrap !important; /* Prevent wrapping */
+    align-items: center !important;
+    gap: 0.25rem !important; /* Tight spacing */
+    width: 100% !important;
+  }
+
+  /* Make audio player buttons more compact */
+  .audio-player button {
+    flex-shrink: 0 !important; /* Prevent buttons from shrinking */
+    min-width: 2rem !important;
+    min-height: 2rem !important;
+    padding: 0.25rem !important;
+  }
+
+  /* Make the volume slider more compact */
+  .audio-player input[type="range"] {
+    width: 3rem !important; /* Smaller volume slider */
+    flex-shrink: 1 !important;
+  }
+
+  /* Ensure the three dots menu button stays compact */
+  .audio-player .relative button {
+    width: 2rem !important;
+    height: 2rem !important;
+    padding: 0.25rem !important;
+  }
+
+  /* Force the container holding play, loop, volume, menu to be horizontal */
+  .audio-player .space-y-3 > div:last-child {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.25rem !important;
+  }
+}
+
+/* Alternative: Target the exact song card structure */
+@media (max-width: 768px) {
+  
+  /* Song card - force vertical stacking */
+  .mobile-content .rounded-lg.border.p-4 > .flex.items-center.justify-between {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Song info (icon + text + badges) stays horizontal */
+  .mobile-content .rounded-lg.border.p-4 > .flex.items-center.justify-between > .flex.items-center:first-child {
+    width: 100% !important;
+  }
+
+  /* Button row - full width with separator and centered buttons */
+  .mobile-content .rounded-lg.border.p-4 > .flex.items-center.justify-between > .flex.items-center:last-child {
+    width: 100% !important;
+    justify-content: center !important; /* Center the buttons */
+    padding-top: 0.5rem !important;
+    border-top: 1px solid rgba(156, 163, 175, 0.3) !important;
+    gap: 0.5rem !important; /* Normal spacing between buttons */
+    flex-wrap: wrap !important; /* Allow wrapping if needed */
+  }
+}
