@@ -182,8 +182,7 @@ const UploadTab = ({
                       </div>
                       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {song.wordCount} words • Added {new Date(song.dateAdded).toLocaleDateString()}
-                        {song.audioFileUrl && song.audioDuration && ` • ${Math.floor(song.audioDuration / 60)}:${(song.audioDuration % 60).toFixed(0).padStart(2, '0')} audio`}
-                      </p>
+                        {song.audioFileUrl && ` • Audio`}                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">

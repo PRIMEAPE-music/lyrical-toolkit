@@ -435,9 +435,8 @@ const AudioPlayer = ({
                   darkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>
                   {audioSize && audioStorageService.formatFileSize(audioSize)}
-                  {audioSize && audioDuration && ' • '}
-                  {audioDuration && audioStorageService.formatDuration(audioDuration)}
-                </p>
+                  {audioSize && duration && ' • '}
+                  {duration > 0 && audioStorageService.formatDuration(duration)}                </p>
               )}
             </div>
             
