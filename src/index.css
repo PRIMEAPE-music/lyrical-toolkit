@@ -1430,27 +1430,17 @@ input[type="range"].appearance-none {
   }
 }
 
-/* Simple fix for volume slider alignment */
+/* Micro-adjustments for perfect alignment */
 @media (max-width: 768px) {
   
-  /* Make volume slider smaller and better aligned */
+  /* Slightly adjust volume slider position */
   .audio-player input[type="range"] {
-    width: 3rem !important;
-    height: 1rem !important; /* Smaller height */
-    margin: 0 !important; /* Remove any margins */
-    padding: 0 !important; /* Remove padding */
-    align-self: center !important;
-    vertical-align: middle !important;
+    margin-top: -2px !important;
+    margin-bottom: -2px !important;
   }
 
-  /* Ensure volume slider container doesn't add extra space */
-  .audio-player input[type="range"]::-webkit-slider-thumb {
-    height: 1rem !important;
-    width: 1rem !important;
-  }
-
-  /* Alternative: try making the volume control container more compact */
-  .audio-player .flex.items-center > input[type="range"] {
-    transform: translateY(-1px) !important; /* Slight vertical adjustment */
+  /* Adjust three-dot menu if needed */
+  .audio-player button:last-child {
+    margin-top: -1px !important;
   }
 }
