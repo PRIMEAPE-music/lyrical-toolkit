@@ -1203,15 +1203,48 @@ input[type="range"].appearance-none {
     width: 100% !important;
   }
 
-  /* 4. Individual song control buttons - 20% smaller */
-  .mobile-content .space-y-3 > div .flex button {
-    font-size: 0.75rem !important; /* Reduced from text-xs md:text-sm */
-    padding: 0.3rem 0.5rem !important; /* Reduced from px-2 md:px-3 py-1 */
-    min-width: 2rem !important; /* 20% smaller */
-    min-height: 1.8rem !important;
-    flex-shrink: 0 !important;
+/* ULTRA COMPACT Mobile Song Buttons - Force Override */
+@media (max-width: 768px) {
+  
+  /* Force override with very specific selectors */
+  .mobile-content .space-y-3 > div .flex.items-center button,
+  .mobile-content .space-y-3 > div .flex.items-center.gap-1 button,
+  .mobile-content .space-y-3 > div .flex.items-center.gap-2 button {
+    font-size: 0.5rem !important; /* Super tiny text */
+    padding: 0.1rem 0.2rem !important; /* Minimal padding */
+    min-width: 0.8rem !important; /* Very small width */
+    max-width: 3rem !important; /* Prevent buttons from getting too wide */
+    min-height: 1rem !important; /* Compact height */
+    height: 1rem !important; /* Fixed height */
+    border-radius: 0.25rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
+  /* Make SVG icons tiny */
+  .mobile-content .space-y-3 > div .flex button svg {
+    width: 0.6rem !important; /* 10px */
+    height: 0.6rem !important; /* 10px */
+  }
+
+  /* Tighter button container spacing */
+  .mobile-content .space-y-3 > div .flex.items-center {
+    gap: 0.1rem !important;
+    flex-wrap: wrap !important;
+  }
+}
+
+/* Nuclear option - target ALL buttons in upload tab */
+@media (max-width: 768px) {
+  .mobile-content button:not(.upload-tab-large) {
+    font-size: 0.5rem !important;
+    padding: 0.1rem 0.2rem !important;
+    min-width: 0.8rem !important;
+    min-height: 1rem !important;
+    height: 1rem !important;
+  }
+}
   /* 5. Audio Player - prevent expansion */
   .audio-player {
     width: 100% !important;
@@ -1368,3 +1401,4 @@ input[type="range"].appearance-none {
     touch-action: manipulation !important;
   }
 }
+
