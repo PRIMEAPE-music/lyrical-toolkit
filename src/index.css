@@ -1430,21 +1430,21 @@ input[type="range"].appearance-none {
   }
 }
 
-/* Fix audio player controls baseline alignment */
+/* Force all audio controls to exact same position */
 @media (max-width: 768px) {
   
-  /* Target the specific container with play, loop, volume, menu */
-  .audio-player .space-y-3 > div:last-child,
-  .audio-player .flex.items-center.justify-between:last-child {
-    display: flex !important;
-    align-items: baseline !important; /* Try baseline instead of center */
-    gap: 0.5rem !important;
+  .audio-player button,
+  .audio-player input[type="range"],
+  .audio-player .relative {
+    position: relative !important;
+    top: 0 !important;
+    vertical-align: top !important;
+    display: inline-flex !important;
+    align-items: center !important;
   }
 
-  /* If baseline doesn't work, try this alternative */
-  .audio-player .space-y-3 > div:last-child > * {
-    vertical-align: top !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+  /* Ensure container uses flexbox baseline */
+  .audio-player .space-y-3 > div:last-child {
+    align-items: flex-start !important;
   }
 }
