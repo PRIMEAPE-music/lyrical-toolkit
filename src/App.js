@@ -615,10 +615,31 @@ const LyricsSearchAppContent = () => {
   // ====================================
 
   const handleAudioUpload = async (songId, audioData) => {
+    console.log('🎵 === AUDIO UPLOAD HANDLER START ===');
+    console.log('📄 Song ID:', songId);
+    console.log('📊 Audio data received:', audioData);
+    
     try {
-      console.log('Processing audio upload for song:', songId, audioData);
+      // CRITICAL: Validate that the upload actually succeeded
+      if (!audioData || !audioData.url) {
+        throw new Error('Invalid audio data - no URL provided');
+      }
       
-      // Update the song with audio metadata in local state
+      // Test if the uploaded file actually exists and is accessible
+      console.log('🔍 Verifying uploaded file exists...');
+      try {
+        const testResponse = await fetch(audioData.url, { method: 'HEAD' });
+        if (!testResponse.ok) {
+          throw new Error(`Uploaded file not accessible: ${testResponse.status}`);
+        }
+        console.log('✅ File verified as accessible');
+      } catch (error) {
+        console.error('❌ File verification failed:', error);
+        throw new Error(`Upload verification failed: ${error.message}`);
+      }
+      
+      // Only update local state AFTER verifying the upload succeeded
+      console.log('🔄 Updating local song state...');
       const updatedSongs = songs.map(song => {
         if (song.id === songId) {
           return {
@@ -633,38 +654,47 @@ const LyricsSearchAppContent = () => {
       });
       
       setSongs(updatedSongs);
+      console.log('✅ Local state updated');
       
       // Save to backend database if authenticated
       if (isAuthenticated) {
-        console.log('Saving audio metadata to database...');
-        await saveUserSongs(updatedSongs);
-        console.log('Audio metadata saved to database successfully');
+        console.log('🔄 Saving to backend database...');
+        try {
+          await saveUserSongs(updatedSongs);
+          console.log('✅ Successfully saved to database');
+        } catch (dbError) {
+          console.error('❌ Database save failed:', dbError);
+          
+          // Revert local state if database save fails
+          console.log('🔄 Reverting local state due to database error...');
+          setSongs(songs); // Revert to original songs
+          
+          throw new Error(`Failed to save to database: ${dbError.message}`);
+        }
       } else {
-        console.warn('User not authenticated - audio metadata not saved to database');
+        console.warn('⚠️ User not authenticated - audio metadata not saved to database');
       }
       
-      // Clear selection
+      // Clear selection only after everything succeeds
       setSelectedSongForAudio(null);
       
-      console.log('Audio upload process completed successfully');
-    } catch (error) {
-      console.error('Error in audio upload process:', error);
-      alert('Failed to save audio metadata. Please try again.');
+      console.log('🎉 === AUDIO UPLOAD COMPLETE ===');
       
-      // Revert local state on error
-      const revertedSongs = songs.map(song => {
-        if (song.id === songId) {
-          return {
-            ...song,
-            audioFileUrl: null,
-            audioFileName: null,
-            audioFileSize: null,
-            audioDuration: null
-          };
-        }
-        return song;
-      });
-      setSongs(revertedSongs);
+      // Show success message
+      alert(`Successfully uploaded and saved audio for "${songs.find(s => s.id === songId)?.title}"`);
+      
+    } catch (error) {
+      console.error('❌ === AUDIO UPLOAD FAILED ===');
+      console.error('Error details:', error);
+      
+      // Show user-friendly error message
+      alert(`Failed to upload audio: ${error.message}\n\nPlease check:\n1. Your internet connection\n2. File size (max 50MB)\n3. File format (MP3, WAV, M4A)\n\nThen try again.`);
+      
+      // Don't update UI state if upload failed
+      console.log('🚫 Not updating UI state due to upload failure');
+      
+      // Re-throw the error so calling code knows it failed
+      throw error;
     }
   };
 
