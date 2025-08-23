@@ -1360,38 +1360,37 @@ input[type="range"].appearance-none {
   }
 }
 
-/* Force Audio Player Buttons Inline on Mobile */
+/* Force Audio Player Buttons Inline on Mobile - Fixed Alignment */
 @media (max-width: 768px) {
   
-  /* Force audio player controls to stay horizontal */
+  /* Force audio player controls to stay horizontal with perfect alignment */
   .audio-player .flex.items-center.justify-between,
   .audio-player .space-y-3 .flex.items-center.justify-between {
-    flex-direction: row !important; /* Force horizontal layout */
-    flex-wrap: nowrap !important; /* Prevent wrapping */
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
-    gap: 0.25rem !important; /* Tight spacing */
+    gap: 0.5rem !important;
     width: 100% !important;
+    height: 2.5rem !important; /* Fixed container height */
   }
 
-  /* Make audio player buttons more compact */
+  /* Make all audio player buttons consistently sized */
   .audio-player button {
-    flex-shrink: 0 !important; /* Prevent buttons from shrinking */
-    min-width: 2rem !important;
-    min-height: 2rem !important;
-    padding: 0.25rem !important;
+    flex-shrink: 0 !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important; /* Remove padding for consistent sizing */
   }
 
-  /* Make the volume slider more compact */
+  /* Volume slider with consistent alignment */
   .audio-player input[type="range"] {
-    width: 3rem !important; /* Smaller volume slider */
+    width: 4rem !important;
+    height: 1.5rem !important; /* Fixed height for alignment */
     flex-shrink: 1 !important;
-  }
-
-  /* Ensure the three dots menu button stays compact */
-  .audio-player .relative button {
-    width: 2rem !important;
-    height: 2rem !important;
-    padding: 0.25rem !important;
+    align-self: center !important;
   }
 
   /* Force the container holding play, loop, volume, menu to be horizontal */
@@ -1400,7 +1399,8 @@ input[type="range"].appearance-none {
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 0.25rem !important;
+    gap: 0.5rem !important;
+    height: 2.5rem !important; /* Fixed height */
   }
 }
 
