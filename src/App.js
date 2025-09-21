@@ -148,6 +148,32 @@ const LyricsSearchAppContent = () => {
     }
   }, [songs, selectedStatsFilter]);
 
+  // Debug token expiration issues
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const checkTokenHealth = () => {
+      const token = authService.getAccessToken();
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const now = Date.now() / 1000;
+          const timeUntilExpiry = payload.exp - now;
+          
+          if (timeUntilExpiry < 300) { // Less than 5 minutes
+            console.log(`⚠️ Token expires in ${Math.floor(timeUntilExpiry)} seconds`);
+          }
+        } catch (error) {
+          console.error('Failed to parse token:', error);
+        }
+      }
+    };
+    
+    // Check token health every minute
+    const interval = setInterval(checkTokenHealth, 60000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   // Enhanced statistics with song filtering
   const stats = useMemo(() => {
     const filteredSongs = selectedStatsFilter === 'all' 
@@ -492,35 +518,42 @@ const LyricsSearchAppContent = () => {
     notepadState.updateTitle('Untitled');
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (!notepadState.currentEditingSongId || !notepadState.content.trim()) return;
-    const sanitizedTitle = DOMPurify.sanitize(notepadState.title);
-    const sanitizedContent = DOMPurify.sanitize(notepadState.content);
-    const originalSong = songs.find(song => song.id === notepadState.currentEditingSongId);
+    
+    try {
+      const sanitizedTitle = DOMPurify.sanitize(notepadState.title);
+      const sanitizedContent = DOMPurify.sanitize(notepadState.content);
+      const originalSong = songs.find(song => song.id === notepadState.currentEditingSongId);
 
-    setSongs(prev => prev.map(song => {
-      if (song.id === notepadState.currentEditingSongId) {
-        const finalTitle = sanitizedTitle || song.title;
-        return {
-          ...song,
-          title: finalTitle,
-          lyrics: sanitizedContent,
-          wordCount: sanitizedContent.split(/\s+/).filter(word => word.length > 0).length,
-          dateModified: new Date().toISOString()
-        };
-      }
-      return song;
-    }));
+      // Update local state
+      setSongs(prev => prev.map(song => {
+        if (song.id === notepadState.currentEditingSongId) {
+          const finalTitle = sanitizedTitle || song.title;
+          return {
+            ...song,
+            title: finalTitle,
+            lyrics: sanitizedContent,
+            wordCount: sanitizedContent.split(/\s+/).filter(word => word.length > 0).length,
+            dateModified: new Date().toISOString()
+          };
+        }
+        return song;
+      }));
 
-    const finalTitle = sanitizedTitle || (originalSong ? originalSong.title : '');
+      const finalTitle = sanitizedTitle || (originalSong ? originalSong.title : '');
 
-    // Update notepad and original content with sanitized values
-    notepadState.updateTitle(finalTitle);
-    notepadState.updateContent(sanitizedContent);
-    setOriginalSongContent(sanitizedContent);
+      // Update notepad and original content with sanitized values
+      notepadState.updateTitle(finalTitle);
+      notepadState.updateContent(sanitizedContent);
+      setOriginalSongContent(sanitizedContent);
 
-    // Show success message
-    alert('Song saved successfully!');
+      console.log('💾 Song saved successfully to local state');
+      alert('Song saved successfully!');
+    } catch (error) {
+      console.error('❌ Failed to save changes:', error);
+      alert(`Failed to save changes: ${error.message}`);
+    }
   };
 
   const handleRevertChanges = () => {

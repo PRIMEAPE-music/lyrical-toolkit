@@ -194,10 +194,39 @@ export const isAuthenticated = () => {
   return !!getAccessToken() && !!getCurrentUser();
 };
 
-// Get authorization header for API requests
-export const getAuthHeader = () => {
+// Check if token needs refresh (within 2 minutes of expiration)
+const shouldRefreshToken = () => {
   const token = getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (!token) return false;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const now = Date.now() / 1000;
+    const timeUntilExpiry = payload.exp - now;
+    
+    // Refresh if token expires within 2 minutes (120 seconds)
+    return timeUntilExpiry < 120;
+  } catch (error) {
+    return true; // If we can't parse, assume we need refresh
+  }
+};
+
+// Get authorization header for API requests with automatic refresh
+export const getAuthHeader = async () => {
+  try {
+    // Check if we need to refresh the token
+    if (shouldRefreshToken()) {
+      console.log('🔄 Auto-refreshing token before request...');
+      await refreshTokens();
+    }
+    
+    const token = getAccessToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch (error) {
+    console.error('Failed to refresh token:', error);
+    const token = getAccessToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
 };
 
 const authService = {

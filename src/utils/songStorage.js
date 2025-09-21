@@ -5,30 +5,40 @@ const API_URL = process.env.NODE_ENV === 'production'
   : 'http://localhost:8888/.netlify/functions/songs';
 
 const authFetch = async (url, options = {}) => {
+  // Get auth header (with automatic refresh if needed)
+  const authHeaders = await getAuthHeader();
+  
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeader(),
+      ...authHeaders,
       ...(options.headers || {})
     }
   });
 
   if (response.status === 401) {
     try {
+      console.log('🔄 401 received, attempting token refresh...');
       await refreshTokens();
+      const newAuthHeaders = await getAuthHeader();
+      
       return fetch(url, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
+          ...newAuthHeaders,
           ...(options.headers || {})
         }
       });
     } catch (err) {
       console.error('Authentication failed:', err);
-      throw err;
+      throw new Error('Session expired. Please refresh the page and try again.');
     }
+  }
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status} ${response.statusText}`);
   }
 
   return response;
