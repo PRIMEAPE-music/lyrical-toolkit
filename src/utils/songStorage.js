@@ -1,4 +1,4 @@
-import { refreshTokens, getAuthHeader, isAuthenticated } from '../services/authService';
+import { refreshTokens, getAuthHeader } from '../services/authService';
 
 const API_URL = process.env.NODE_ENV === 'production' 
   ? '/.netlify/functions/songs' 
@@ -152,21 +152,28 @@ export const loadUserSongs = async (includeExample = true) => {
   let userSongs = [];
   
   try {
-    if (isAuthenticated()) {
-      console.log('Loading songs from server...');
+    console.log('🔍 Loading user songs from:', API_URL);
+    console.log('🔐 Is authenticated:', isAuthenticated());
+    
+    const response = await authFetch(API_URL);
+    console.log('📡 Response status:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('📦 Raw response data:', data);
       
-      const response = await authFetch(API_URL);
-      
-      if (response && response.songs) {
-        userSongs = response.songs
-          .filter(song => !song.isExample)
+      // Handle Supabase API response format
+      if (data.songs && Array.isArray(data.songs)) {
+        console.log('✅ Found', data.songs.length, 'songs in response');
+        
+        userSongs = data.songs
+          .filter(song => song && song.id && song.title)
           .map(song => {
-            // Ensure both content and lyrics fields exist
+            // Ensure both lyrics and content fields are always present
             const songContent = song.content || song.lyrics || '';
             
-            // CRITICAL: Always use the database UUID ID, never frontend timestamp IDs
             return {
-              id: song.id, // This is the UUID from database - MUST use this for all operations
+              id: song.id,
               title: song.title || 'Untitled Song',
               lyrics: songContent,     // Frontend expects lyrics field
               content: songContent,    // Backend uses content field
@@ -183,10 +190,19 @@ export const loadUserSongs = async (includeExample = true) => {
               audioDuration: song.audioDuration || song.audio_duration || null
             };
           });
+        
+        console.log('✅ Processed', userSongs.length, 'songs successfully');
+      } else {
+        console.warn('⚠️ Unexpected response format - no songs array found');
       }
+    } else {
+      console.error('❌ Response not OK:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText);
     }
   } catch (error) {
-    console.error('Error loading songs from server:', error);
+    console.error('❌ Error loading songs from server:', error);
+    console.error('❌ Error details:', error.message, error.stack);
     // On auth errors, don't return early - fall through to example logic
   }
   
