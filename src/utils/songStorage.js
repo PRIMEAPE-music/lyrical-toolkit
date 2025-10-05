@@ -176,7 +176,7 @@ export const loadUserSongs = async (includeExample = true) => {
               dateAdded: song.dateAdded || song.date_added || new Date().toISOString(),
               dateModified: song.dateModified || song.date_modified,
               userId: song.userId || song.user_id,
-              // Audio metadata
+              // Audio metadata - handle both camelCase and snake_case from backend
               audioFileUrl: song.audioFileUrl || song.audio_file_url || null,
               audioFileName: song.audioFileName || song.audio_file_name || null,
               audioFileSize: song.audioFileSize || song.audio_file_size || null,

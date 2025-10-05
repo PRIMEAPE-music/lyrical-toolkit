@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Book, Shuffle, Music } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import jsPDF from 'jspdf';
@@ -111,7 +111,6 @@ const LyricsSearchAppContent = () => {
     const loadSongs = async () => {
       // Always try to load songs based on authentication state
       if (!userSongsLoaded) {
-        isLoadingRef.current = true; // Set loading flag
         try {
           const allSongs = await loadAllSongs(isAuthenticated);
           setSongs(allSongs);
@@ -119,7 +118,6 @@ const LyricsSearchAppContent = () => {
           console.error('Failed to load songs:', error);
         }
         setUserSongsLoaded(true);
-        isLoadingRef.current = false; // Clear loading flag
       }
     };
 
@@ -127,21 +125,11 @@ const LyricsSearchAppContent = () => {
   }, [isAuthenticated, userSongsLoaded]);
 
   // Persist user songs whenever songs change
-  // Use a ref to track if we're loading to prevent save-during-load loops
-  const isLoadingRef = useRef(false);
-  
   useEffect(() => {
-    if (isAuthenticated && !isLoadingRef.current && userSongsLoaded) {
-      // Only save if we're not currently loading and songs have been loaded
-      const timeoutId = setTimeout(() => {
-        saveUserSongs(songs).catch(error => {
-          console.error('Failed to save songs:', error);
-        });
-      }, 500); // Debounce saves by 500ms to avoid rapid successive saves
-      
-      return () => clearTimeout(timeoutId);
+    if (isAuthenticated) {
+      saveUserSongs(songs);
     }
-  }, [songs, isAuthenticated, userSongsLoaded]);
+  }, [songs, isAuthenticated]);
 
   // Reset stats filter when songs change
   useEffect(() => {
