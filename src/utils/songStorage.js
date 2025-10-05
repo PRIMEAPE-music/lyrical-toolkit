@@ -1,4 +1,4 @@
-import { refreshTokens, getAuthHeader } from '../services/authService';
+import { refreshTokens, getAuthHeader, isAuthenticated } from '../services/authService';
 
 const API_URL = process.env.NODE_ENV === 'production' 
   ? '/.netlify/functions/songs' 
