@@ -12,6 +12,7 @@ import {
 import { analyzeRhymeStatistics } from './utils/phoneticUtils';
 import { songVocabularyPhoneticMap } from './data/songVocabularyPhoneticMap';
 import { saveUserSongs, clearUserSongs, saveExampleSongDeleted, loadAllSongs } from './utils/songStorage';
+import * as authService from './services/authService';
 import audioStorageService from './services/audioStorageService';
 import { deleteSong as deleteSongFromServer } from './services/songsService';
 // Import hooks
