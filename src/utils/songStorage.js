@@ -152,19 +152,21 @@ export const loadUserSongs = async (includeExample = true) => {
   let userSongs = [];
   
   try {
-    const response = await authFetch(API_URL);
-    if (response.ok) {
-      const data = await response.json();
-      // Handle Supabase API response format
-      if (data.songs && Array.isArray(data.songs)) {
-        userSongs = data.songs
-          .filter(song => song && song.id && song.title)
+    if (isAuthenticated()) {
+      console.log('Loading songs from server...');
+      
+      const response = await authFetch(API_URL);
+      
+      if (response && response.songs) {
+        userSongs = response.songs
+          .filter(song => !song.isExample)
           .map(song => {
-            // Ensure both lyrics and content fields are always present
+            // Ensure both content and lyrics fields exist
             const songContent = song.content || song.lyrics || '';
             
+            // CRITICAL: Always use the database UUID ID, never frontend timestamp IDs
             return {
-              id: song.id,
+              id: song.id, // This is the UUID from database - MUST use this for all operations
               title: song.title || 'Untitled Song',
               lyrics: songContent,     // Frontend expects lyrics field
               content: songContent,    // Backend uses content field
@@ -175,10 +177,10 @@ export const loadUserSongs = async (includeExample = true) => {
               dateModified: song.dateModified || song.date_modified,
               userId: song.userId || song.user_id,
               // Audio metadata
-              audioFileUrl: song.audioFileUrl || null,
-              audioFileName: song.audioFileName || null,
-              audioFileSize: song.audioFileSize || null,
-              audioDuration: song.audioDuration || null
+              audioFileUrl: song.audioFileUrl || song.audio_file_url || null,
+              audioFileName: song.audioFileName || song.audio_file_name || null,
+              audioFileSize: song.audioFileSize || song.audio_file_size || null,
+              audioDuration: song.audioDuration || song.audio_duration || null
             };
           });
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, Book, Shuffle, Music } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import jsPDF from 'jspdf';
@@ -111,6 +111,7 @@ const LyricsSearchAppContent = () => {
     const loadSongs = async () => {
       // Always try to load songs based on authentication state
       if (!userSongsLoaded) {
+        isLoadingRef.current = true; // Set loading flag
         try {
           const allSongs = await loadAllSongs(isAuthenticated);
           setSongs(allSongs);
@@ -118,23 +119,29 @@ const LyricsSearchAppContent = () => {
           console.error('Failed to load songs:', error);
         }
         setUserSongsLoaded(true);
+        isLoadingRef.current = false; // Clear loading flag
       }
     };
 
     loadSongs();
   }, [isAuthenticated, userSongsLoaded]);
 
-  // Reset loading state when authentication changes
-  useEffect(() => {
-    setUserSongsLoaded(false);
-  }, [isAuthenticated]);
-
   // Persist user songs whenever songs change
+  // Use a ref to track if we're loading to prevent save-during-load loops
+  const isLoadingRef = useRef(false);
+  
   useEffect(() => {
-    if (isAuthenticated) {
-      saveUserSongs(songs);
+    if (isAuthenticated && !isLoadingRef.current && userSongsLoaded) {
+      // Only save if we're not currently loading and songs have been loaded
+      const timeoutId = setTimeout(() => {
+        saveUserSongs(songs).catch(error => {
+          console.error('Failed to save songs:', error);
+        });
+      }, 500); // Debounce saves by 500ms to avoid rapid successive saves
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [songs, isAuthenticated]);
+  }, [songs, isAuthenticated, userSongsLoaded]);
 
   // Reset stats filter when songs change
   useEffect(() => {
@@ -331,26 +338,43 @@ const LyricsSearchAppContent = () => {
     const confirmDelete = window.confirm('Are you sure you want to delete this song? This cannot be undone.');
     if (!confirmDelete) return;
 
+    // Store original songs for rollback if needed
+    const originalSongs = [...songs];
+    
     try {
-      setSongs(prev => {
-        const songToDelete = prev.find(song => song.id === songId);
-        if (songToDelete && songToDelete.isExample) {
-          saveExampleSongDeleted(true);
-        }
-        return prev.filter(song => song.id !== songId);
-      });
+      // Optimistically remove from UI first
+      const songToDelete = songs.find(song => song.id === songId);
+      if (songToDelete && songToDelete.isExample) {
+        saveExampleSongDeleted(true);
+      }
+      
+      setSongs(prev => prev.filter(song => song.id !== songId));
 
       // If user is authenticated, delete from server too
       if (isAuthenticated) {
+        console.log('🗑️ Deleting song from server with ID:', songId);
         await deleteSongFromServer(songId);
         console.log('✅ Song deleted from server');
       }
     } catch (error) {
       console.error('❌ Error deleting song:', error);
-      alert('Failed to delete song. Please try again.');
-      // Revert local state on error by reloading songs
-      const allSongs = await loadAllSongs(isAuthenticated);
-      setSongs(allSongs);
+      
+      // Show specific error message
+      const errorMessage = error.message || 'Unknown error occurred';
+      alert(`Failed to delete song: ${errorMessage}\n\nThe song has been restored.`);
+      
+      // Rollback - restore the song
+      setSongs(originalSongs);
+      
+      // Optionally reload from server to ensure sync
+      if (isAuthenticated) {
+        try {
+          const allSongs = await loadAllSongs(isAuthenticated);
+          setSongs(allSongs);
+        } catch (reloadError) {
+          console.error('Failed to reload songs after delete error:', reloadError);
+        }
+      }
     }
   };
 
