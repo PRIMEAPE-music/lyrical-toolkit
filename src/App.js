@@ -153,6 +153,9 @@ const LyricsSearchAppContent = () => {
     }
   }, [songs, selectedStatsFilter]);
 
+  // Track if we need to reload after save
+  const [needsReload, setNeedsReload] = useState(false);
+
   // Save songs to server when they change (authenticated users only)
   useEffect(() => {
     if (!isAuthenticated || songs.length === 0) return;
@@ -162,10 +165,7 @@ const LyricsSearchAppContent = () => {
         console.log('💾 Auto-saving songs...');
         await saveUserSongs(songs);
         console.log('✅ Auto-save complete');
-        
-        // Reload to sync IDs
-        const allSongs = await loadAllSongs(isAuthenticated);
-        setSongs(allSongs);
+        setNeedsReload(true); // Mark that we need to reload
       } catch (error) {
         console.error('❌ Auto-save failed:', error);
       }
@@ -173,6 +173,26 @@ const LyricsSearchAppContent = () => {
     
     return () => clearTimeout(timeoutId);
   }, [songs, isAuthenticated]);
+
+  // Reload once after save to get UUIDs
+  useEffect(() => {
+    if (!needsReload || !isAuthenticated) return;
+    
+    const reloadSongs = async () => {
+      try {
+        console.log('🔄 Reloading songs to sync IDs...');
+        const allSongs = await loadAllSongs(isAuthenticated);
+        setSongs(allSongs);
+        setNeedsReload(false); // Reset flag
+      } catch (error) {
+        console.error('❌ Reload failed:', error);
+      }
+    };
+    
+    // Small delay to ensure save completed
+    const timeoutId = setTimeout(reloadSongs, 500);
+    return () => clearTimeout(timeoutId);
+  }, [needsReload, isAuthenticated]);
 
   // Debug token expiration issues
   useEffect(() => {
