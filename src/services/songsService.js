@@ -98,17 +98,18 @@ export const updateSong = async (songId, songData) => {
 
 // Delete a specific song
 export const deleteSong = async (songId) => {
+  const authHeaders = await getAuthHeader(); // ← Add await here!
+  
   const response = await fetch(`${SONGS_API}/song-content/${songId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeader()
+      ...authHeaders
     }
   });
 
   return handleResponse(response);
 };
-
 // Upload a single song file
 export const uploadSong = async (file, title = null) => {
   return new Promise((resolve, reject) => {
