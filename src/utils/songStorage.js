@@ -133,25 +133,26 @@ export const loadExampleSong = async () => {
   }
 };
 
-const shouldShowExampleSong = (userSongsCount) => {
-  // Don't show example if it's been explicitly deleted
-  const exampleDeleted = loadExampleSongDeleted();
-  if (exampleDeleted) {
-    return false;
+// Check if user should see example song
+const shouldShowExampleSong = (userSongsCount = 0) => {
+  const isDeleted = loadExampleSongDeleted();
+  
+  // If user has no songs, always show example regardless of deletion state
+  // (deletion only matters when user has uploaded their own songs)
+  if (userSongsCount === 0) {
+    return true;
   }
   
-  // Show example if user has no songs (regardless of auth state)
-  // This function is only called from loadUserSongs, which is for authenticated users
-  return userSongsCount === 0;
+  // If user has songs, respect their deletion preference
+  return !isDeleted;
 };
 
 // Load user songs from the server
 export const loadUserSongs = async (includeExample = true) => {
   let userSongs = [];
-  
+ 
   try {
     console.log('🔍 Loading user songs from:', API_URL);
-    console.log('🔐 Is authenticated:', isAuthenticated());
     
     const response = await authFetch(API_URL);
     console.log('📡 Response status:', response.status);
