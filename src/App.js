@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, Book, Shuffle, Music } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import jsPDF from 'jspdf';
@@ -153,46 +153,39 @@ const LyricsSearchAppContent = () => {
     }
   }, [songs, selectedStatsFilter]);
 
-  // Track if we need to reload after save
-  const [needsReload, setNeedsReload] = useState(false);
+  // Use ref to track if we're currently reloading to prevent infinite loop
+  const isReloadingRef = useRef(false);
 
   // Save songs to server when they change (authenticated users only)
   useEffect(() => {
-    if (!isAuthenticated || songs.length === 0) return;
+    // Skip auto-save if we're reloading or not authenticated
+    if (!isAuthenticated || songs.length === 0 || isReloadingRef.current) {
+      return;
+    }
     
     const timeoutId = setTimeout(async () => {
       try {
         console.log('💾 Auto-saving songs...');
         await saveUserSongs(songs);
         console.log('✅ Auto-save complete');
-        setNeedsReload(true); // Mark that we need to reload
+        
+        // Reload to sync IDs
+        isReloadingRef.current = true; // Set flag before reload
+        const allSongs = await loadAllSongs(isAuthenticated);
+        setSongs(allSongs);
+        
+        // Reset flag after a short delay to allow state to settle
+        setTimeout(() => {
+          isReloadingRef.current = false;
+        }, 1000);
       } catch (error) {
         console.error('❌ Auto-save failed:', error);
+        isReloadingRef.current = false; // Reset on error too
       }
     }, 2000); // 2 second debounce
     
     return () => clearTimeout(timeoutId);
   }, [songs, isAuthenticated]);
-
-  // Reload once after save to get UUIDs
-  useEffect(() => {
-    if (!needsReload || !isAuthenticated) return;
-    
-    const reloadSongs = async () => {
-      try {
-        console.log('🔄 Reloading songs to sync IDs...');
-        const allSongs = await loadAllSongs(isAuthenticated);
-        setSongs(allSongs);
-        setNeedsReload(false); // Reset flag
-      } catch (error) {
-        console.error('❌ Reload failed:', error);
-      }
-    };
-    
-    // Small delay to ensure save completed
-    const timeoutId = setTimeout(reloadSongs, 500);
-    return () => clearTimeout(timeoutId);
-  }, [needsReload, isAuthenticated]);
 
   // Debug token expiration issues
   useEffect(() => {
