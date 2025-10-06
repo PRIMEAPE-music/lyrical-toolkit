@@ -110,20 +110,18 @@ const LyricsSearchAppContent = () => {
   // Load songs when authentication state changes or on initial load
   useEffect(() => {
     const loadSongs = async () => {
-      // Always try to load songs based on authentication state
-      if (!userSongsLoaded) {
-        try {
-          const allSongs = await loadAllSongs(isAuthenticated);
-          setSongs(allSongs);
-        } catch (error) {
-          console.error('Failed to load songs:', error);
-        }
-        setUserSongsLoaded(true);
+      try {
+        console.log('🔄 Loading songs, authenticated:', isAuthenticated);
+        const allSongs = await loadAllSongs(isAuthenticated);
+        setSongs(allSongs);
+        console.log('✅ Loaded', allSongs.length, 'songs');
+      } catch (error) {
+        console.error('Failed to load songs:', error);
       }
     };
 
     loadSongs();
-  }, [isAuthenticated, userSongsLoaded]);
+  }, [isAuthenticated]); // Reload whenever auth state changes
 
   // Persist user songs whenever songs change
   useEffect(() => {
