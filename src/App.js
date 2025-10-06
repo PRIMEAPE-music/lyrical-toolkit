@@ -82,7 +82,7 @@ const LyricsSearchAppContent = () => {
   const [selectedStatsFilter, setSelectedStatsFilter] = useState('all');
 
   // File upload hook
-  const fileUploadHook = useFileUpload(songs, setSongs);
+  const fileUploadHook = useFileUpload(songs, setSongs, isAuthenticated ? saveAndReloadSongs : null);
   
   // Search hook
   const { searchResults } = useSearch(songs, searchQuery, highlightWord);
@@ -123,12 +123,23 @@ const LyricsSearchAppContent = () => {
     loadSongs();
   }, [isAuthenticated]); // Reload whenever auth state changes
 
-  // Persist user songs whenever songs change
-  useEffect(() => {
-    if (isAuthenticated) {
-      saveUserSongs(songs);
+  // Helper function to save and reload songs
+  const saveAndReloadSongs = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      console.log('💾 Saving songs to server...');
+      await saveUserSongs(songs);
+      console.log('✅ Songs saved, reloading...');
+      
+      // Reload from server to get UUIDs
+      const allSongs = await loadAllSongs(isAuthenticated);
+      setSongs(allSongs);
+      console.log('✅ Reloaded', allSongs.length, 'songs with server IDs');
+    } catch (error) {
+      console.error('❌ Failed to save/reload songs:', error);
     }
-  }, [songs, isAuthenticated]);
+  };
 
   // Reset stats filter when songs change
   useEffect(() => {
@@ -500,7 +511,7 @@ const LyricsSearchAppContent = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleUploadToSongs = () => {
+  const handleUploadToSongs = async () => {
     if (!notepadState.content.trim()) return;
 
     // Should only create new song when NOT editing
@@ -516,6 +527,7 @@ const LyricsSearchAppContent = () => {
       id: Date.now() + Math.random(),
       title: sanitizedTitle,
       lyrics: sanitizedContent,
+      content: sanitizedContent, // Add content field for backend
       wordCount: sanitizedContent.split(/\s+/).filter(word => word.length > 0).length,
       dateAdded: new Date().toISOString(),
       filename: `${sanitizedTitle}.txt`,
@@ -523,6 +535,11 @@ const LyricsSearchAppContent = () => {
     };
     
     setSongs(prev => [newSong, ...prev]);
+    
+    // Save and reload to get UUID from server
+    if (isAuthenticated) {
+      await saveAndReloadSongs();
+    }
     
     // Optionally clear notepad after upload
     notepadState.updateContent('');

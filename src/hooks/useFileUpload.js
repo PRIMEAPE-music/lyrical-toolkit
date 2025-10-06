@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DOMPurify from 'dompurify';
 
-export const useFileUpload = (songs, setSongs) => {
+export const useFileUpload = (songs, setSongs, onUploadComplete = null) => {
   const [isDragging, setIsDragging] = useState(false);
 
   // File upload handler
@@ -48,9 +48,14 @@ export const useFileUpload = (songs, setSongs) => {
 
     if (newSongs.length > 0) {
       setSongs(prev => [...prev, ...newSongs]);
+      
+      // Trigger save and reload if authenticated
+      if (onUploadComplete) {
+        await onUploadComplete();
+      }
     }
   };
-
+  
   // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
