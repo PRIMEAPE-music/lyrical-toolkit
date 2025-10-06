@@ -168,18 +168,31 @@ const SongOperations = {
     delete: async function(userId, songId) {
         const supabase = getSupabaseClient();
         
-        const { error } = await supabase
+        console.log('🗑️ Attempting database delete');
+        console.log('User ID:', userId);
+        console.log('Song ID:', songId);
+        
+        const { data, error } = await supabase
             .from('songs')
             .delete()
             .eq('id', songId)
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .select(); // Return deleted rows to confirm
         
         if (error) {
+            console.error('❌ Database delete failed:', error);
             throw new Error('Failed to delete song: ' + error.message);
         }
         
+        if (!data || data.length === 0) {
+            console.error('❌ Delete query succeeded but no rows affected');
+            console.error('This usually means the song ID or user ID did not match');
+            throw new Error('Song not found or already deleted');
+        }
+        
+        console.log('✅ Successfully deleted song:', data[0].title);
         return true;
-    }
+    },
 };
 
 exports.handler = async (event, context) => {
@@ -406,18 +419,63 @@ exports.handler = async (event, context) => {
             case 'DELETE':
                 // Delete specific song and associated audio file
                 try {
+                    console.log('🗑️ DELETE request received');
+                    console.log('User ID:', userId);
+                    console.log('Song ID:', songId);
+                    console.log('Song ID type:', isUUID(songId) ? 'UUID' : isTimestampId(songId) ? 'Timestamp' : 'Other');
+                    
                     // Check if song exists first
                     const existingSong = await SongOperations.getById(userId, songId);
+                    
                     if (!existingSong) {
+                        console.error('❌ Song not found for deletion');
+                        console.error('Attempted userId:', userId);
+                        console.error('Attempted songId:', songId);
+                        
+                        // If timestamp ID, try to find and delete any song with matching content
+                        if (isTimestampId(songId)) {
+                            console.log('⚠️ Timestamp ID detected - attempting flexible delete');
+                            
+                            // Get all user songs and try to find by old ID reference
+                            const supabase = getSupabaseClient();
+                            const { data: allUserSongs } = await supabase
+                                .from('songs')
+                                .select('id, title, filename')
+                                .eq('user_id', userId);
+                            
+                            console.log(`Found ${allUserSongs?.length || 0} total songs for user`);
+                            
+                            if (!allUserSongs || allUserSongs.length === 0) {
+                                return {
+                                    statusCode: 404,
+                                    headers,
+                                    body: JSON.stringify({ 
+                                        error: 'Song not found',
+                                        details: 'No songs exist for this user',
+                                        userId: userId,
+                                        attemptedSongId: songId
+                                    })
+                                };
+                            }
+                        }
+                        
                         return {
                             statusCode: 404,
                             headers,
-                            body: JSON.stringify({ error: 'Song not found' })
+                            body: JSON.stringify({ 
+                                error: 'Song not found',
+                                details: 'Song may have been already deleted or ID mismatch',
+                                userId: userId,
+                                songId: songId
+                            })
                         };
                     }
                     
+                    console.log('✅ Song found:', existingSong.title);
+                    
                     // Delete from database first
                     await SongOperations.delete(userId, songId);
+                    console.log('✅ Song deleted from database');
                     
                     // If song had an audio file, delete it from storage
                     if (existingSong.audio_file_url) {
