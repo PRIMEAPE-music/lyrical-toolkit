@@ -81,6 +81,24 @@ const LyricsSearchAppContent = () => {
   // Stats filter
   const [selectedStatsFilter, setSelectedStatsFilter] = useState('all');
 
+  // Helper function to save and reload songs
+  const saveAndReloadSongs = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      console.log('💾 Saving songs to server...');
+      await saveUserSongs(songs);
+      console.log('✅ Songs saved, reloading...');
+      
+      // Reload from server to get UUIDs
+      const allSongs = await loadAllSongs(isAuthenticated);
+      setSongs(allSongs);
+      console.log('✅ Reloaded', allSongs.length, 'songs with server IDs');
+    } catch (error) {
+      console.error('❌ Failed to save/reload songs:', error);
+    }
+  };
+
   // File upload hook
   const fileUploadHook = useFileUpload(songs, setSongs, isAuthenticated ? saveAndReloadSongs : null);
   
@@ -122,24 +140,6 @@ const LyricsSearchAppContent = () => {
 
     loadSongs();
   }, [isAuthenticated]); // Reload whenever auth state changes
-
-  // Helper function to save and reload songs
-  const saveAndReloadSongs = async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      console.log('💾 Saving songs to server...');
-      await saveUserSongs(songs);
-      console.log('✅ Songs saved, reloading...');
-      
-      // Reload from server to get UUIDs
-      const allSongs = await loadAllSongs(isAuthenticated);
-      setSongs(allSongs);
-      console.log('✅ Reloaded', allSongs.length, 'songs with server IDs');
-    } catch (error) {
-      console.error('❌ Failed to save/reload songs:', error);
-    }
-  };
 
   // Reset stats filter when songs change
   useEffect(() => {
