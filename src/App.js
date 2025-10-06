@@ -82,12 +82,13 @@ const LyricsSearchAppContent = () => {
   const [selectedStatsFilter, setSelectedStatsFilter] = useState('all');
 
   // Helper function to save and reload songs
-  const saveAndReloadSongs = async () => {
+  const saveAndReloadSongs = async (songsToSave = null) => {
     if (!isAuthenticated) return;
     
     try {
-      console.log('💾 Saving songs to server...');
-      await saveUserSongs(songs);
+      const actualSongs = songsToSave || songs;
+      console.log('💾 Saving', actualSongs.length, 'songs to server...');
+      await saveUserSongs(actualSongs);
       console.log('✅ Songs saved, reloading...');
       
       // Reload from server to get UUIDs
@@ -99,9 +100,8 @@ const LyricsSearchAppContent = () => {
     }
   };
 
-  // File upload hook
-  const fileUploadHook = useFileUpload(songs, setSongs, isAuthenticated ? saveAndReloadSongs : null);
-  
+  // File upload hook - don't pass callback, we'll handle it differently
+  const fileUploadHook = useFileUpload(songs, setSongs);  
   // Search hook
   const { searchResults } = useSearch(songs, searchQuery, highlightWord);
 
@@ -152,6 +152,27 @@ const LyricsSearchAppContent = () => {
       }
     }
   }, [songs, selectedStatsFilter]);
+
+  // Save songs to server when they change (authenticated users only)
+  useEffect(() => {
+    if (!isAuthenticated || songs.length === 0) return;
+    
+    const timeoutId = setTimeout(async () => {
+      try {
+        console.log('💾 Auto-saving songs...');
+        await saveUserSongs(songs);
+        console.log('✅ Auto-save complete');
+        
+        // Reload to sync IDs
+        const allSongs = await loadAllSongs(isAuthenticated);
+        setSongs(allSongs);
+      } catch (error) {
+        console.error('❌ Auto-save failed:', error);
+      }
+    }, 2000); // 2 second debounce
+    
+    return () => clearTimeout(timeoutId);
+  }, [songs, isAuthenticated]);
 
   // Debug token expiration issues
   useEffect(() => {

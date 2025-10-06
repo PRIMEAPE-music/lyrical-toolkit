@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DOMPurify from 'dompurify';
 
-export const useFileUpload = (songs, setSongs, onUploadComplete = null) => {
+export const useFileUpload = (songs, setSongs) => {
   const [isDragging, setIsDragging] = useState(false);
 
   // File upload handler
@@ -34,6 +34,7 @@ export const useFileUpload = (songs, setSongs, onUploadComplete = null) => {
             id: Date.now() + Math.random(),
             title: DOMPurify.sanitize(songTitle),
             lyrics: DOMPurify.sanitize(content),
+            content: DOMPurify.sanitize(content), // Add content field for backend
             wordCount: content.split(/\s+/).filter(word => word.length > 0).length,
             dateAdded: new Date().toISOString(),
             filename: sanitizedName
@@ -48,14 +49,13 @@ export const useFileUpload = (songs, setSongs, onUploadComplete = null) => {
 
     if (newSongs.length > 0) {
       setSongs(prev => [...prev, ...newSongs]);
-      
-      // Trigger save and reload if authenticated
-      if (onUploadComplete) {
-        await onUploadComplete();
-      }
+      // Return the new songs so caller can save if needed
+      return newSongs;
     }
+    
+    return [];
   };
-  
+
   // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
