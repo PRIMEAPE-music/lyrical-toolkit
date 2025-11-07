@@ -23,16 +23,16 @@ const MusicBanner = () => {
           
           {/* Left Social Links */}
           <div className="flex gap-3 order-1 desktop-social">
-            
-          <a  href="https://open.spotify.com/artist/63oAAVGEpX2fnQC2eF0rbM"
+
+          <a  href="https://open.spotify.com/artist/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-300 hover:text-white transition-colors"
             >
               Spotify
             </a>
-            
-          <a  href="https://www.youtube.com/@ITZTLI-music"
+
+          <a  href="https://youtube.com/@PRIMEAPE-music"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-300 hover:text-white transition-colors"
@@ -41,37 +41,37 @@ const MusicBanner = () => {
             </a>
           </div>
 
-          {/* Album 1 */}
-          
-        <a  href="https://open.spotify.com/album/1unpOZdVAc4g0FraOafrDS?si=ig3-0gTVR2SBdzMVseUCsQ"
+          {/* Album Cover */}
+
+        <a  href="https://primeape.bandcamp.com"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:opacity-80 transition-opacity order-2"
           >
-            <img 
-              src="/album1.png" 
-              alt="Album 1" 
+            <img
+              src="/foundation-cover.png"
+              alt="PRIMEAPE - Foundation"
               className="w-6 h-6 md:w-8 md:h-8 rounded border border-gray-500"
               style={{ maxWidth: '64px', maxHeight: '64px', minWidth: '48px', minHeight: '48px' }}
             />
           </a>
 
           {/* Main Site Link */}
-          
+
           <div className="text-center order-3">
             <div className="text-sm font-medium text-white mb-1">Check out my music!</div>
             {/* Desktop: Show full website link */}
-            
-          <a  href="https://itztli-music.com"
+
+          <a  href="https://primeape.org"
               target="_blank"
               rel="noopener noreferrer"
               className="desktop-link text-xs text-gray-300 hover:text-white transition-colors px-2 py-1 border border-gray-500 rounded"
             >
-              itztli-music.com
+              primeape.org
             </a>
             {/* Mobile: Show Linktree link */}
-            
-          <a  href="https://linktr.ee/ITZTLI.music"
+
+          <a  href="https://linktr.ee/primeape.music"
               target="_blank"
               rel="noopener noreferrer"
               className="mobile-link text-xs text-gray-300 hover:text-white transition-colors px-2 py-1 border border-gray-500 rounded"
@@ -80,38 +80,31 @@ const MusicBanner = () => {
             </a>
           </div>
 
-          {/* Album 2 */}
-          
-        <a  href="https://open.spotify.com/album/5DIJJcDNZJ9uqOhHC5hi3P"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:opacity-80 transition-opacity order-4"
-          >
-            <img 
-              src="/album2.png" 
-              alt="Album 2" 
-              className="w-6 h-6 md:w-8 md:h-8 rounded border border-gray-500"
-              style={{ maxWidth: '64px', maxHeight: '64px', minWidth: '48px', minHeight: '48px' }}
-            />
-          </a>
-
           {/* Right Social Links */}
-          <div className="flex gap-3 order-5 desktop-social">
-            
-          <a  href="https://www.tiktok.com/@itztli.music?_t=zt-8vgi63vcwwp&_r=1"
+          <div className="flex gap-3 order-4 desktop-social">
+
+          <a  href="https://tiktok.com/@primeape.music"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-300 hover:text-white transition-colors"
             >
               TikTok
             </a>
-            
-          <a  href="https://www.instagram.com/itztli.music/"
+
+          <a  href="https://instagram.com/primeape.music"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-300 hover:text-white transition-colors"
             >
               Instagram
+            </a>
+
+          <a  href="https://music.apple.com/artist/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-gray-300 hover:text-white transition-colors"
+            >
+              Apple Music
             </a>
           </div>
         </div>
