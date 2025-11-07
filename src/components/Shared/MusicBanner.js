@@ -39,49 +39,52 @@ const MusicBanner = () => {
             >
               YouTube
             </a>
+
+          <a  href="https://primeape.bandcamp.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-gray-300 hover:text-white transition-colors"
+            >
+              Bandcamp
+            </a>
           </div>
 
-          {/* Album Cover */}
+        {/* Album Cover - Center, links to main site */}
 
-        <a  href="https://primeape.bandcamp.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:opacity-80 transition-opacity order-2"
-          >
-            <img
-              src="/foundation-cover.png"
-              alt="PRIMEAPE - Foundation"
-              className="w-6 h-6 md:w-8 md:h-8 rounded border border-gray-500"
-              style={{ maxWidth: '64px', maxHeight: '64px', minWidth: '48px', minHeight: '48px' }}
-            />
-          </a>
-
-          {/* Main Site Link */}
-
-          <div className="text-center order-3">
+          <div className="text-center order-2">
             <div className="text-sm font-medium text-white mb-1">Check out my music!</div>
-            {/* Desktop: Show full website link */}
-
-          <a  href="https://primeape.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="desktop-link text-xs text-gray-300 hover:text-white transition-colors px-2 py-1 border border-gray-500 rounded"
-            >
-              primeape.org
+            
+            {/* Desktop: Show album with primeape.org link */}
+            <a  href="https://primeape.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="desktop-link inline-block hover:opacity-80 transition-opacity"
+              >
+              <img
+                src="/foundation-cover.png"
+                alt="PRIMEAPE - Foundation"
+                className="w-8 h-8 md:w-10 md:h-10 rounded border border-gray-500 mx-auto"
+                style={{ maxWidth: '40px', maxHeight: '40px', width: '32px', height: '32px' }}
+              />
             </a>
-            {/* Mobile: Show Linktree link */}
 
-          <a  href="https://linktr.ee/primeape.music"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mobile-link text-xs text-gray-300 hover:text-white transition-colors px-2 py-1 border border-gray-500 rounded"
-            >
-              Linktree
+            {/* Mobile: Show album with Linktree link */}
+            <a  href="https://linktr.ee/primeape.music"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mobile-link inline-block hover:opacity-80 transition-opacity"
+              >
+              <img
+                src="/foundation-cover.png"
+                alt="PRIMEAPE - Foundation"
+                className="w-8 h-8 md:w-10 md:h-10 rounded border border-gray-500 mx-auto"
+                style={{ maxWidth: '40px', maxHeight: '40px', width: '32px', height: '32px' }}
+              />
             </a>
           </div>
 
           {/* Right Social Links */}
-          <div className="flex gap-3 order-4 desktop-social">
+          <div className="flex gap-3 order-3 desktop-social">
 
           <a  href="https://tiktok.com/@primeape.music"
               target="_blank"
